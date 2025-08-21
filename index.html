@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formosa Recicla | Juntos por una ciudad más limpia</title>
+
+    <!-- SEO & Social Sharing Meta Tags -->
+    <meta name="description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad con nosotros. Guías, puntos verdes y más." />
+    <meta name="keywords" content="reciclaje, Formosa, sustentabilidad, ecología, puntos verdes, reciclar" />
+    <meta name="author" content="Formosa Recicla" />
+    <meta property="og:title" content="Formosa Recicla | Juntos por una ciudad más limpia" />
+    <meta property="og:description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop" />
+    <meta property="og:url" content="[YOUR_APP_URL_HERE]" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Formosa Recicla | Juntos por una ciudad más limpia" />
+    <meta name="twitter:description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad." />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop" />
+    <meta name="theme-color" content="#2E7D32" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://esm.sh" />
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#2E7D32',
+              'secondary': '#66BB6A',
+              'accent': '#FFC107',
+              'background': '#F8F9FA',
+              'text-main': '#212529',
+              'text-secondary': '#6c757d',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+             animation: {
+              'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+              'slide-in-right': 'slideInRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+              'slide-in-left': 'slideInLeft 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+              'scale-in': 'scaleIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+            },
+            keyframes: {
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(25px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideInRight: {
+                '0%': { opacity: '0', transform: 'translateX(30px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              slideInLeft: {
+                '0%': { opacity: '0', transform: 'translateX(-30px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              scaleIn: {
+                '0%': { opacity: '0', transform: 'scale(0.95)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Custom Global Styles -->
+    <style>
+      /* Base and Typography */
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #F8F9FA;
+        color: #212529;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        background-color: #F8F9FA;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #2E7D32;
+        border-radius: 10px;
+        border: 2px solid #F8F9FA;
+      }
+      
+      /* Selection Color */
+      ::selection {
+        background-color: #2E7D32;
+        color: #FFFFFF;
+      }
+
+      /* Focus visible for accessibility */
+      :focus-visible {
+        outline: 2px solid #66BB6A;
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* Gradients and Cards */
+      .bg-gradient-subtle {
+        background-image: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+      }
+      
+      .neo-card {
+        background-color: white;
+        border: 2px solid #212529;
+        border-radius: 0.5rem;
+        box-shadow: 4px 4px 0 0 #212529;
+        transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.25s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease;
+      }
+      .neo-card:hover {
+        transform: translate(-6px, -6px);
+        box-shadow: 10px 10px 0 0 #2E7D32;
+      }
+
+      /* --- Modern FAQ Accordion Animation --- */
+      details summary {
+        list-style: none;
+      }
+      details summary::-webkit-details-marker {
+        display: none;
+      }
+      details .faq-arrow {
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+      details[open] > summary .faq-arrow {
+        transform: rotate(45deg);
+      }
+      details .faq-content-wrapper {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+      details[open] .faq-content-wrapper {
+        grid-template-rows: 1fr;
+      }
+      .faq-content {
+        overflow: hidden;
+      }
+      
+      /* Header Menu Hover Effects */
+      .modern-menu a.active {
+        background-color: #E8F5E9;
+        color: #1B5E20;
+      }
+      .modern-menu a.active .link-title, .modern-menu a:hover .link-title {
+        max-width: 150px;
+        opacity: 1;
+        margin-left: 0.5rem;
+      }
+      .modern-menu a.active svg, .modern-menu a:hover svg {
+        transform: translateX(-4px) rotate(-5deg);
+      }
+      
+      /* Scroll-triggered Animation */
+      .fade-in-section {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+      .fade-in-section.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Responsive Video/iFrame Embed */
+      .aspect-w-16 {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      }
+      .aspect-h-9 > *, .aspect-w-16 > * {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+      }
+
+      /* --- Interactive Map Styles --- */
+      .map-container {
+        --city-radius: 2rem;
+        --city-sign-color-back: #2E7D32; /* primary */
+        --city-sign-color-font: #fff;
+        --city-pin-size-font: 1.2rem;
+        
+        border-radius: 0.5em;
+        box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+        line-height: 1;
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        overflow: hidden;
+      }
+
+      .map-background {
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .map-cities {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      .map-city {
+        border-radius: var(--city-radius);
+        left: calc(var(--x) * 1% - var(--city-radius));
+        padding: var(--city-radius);
+        position: absolute;
+        top: calc(var(--y) * 1% - var(--city-radius));
+        cursor: pointer;
+      }
+      .map-city::after,
+      .map-city::before {
+        font-size: var(--city-pin-size-font);
+      }
+      .map-city::before {
+        content: "•";
+        color: var(--city-sign-color-back);
+        left: calc(-50% + var(--city-radius));
+        position: absolute;
+        top: calc(-0.65em + var(--city-radius));
+        text-align: center;
+        text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+        width: 100%;
+        transform: scale(1.5);
+      }
+      .map-city::after {
+        clip-path: inset(-0.5em 0 0 0);
+        content: "📍";
+        left: calc(-50% + var(--city-radius));
+        position: absolute;
+        top: calc(-1em + var(--city-radius));
+        text-align: center;
+        transition: all 300ms ease-out;
+        width: 100%;
+        z-index: var(--y);
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      .map-city__label {
+        display: none;
+        left: calc(-5em + 50%);
+        position: absolute;
+        text-align: center;
+        width: 10em;
+        z-index: 999;
+      }
+      .map-city__sign {
+        align-items: center;
+        background-color: var(--city-sign-color-back);
+        border-radius: 0.2rem;
+        border: 0.15em solid var(--city-sign-color-font);
+        box-shadow: 0 0 3px #000;
+        color: var(--city-sign-color-font);
+        column-gap: 0.3em;
+        display: flex;
+        font-weight: 700;
+        justify-content: center;
+        margin: 0 auto;
+        max-width: 100%;
+        overflow: hidden;
+        padding: 0.4em 0.6em 0.4em 0.3em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: max-content;
+      }
+      .map-city__sign::before {
+        content: attr(data-icon);
+      }
+
+      .map-city:hover::after {
+        clip-path: inset(-0.5em 0 0.5em 0);
+        transform: translateY(0.5em) scale(1);
+        opacity: 1;
+      }
+      .map-city:hover::before {
+        transform: scale(0);
+      }
+
+      .map-city:hover .map-city__label {
+        animation: map-fadein 300ms forwards ease-out;
+        display: block;
+      }
+
+      @keyframes map-fadein {
+        0% {
+          opacity: 0;
+          top: calc(var(--city-radius));
+        }
+
+        100% {
+          opacity: 1;
+          top: calc(var(--city-radius) + var(--city-pin-size-font) / 2);
+        }
+      }
+      
+      /* --- Filter Menu Styles --- */
+      .filter-menu {
+        padding: 0.5rem;
+        background-color: #fff;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px 0 rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+      }
+
+      .filter-link {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        transform-origin: center left;
+        transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1), color 0.3s ease;
+        text-decoration: none;
+        color: #6c757d; /* text-secondary */
+      }
+
+      .filter-link:before {
+        position: absolute;
+        z-index: -1;
+        content: "";
+        display: block;
+        border-radius: 12px;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        transform-origin: center right;
+        background-color: #E8F5E9;
+      }
+
+      .filter-link.active,
+      .filter-link:hover,
+      .filter-link:focus {
+        outline: 0;
+        width: 120px;
+        color: #2E7D32; /* primary */
+      }
+
+      .filter-link.active:before,
+      .filter-link:hover:before,
+      .filter-link:focus:before {
+          transform: translateX(0);
+      }
+
+      .filter-link .link-icon {
+        width: 24px;
+        height: 24px;
+        display: block;
+        flex-shrink: 0;
+        left: 13px;
+        position: absolute;
+        transition: color 0.3s ease;
+      }
+
+      .filter-link .link-icon svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .filter-link .link-title {
+        transform: translateX(100%);
+        opacity: 0;
+        transition: transform 0.3s ease-in, opacity 0.2s ease-in;
+        transform-origin: center right;
+        display: block;
+        text-align: center;
+        text-indent: 24px;
+        width: 100%;
+        font-weight: 500;
+        font-size: 0.875rem;
+        white-space: nowrap;
+      }
+
+      .filter-link.active .link-title,
+      .filter-link:hover .link-title,
+      .filter-link:focus .link-title {
+        transform: translateX(0);
+        opacity: 1;
+      }
+       /* Pulse animation for microphone */
+      @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.7;
+            transform: scale(1.1);
+        }
+      }
+      .mic-listening {
+        animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        color: #EF5350; /* A red color to indicate recording */
+      }
+
+       /* Subtle pulse for login button */
+       @keyframes pulse-subtle {
+          0%, 100% {
+              transform: scale(1);
+          }
+          50% {
+              transform: scale(1.03);
+          }
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.1.1",
+        "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+        "react/": "https://esm.sh/react@^19.1.1/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.15.0"
+      }
+    }
+    </script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
