@@ -71,7 +71,7 @@
               scaleIn: {
                 '0%': { opacity: '0', transform: 'scale(0.95)' },
                 '100%': { opacity: '1', transform: 'scale(1)' },
-              }
+              },
             }
           }
         }
@@ -199,129 +199,6 @@
         bottom: 0;
         left: 0;
       }
-
-      /* --- Interactive Map Styles --- */
-      .map-container {
-        --city-radius: 2rem;
-        --city-sign-color-back: #2E7D32; /* primary */
-        --city-sign-color-font: #fff;
-        --city-pin-size-font: 1.2rem;
-        
-        border-radius: 0.5em;
-        box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
-        line-height: 1;
-        position: relative;
-        width: 100%;
-        aspect-ratio: 1;
-        overflow: hidden;
-      }
-
-      .map-background {
-        left: 0;
-        position: absolute;
-        top: 0;
-        width: 100%;
-        height: 100%;
-      }
-
-      .map-cities {
-        width: 100%;
-        height: 100%;
-        position: relative;
-      }
-      .map-city {
-        border-radius: var(--city-radius);
-        left: calc(var(--x) * 1% - var(--city-radius));
-        padding: var(--city-radius);
-        position: absolute;
-        top: calc(var(--y) * 1% - var(--city-radius));
-        cursor: pointer;
-      }
-      .map-city::after,
-      .map-city::before {
-        font-size: var(--city-pin-size-font);
-      }
-      .map-city::before {
-        content: "•";
-        color: var(--city-sign-color-back);
-        left: calc(-50% + var(--city-radius));
-        position: absolute;
-        top: calc(-0.65em + var(--city-radius));
-        text-align: center;
-        text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-        width: 100%;
-        transform: scale(1.5);
-      }
-      .map-city::after {
-        clip-path: inset(-0.5em 0 0 0);
-        content: "📍";
-        left: calc(-50% + var(--city-radius));
-        position: absolute;
-        top: calc(-1em + var(--city-radius));
-        text-align: center;
-        transition: all 300ms ease-out;
-        width: 100%;
-        z-index: var(--y);
-        opacity: 0;
-        transform: scale(0.8);
-      }
-
-      .map-city__label {
-        display: none;
-        left: calc(-5em + 50%);
-        position: absolute;
-        text-align: center;
-        width: 10em;
-        z-index: 999;
-      }
-      .map-city__sign {
-        align-items: center;
-        background-color: var(--city-sign-color-back);
-        border-radius: 0.2rem;
-        border: 0.15em solid var(--city-sign-color-font);
-        box-shadow: 0 0 3px #000;
-        color: var(--city-sign-color-font);
-        column-gap: 0.3em;
-        display: flex;
-        font-weight: 700;
-        justify-content: center;
-        margin: 0 auto;
-        max-width: 100%;
-        overflow: hidden;
-        padding: 0.4em 0.6em 0.4em 0.3em;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        width: max-content;
-      }
-      .map-city__sign::before {
-        content: attr(data-icon);
-      }
-
-      .map-city:hover::after {
-        clip-path: inset(-0.5em 0 0.5em 0);
-        transform: translateY(0.5em) scale(1);
-        opacity: 1;
-      }
-      .map-city:hover::before {
-        transform: scale(0);
-      }
-
-      .map-city:hover .map-city__label {
-        animation: map-fadein 300ms forwards ease-out;
-        display: block;
-      }
-
-      @keyframes map-fadein {
-        0% {
-          opacity: 0;
-          top: calc(var(--city-radius));
-        }
-
-        100% {
-          opacity: 1;
-          top: calc(var(--city-radius) + var(--city-pin-size-font) / 2);
-        }
-      }
       
       /* --- Filter Menu Styles --- */
       .filter-menu {
@@ -439,6 +316,63 @@
           50% {
               transform: scale(1.03);
           }
+      }
+      
+      /* --- Puntos Verdes SVG Map Styles --- */
+      .map-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .map-svg {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .map-city {
+        fill: #E8F5E9; /* Light green */
+        stroke: #A5D6A7; /* Darker green */
+        stroke-width: 2;
+      }
+      .map-river {
+        fill: #B3E5FC; /* Light blue */
+      }
+      .map-pin {
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), fill 0.2s ease;
+      }
+      .map-pin-circle {
+        fill: #2E7D32; /* primary */
+        stroke: white;
+        stroke-width: 2px;
+      }
+      .map-pin-emoji {
+        font-size: 16px;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        pointer-events: none; /* Make emoji non-interactive */
+      }
+      .map-pin.hovered .map-pin-circle, .map-pin.selected .map-pin-circle {
+        fill: #FFC107; /* accent */
+      }
+      .map-pin.selected {
+        transform: scale(1.4);
+        transform-origin: center;
+      }
+      .map-pin.hovered {
+        animation: pulse-map-pin 1.5s infinite;
+      }
+      
+      @keyframes pulse-map-pin {
+        0%, 100% {
+          transform-origin: center;
+          transform: scale(1);
+        }
+        50% {
+          transform-origin: center;
+          transform: scale(1.2);
+        }
       }
     </style>
     <script type="importmap">

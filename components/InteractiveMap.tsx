@@ -1,77 +1,62 @@
 import React from 'react';
 
-interface MapPointProps {
-  x: number;
-  y: number;
-  name: string;
-  icon: string;
-}
-
-const MapPoint: React.FC<MapPointProps> = ({ x, y, name, icon }) => {
-  const style = {
-    '--x': x,
-    '--y': y,
-  } as React.CSSProperties;
-
-  return (
-    <div style={style} className="map-city">
-      <div className="map-city__label">
-        <span data-icon={icon} className="map-city__sign">
-          {name}
-        </span>
-      </div>
-    </div>
-  );
-};
-
 export interface LocationData {
   name: string;
+  lat: number;
+  lng: number;
   x: number;
   y: number;
-  icon: string;
+  emoji: string;
 }
 
 interface InteractiveMapProps {
   locations: LocationData[];
+  selectedLocation: LocationData | null;
+  hoveredLocation: LocationData | null;
+  onPinClick: (location: LocationData) => void;
 }
 
-const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations }) => {
-  return (
-    <div className="map-container">
-      <svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" className="map-background">
-        <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E0E0E0" strokeWidth="0.5"/>
-            </pattern>
-        </defs>
-        
-        {/* Base Land */}
-        <rect width="800" height="800" fill="#F5F5F5" />
-        <rect width="800" height="800" fill="url(#grid)" />
+const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations, selectedLocation, hoveredLocation, onPinClick }) => {
+    return (
+        <div className="map-container rounded-lg border-2 border-gray-200 bg-white">
+            <svg
+                className="map-svg"
+                viewBox="0 0 800 600"
+                preserveAspectRatio="xMidYMid meet"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                {/* Simplified map paths */}
+                <path className="map-river" d="M 0,300 C 100,250 150,350 250,300 S 400,200 500,300 S 650,400 800,350 L 800,600 L 0,600 Z" />
+                <path className="map-city" d="M 50,50 L 750,50 L 750,550 L 50,550 Z" opacity="0.5" />
+                <path className="map-city" d="M 100,80 L 300,80 L 350,150 L 150,150 Z" />
+                <path className="map-city" d="M 400,100 L 700,100 L 700,300 L 450,300 Z" />
+                <path className="map-city" d="M 150,400 L 400,400 L 400,500 L 150,500 Z" />
+                <path className="map-city" d="M 500,450 L 700,450 L 700,550 L 500,550 Z" />
+                
+                {locations.map(location => {
+                    const isSelected = selectedLocation?.name === location.name;
+                    const isHovered = hoveredLocation?.name === location.name;
+                    const pinClasses = [
+                        'map-pin',
+                        isSelected ? 'selected' : '',
+                        isHovered ? 'hovered' : ''
+                    ].join(' ');
 
-        {/* River */}
-        <path d="M 650, -50 C 550, 150 600, 300 500, 450 S 400, 600 350, 850" fill="none" stroke="#66BB6A" strokeWidth="60" strokeOpacity="0.3" />
-        <path d="M 650, -50 C 550, 150 600, 300 500, 450 S 400, 600 350, 850" fill="none" stroke="#AED581" strokeWidth="40" />
-
-        {/* Park Areas */}
-        <path d="M 50, 50 H 200 V 150 H 50 Z" fill="#2E7D32" opacity="0.4" rx="10" />
-        <path d="M 350, 500 a 100,80 0 1,0 200,0 a 100,80 0 1,0 -200,0" fill="#2E7D32" opacity="0.4"/>
-        <path d="M 50, 600 H 280 V 750 H 50 Z" fill="#2E7D32" opacity="0.4" rx="10" />
-        
-        {/* Main Roads */}
-        <path d="M -50, 200 C 200, 220 600, 180 850, 200" fill="none" stroke="#FFFFFF" strokeWidth="15" />
-        <path d="M -50, 200 C 200, 220 600, 180 850, 200" fill="none" stroke="#BDBDBD" strokeWidth="8" />
-        <path d="M 250, -50 C 230, 300 270, 600 250, 850" fill="none" stroke="#FFFFFF" strokeWidth="15" />
-        <path d="M 250, -50 C 230, 300 270, 600 250, 850" fill="none" stroke="#BDBDBD" strokeWidth="8" />
-
-      </svg>
-      <div className="map-cities">
-        {locations.map((location) => (
-          <MapPoint key={location.name} {...location} />
-        ))}
-      </div>
-    </div>
-  );
+                    return (
+                        <g
+                            key={location.name}
+                            className={pinClasses}
+                            transform={`translate(${location.x}, ${location.y})`}
+                            onClick={() => onPinClick(location)}
+                        >
+                            <circle className="map-pin-circle" r="12" />
+                            <text className="map-pin-emoji" y="2">{location.emoji}</text>
+                        </g>
+                    );
+                })}
+            </svg>
+        </div>
+    );
 };
 
 export default InteractiveMap;
