@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type, Content } from "@google/genai";
+import { GoogleGenAI, Type, Content, GenerateContentResponse } from "@google/genai";
 import { navigationData } from '../data/navigationData';
 
 // Ensure the API key is available
@@ -146,6 +146,6 @@ export const sendMessageToBot = async (contents: Content[], userName?: string): 
     },
   });
   
-  const response = await withRetry(apiCall);
+  const response: GenerateContentResponse = await withRetry(apiCall);
   return response.text;
 };

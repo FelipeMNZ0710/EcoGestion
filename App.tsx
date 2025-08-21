@@ -26,7 +26,7 @@ const App: React.FC = () => {
       case 'noticias':
         return <NoticiasPage />;
       case 'comunidad':
-        return <ComunidadPage />;
+        return <ComunidadPage user={user} />;
       case 'contacto':
         return <ContactoPage />;
       default:
