@@ -54,8 +54,46 @@ export type Page =
   | 'juegos'
   | 'noticias'
   | 'comunidad'
-  | 'contacto';
+  | 'contacto'
+  | 'perfil';
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  unlockCondition: {
+    type: 'points' | 'stat';
+    stat?: keyof UserStats;
+    value: number;
+  };
+}
+
+export interface UserStats {
+    messagesSent: number;
+    pointsVisited: number;
+    reportsMade: number;
+    dailyLogins: number;
+}
 
 export interface User {
+  id: string;
   name: string;
+  email: string;
+  points: number;
+  achievements: Achievement[];
+  isAdmin: boolean;
+  stats: UserStats;
+  lastLogin: string; // ISO date string 'YYYY-MM-DD'
+}
+
+export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login';
+
+export interface Notification {
+    id: number;
+    type: 'points' | 'achievement';
+    title: string;
+    message: string;
+    icon?: string;
 }

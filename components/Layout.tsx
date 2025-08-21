@@ -2,7 +2,8 @@ import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import ChatAssistantWidget from './ChatAssistantWidget';
-import type { Page, User } from '../types';
+import NotificationToaster from './NotificationToaster';
+import type { Page, User, Notification } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,9 +11,10 @@ interface LayoutProps {
   setCurrentPage: (page: Page) => void;
   user: User | null;
   setUser: (user: User | null) => void;
+  notifications: Notification[];
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser, notifications }) => {
   return (
     <div className="bg-gradient-subtle min-h-screen flex flex-col antialiased text-text-main">
       <Header currentPage={currentPage} setCurrentPage={setCurrentPage} user={user} setUser={setUser} />
@@ -21,6 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, 
       </main>
       <Footer />
       <ChatAssistantWidget user={user} />
+      <NotificationToaster notifications={notifications} />
     </div>
   );
 };

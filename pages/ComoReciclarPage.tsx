@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import type { User } from '../types';
 
 type Material = 'papel' | 'plastico' | 'vidrio' | 'metales';
+
+interface MaterialContent {
+    yes: string[];
+    no: string[];
+    tip: string;
+}
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
     <button
@@ -14,7 +21,6 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; children: Reac
 const MaterialCard: React.FC<{ type: 'yes' | 'no'; title: string; items: string[] }> = ({ type, title, items }) => {
     const isYes = type === 'yes';
     const borderColor = isYes ? 'border-secondary' : 'border-red-500';
-    const shadowColor = isYes ? 'shadow-secondary' : 'shadow-red-500';
     const icon = isYes
         ? <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
         : <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
@@ -40,7 +46,7 @@ const ProTip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     </div>
 );
 
-const content: Record<Material, { yes: string[], no: string[], tip: string }> = {
+const initialContent: Record<Material, MaterialContent> = {
     papel: {
         yes: ['Diarios y revistas', 'Cajas de cartón (desarmadas)', 'Papel de oficina y cuadernos', 'Folletos y sobres', 'Guías telefónicas'],
         no: ['Papel de cocina o servilletas usadas', 'Papel higiénico', 'Cajas de pizza con grasa', 'Papel fotográfico', 'Vasos de papel encerados'],
@@ -63,9 +69,63 @@ const content: Record<Material, { yes: string[], no: string[], tip: string }> = 
     },
 };
 
-const ComoReciclarPage: React.FC = () => {
+const EditContentModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    content: MaterialContent;
+    onSave: (newContent: MaterialContent) => void;
+    categoryName: string;
+}> = ({ isOpen, onClose, content, onSave, categoryName }) => {
+    const [currentContent, setCurrentContent] = useState(content);
+
+    useEffect(() => {
+        setCurrentContent(content);
+    }, [content]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave({
+            ...currentContent,
+            yes: currentContent.yes.filter(item => item.trim() !== ''),
+            no: currentContent.no.filter(item => item.trim() !== '')
+        });
+    };
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="p-6">
+                    <h2 className="text-xl font-bold text-text-main mb-4">Editar Contenido de "{categoryName}"</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4 modal-form">
+                        <div>
+                            <label htmlFor="yes-items">SÍ se recicla (un item por línea)</label>
+                            <textarea id="yes-items" rows={5} value={currentContent.yes.join('\n')} onChange={e => setCurrentContent({...currentContent, yes: e.target.value.split('\n')})} />
+                        </div>
+                         <div>
+                            <label htmlFor="no-items">NO se recicla (un item por línea)</label>
+                            <textarea id="no-items" rows={5} value={currentContent.no.join('\n')} onChange={e => setCurrentContent({...currentContent, no: e.target.value.split('\n')})} />
+                        </div>
+                        <div>
+                            <label htmlFor="pro-tip">Pro Tip</label>
+                            <input type="text" id="pro-tip" value={currentContent.tip} onChange={e => setCurrentContent({...currentContent, tip: e.target.value})}/>
+                        </div>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-green-800">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ComoReciclarPage: React.FC<{user: User | null}> = ({ user }) => {
     const [activeTab, setActiveTab] = useState<Material>('papel');
-    const activeContent = content[activeTab];
+    const [recyclingContent, setRecyclingContent] = useState(initialContent);
+    const [isEditModalOpen, setEditModalOpen] = useState(false);
     
      useEffect(() => {
         const observer = new IntersectionObserver(
@@ -85,15 +145,33 @@ const ComoReciclarPage: React.FC = () => {
         return () => elements.forEach((el) => observer.unobserve(el));
     }, []);
 
+    const handleSaveContent = (newContent: MaterialContent) => {
+        setRecyclingContent(prev => ({...prev, [activeTab]: newContent}));
+        setEditModalOpen(false);
+    }
+    
+    const activeContent = recyclingContent[activeTab];
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <EditContentModal 
+                isOpen={isEditModalOpen} 
+                onClose={() => setEditModalOpen(false)} 
+                content={activeContent}
+                onSave={handleSaveContent}
+                categoryName={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            />
             <div className="text-center mb-12 fade-in-section">
                 <h1 className="text-4xl font-extrabold text-text-main">Guía Completa de Reciclaje</h1>
                 <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Aprendé a separar correctamente cada tipo de material para maximizar el impacto de tu esfuerzo.</p>
             </div>
 
-            <div className="border-b border-gray-200 flex justify-center mb-8 fade-in-section" style={{animationDelay: '0.2s'}}>
+            <div className="relative border-b border-gray-200 flex justify-center mb-8 fade-in-section" style={{animationDelay: '0.2s'}}>
+                {user?.isAdmin && (
+                    <button onClick={() => setEditModalOpen(true)} className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2 text-sm font-semibold rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                        Editar
+                    </button>
+                )}
                 <TabButton active={activeTab === 'papel'} onClick={() => setActiveTab('papel')}>Papel y Cartón</TabButton>
                 <TabButton active={activeTab === 'plastico'} onClick={() => setActiveTab('plastico')}>Plásticos</TabButton>
                 <TabButton active={activeTab === 'vidrio'} onClick={() => setActiveTab('vidrio')}>Vidrios</TabButton>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import type { User } from '../types';
+import type { User, GamificationAction } from '../types';
 
 // --- Types ---
 interface Reaction {
@@ -278,9 +278,10 @@ const MentionBox: React.FC<MentionBoxProps> = ({ suggestions, onSelect, activeIn
 // --- Main Component ---
 interface ComunidadPageProps {
   user: User | null;
+  onUserAction: (action: GamificationAction) => void;
 }
 
-const ComunidadPage: React.FC<ComunidadPageProps> = ({ user }) => {
+const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => {
     const [channels, setChannels] = useState<Channel[]>(initialChannels);
     const [activeChannel, setActiveChannel] = useState('general');
     const [messages, setMessages] = useState<MessagesState>(initialMessages);
@@ -351,6 +352,7 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user }) => {
             setInputText('');
             setImageToSend(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
+            onUserAction('send_message');
         }
 
         if (imageToSend) {

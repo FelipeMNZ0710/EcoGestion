@@ -340,13 +340,22 @@
       }
       .map-pin {
         cursor: pointer;
-        transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), fill 0.2s ease;
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
       }
       .map-pin-circle {
-        fill: #2E7D32; /* primary */
         stroke: white;
         stroke-width: 2px;
+        transition: fill 0.3s ease;
       }
+      /* Default status */
+      .map-pin-circle.status-ok { fill: #2E7D32; }
+      /* Reported status */
+      .map-pin-circle.status-reported { fill: #f59e0b; } /* amber-500 */
+      /* Maintenance status */
+      .map-pin-circle.status-maintenance { fill: #3b82f6; } /* blue-500 */
+      /* Serviced status */
+      .map-pin-circle.status-serviced { fill: #22c55e; } /* green-500 */
+
       .map-pin-emoji {
         font-size: 16px;
         text-anchor: middle;
@@ -361,19 +370,308 @@
         transform-origin: center;
       }
       .map-pin.hovered {
-        animation: pulse-map-pin 1.5s infinite;
+        transform: scale(1.2);
+        transform-origin: center;
       }
       
-      @keyframes pulse-map-pin {
-        0%, 100% {
+      /* --- Puntos Verdes Page Revamp Styles --- */
+      .location-card-revamped {
+          background-color: #fff;
+          border-radius: 0.75rem; /* 12px */
+          border: 1px solid #e5e7eb; /* gray-200 */
+          display: flex;
+          gap: 1rem;
+          transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+      }
+
+      .location-card-revamped::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 4px;
+          background-color: #d1d5db; /* gray-300 */
+          transition: background-color 0.3s ease, transform 0.3s ease;
+      }
+
+      .location-card-revamped.is-open::before {
+          background-color: #4ade80; /* green-400 */
+      }
+      
+      /* Status border colors */
+      .location-card-revamped.status-ok::before { background-color: #22c55e; }
+      .location-card-revamped.status-reported::before { background-color: #f59e0b; }
+      .location-card-revamped.status-maintenance::before { background-color: #3b82f6; }
+      .location-card-revamped.status-serviced::before { background-color: #10b981; }
+
+      .location-card-revamped:hover {
+          transform: translateY(-4px) scale(1.01);
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+      }
+
+      .location-card-revamped.is-selected {
+          border-color: #2E7D32; /* primary */
+          box-shadow: 0 0 0 2px #2E7D32, 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+          transform: translateY(-2px) scale(1.01);
+          background-color: #f7fdf7;
+      }
+      .location-card-revamped.is-selected::before {
+          background-color: #2E7D32;
+          transform: scaleY(1.1);
+      }
+      
+      .location-card-thumbnail {
+        width: 100px;
+        height: 100px;
+        flex-shrink: 0;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        align-self: center;
+        margin-left: 1rem;
+      }
+
+      .location-card-content {
+          padding: 1rem;
+          padding-left: 0;
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+      }
+      
+      /* Report Button */
+      .report-button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.75rem; /* text-xs */
+          font-weight: 500;
+          color: #ef4444; /* red-500 */
+          background-color: #fee2e2; /* red-100 */
+          padding: 0.25rem 0.75rem;
+          border-radius: 9999px;
+          transition: all 0.2s ease;
+      }
+      .report-button:hover:not(:disabled) {
+          background-color: #fecaca; /* red-200 */
+      }
+      .report-button:disabled {
+          cursor: not-allowed;
+          background-color: #d1fae5; /* green-100 */
+          color: #065f46; /* green-800 */
+      }
+
+      @keyframes pulse-halo {
+        0% { transform: scale(0.95); opacity: 0.7; }
+        70% { transform: scale(2.5); opacity: 0; }
+        100% { transform: scale(0.95); opacity: 0; }
+      }
+      .map-pin .map-pin-halo {
+          fill: #FFC107;
+          opacity: 0;
           transform-origin: center;
-          transform: scale(1);
+          pointer-events: none;
+      }
+      .map-pin.selected .map-pin-halo {
+          animation: pulse-halo 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      }
+      
+      .animate-fade-in-up-stagger {
+        animation-name: fadeInUp;
+        animation-duration: 0.6s;
+        animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+        animation-fill-mode: forwards;
+        opacity: 0;
+      }
+      
+      /* --- Location Detail Modal --- */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        animation: fadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      }
+      .modal-content {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.95);
+        opacity: 0;
+        animation: scaleIn 0.3s 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        position: relative;
+      }
+       @keyframes fadeIn {
+        to { opacity: 1; }
+      }
+      @keyframes scaleIn {
+        to { transform: scale(1); opacity: 1; }
+      }
+      .modal-close-button {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background-color: rgba(0,0,0,0.3);
+        color: white;
+        border-radius: 9999px;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+      }
+      .modal-close-button:hover {
+        background-color: rgba(0,0,0,0.6);
+      }
+      
+      /* Custom scrollbar for Puntos Verdes list */
+      .location-list-scroller::-webkit-scrollbar {
+          width: 6px;
+      }
+      .location-list-scroller::-webkit-scrollbar-track {
+          background: transparent;
+      }
+      .location-list-scroller::-webkit-scrollbar-thumb {
+          background-color: #A5D6A7; /* Softer green */
+          border-radius: 6px;
+      }
+      .location-list-scroller {
+          scrollbar-width: thin;
+          scrollbar-color: #A5D6A7 transparent;
+      }
+      
+      /* --- Profile Page Styles --- */
+      .achievement-badge {
+          filter: grayscale(1);
+          opacity: 0.6;
+          transition: all 0.3s ease;
+      }
+      .achievement-badge.unlocked {
+          filter: grayscale(0);
+          opacity: 1;
+      }
+      .achievement-badge.unlocked:hover {
+          transform: scale(1.1) rotate(3deg);
+      }
+
+      /* --- Admin Control Styles --- */
+      .admin-controls-container {
+        position: relative;
+      }
+      .admin-controls-button {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(4px);
+        border: 1px solid #e5e7eb;
+      }
+      .card-admin-controls {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        z-index: 10;
+        display: flex;
+        gap: 0.5rem;
+      }
+      .admin-action-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        background-color: white;
+        border-radius: 9999px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+      }
+      .admin-action-button:hover {
+        transform: scale(1.1);
+        background-color: #f3f4f6;
+      }
+      .admin-action-button.delete:hover {
+        background-color: #fee2e2;
+        color: #ef4444;
+      }
+      .destructive-button {
+        background-color: #ef4444; /* red-500 */
+        color: white;
+      }
+      .destructive-button:hover {
+        background-color: #dc2626; /* red-600 */
+      }
+      .modal-form label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: #4b5563;
+      }
+      .modal-form input, .modal-form textarea, .modal-form select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .modal-form input:focus, .modal-form textarea:focus, .modal-form select:focus {
+        outline: none;
+        border-color: #66BB6A;
+        box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.3);
+      }
+
+      /* --- Notification Toaster Styles --- */
+      .toaster-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      @keyframes slideInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
         }
-        50% {
-          transform-origin: center;
-          transform: scale(1.2);
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
         }
       }
+      @keyframes slideOutUp {
+        from {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+      }
+      .toast-notification {
+        animation: slideInDown 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      }
+      .toast-notification.exiting {
+        animation: slideOutUp 0.4s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+      }
+
     </style>
     <script type="importmap">
     {

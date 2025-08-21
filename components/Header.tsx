@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import type { Page, User } from '../types';
 import { navigationData } from '../data/navigationData';
+import { allAchievements } from '../data/achievementsData';
 
 interface HeaderProps {
   currentPage: Page;
@@ -10,8 +10,10 @@ interface HeaderProps {
   setUser: (user: User | null) => void;
 }
 
+const ADMIN_USERS = ['Felipe', 'Rolón Sergio Agustín'];
+
 // Create a map to store JSX icons, keeping them inside the component file
-const iconMap: Record<Page, JSX.Element> = {
+const iconMap: Record<string, JSX.Element> = {
   home: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   'como-reciclar': <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
   'puntos-verdes': <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
@@ -36,7 +38,27 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   };
   
   const handleLogin = () => {
-      setUser({ name: 'Felipe' });
+      const userName = 'Felipe'; // Can be dynamic in a real app
+      const isAdmin = ADMIN_USERS.includes(userName);
+      
+      setUser({
+          id: 'user-felipe-123',
+          name: userName,
+          email: 'felipe@example.com',
+          points: 1250,
+          achievements: allAchievements.map(ach => ({
+              ...ach,
+              unlocked: isAdmin ? true : (['1', '2'].includes(ach.id)), // Admins have all, demo user has first two
+          })),
+          isAdmin: isAdmin,
+          stats: {
+              messagesSent: 12,
+              pointsVisited: 3,
+              reportsMade: 1,
+              dailyLogins: 5,
+          },
+          lastLogin: '2024-01-01', // A date in the past to ensure daily login triggers
+      });
       setIsMobileMenuOpen(false);
   };
   
@@ -49,7 +71,18 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
     if (user) {
         return (
             <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'space-x-3'}`}>
-                <span className="text-sm font-medium text-text-main">¡Hola, {user.name}!</span>
+                <div className="flex items-center space-x-2">
+                    <a 
+                        href="#" 
+                        onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }}
+                        className="text-sm font-medium text-text-main hover:text-primary transition-colors"
+                    >
+                        ¡Hola, {user.name}!
+                    </a>
+                    {user.isAdmin && (
+                        <span className="text-xs font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Admin</span>
+                    )}
+                </div>
                 <button
                     onClick={handleLogout}
                     className="px-3 py-2 text-sm font-semibold text-red-600 bg-red-100 rounded-full hover:bg-red-200 transition-colors"

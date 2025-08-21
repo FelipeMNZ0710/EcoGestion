@@ -1,9 +1,58 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { User } from '../types';
 
-const NewsCard = ({ image, category, title, date, featured = false }: { image: string, category: string, title: string, date: string, featured?: boolean }) => {
+interface NewsArticle {
+    id: number;
+    image: string;
+    category: string;
+    title: string;
+    date: string;
+    featured: boolean;
+}
+
+const initialNews: NewsArticle[] = [
+    { 
+        id: 1,
+        featured: true, 
+        image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1913&auto=format&fit=crop",
+        category: "Iniciativas",
+        title: "Lanzamos nuevo programa de reciclaje en escuelas primarias",
+        date: "15 de Julio, 2024"
+    },
+    { 
+        id: 2,
+        featured: false,
+        image: "https://images.unsplash.com/photo-1605170425218-9df782293e27?q=80&w=2070&auto=format&fit=crop",
+        category: "Consejos",
+        title: "5 formas creativas de reutilizar frascos de vidrio en casa",
+        date: "12 de Julio, 2024"
+    },
+    { 
+        id: 3,
+        featured: false,
+        image: "https://images.unsplash.com/photo-1588289223825-c6b7d5930e84?q=80&w=2070&auto=format&fit=crop",
+        category: "Eventos",
+        title: "Resumen de la jornada de limpieza en la costanera",
+        date: "10 de Julio, 2024"
+    },
+];
+
+const NewsCard: React.FC<{ 
+    article: NewsArticle; 
+    user: User | null;
+    onEdit: (article: NewsArticle) => void;
+    onDelete: (articleId: number) => void;
+}> = ({ article, user, onEdit, onDelete }) => {
+    const { image, category, title, date, featured } = article;
     if (featured) {
         return (
-            <div className="col-span-1 md:col-span-2 bg-white rounded-lg border border-gray-200 overflow-hidden group fade-in-section">
+            <div className="col-span-1 md:col-span-2 bg-white rounded-lg border border-gray-200 overflow-hidden group fade-in-section relative">
+                 {user?.isAdmin && (
+                    <div className="card-admin-controls">
+                        <button onClick={() => onEdit(article)} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
+                        <button onClick={() => onDelete(article.id)} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    </div>
+                )}
                 <div className="grid md:grid-cols-2">
                     <img src={image} alt={title} className="w-full h-64 object-cover"/>
                     <div className="p-6 flex flex-col justify-center">
@@ -17,7 +66,13 @@ const NewsCard = ({ image, category, title, date, featured = false }: { image: s
         );
     }
     return (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden group fade-in-section">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden group fade-in-section relative">
+             {user?.isAdmin && (
+                <div className="card-admin-controls">
+                    <button onClick={() => onEdit(article)} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
+                    <button onClick={() => onDelete(article.id)} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                </div>
+            )}
             <img src={image} alt={title} className="w-full h-48 object-cover"/>
             <div className="p-4">
                 <p className="text-sm text-secondary font-semibold mb-2">{category}</p>
@@ -36,10 +91,63 @@ const SidebarWidget: React.FC<{title: string; children: React.ReactNode}> = ({ti
     </div>
 );
 
+const NewsModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (article: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => void;
+    article: NewsArticle | null;
+}> = ({ isOpen, onClose, onSave, article }) => {
+    const [title, setTitle] = useState('');
+    const [category, setCategory] = useState('');
+    const [image, setImage] = useState('');
+    const [featured, setFeatured] = useState(false);
 
-const NoticiasPage: React.FC = () => {
-    
-     useEffect(() => {
+    useEffect(() => {
+        if (article) {
+            setTitle(article.title);
+            setCategory(article.category);
+            setImage(article.image);
+            setFeatured(article.featured);
+        } else {
+            setTitle('');
+            setCategory('');
+            setImage('');
+            setFeatured(false);
+        }
+    }, [article, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave({ id: article?.id, title, category, image, featured });
+    };
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="p-6">
+                    <h2 className="text-xl font-bold text-text-main mb-4">{article ? 'Editar Noticia' : 'Crear Nueva Noticia'}</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4 modal-form">
+                        <div><label htmlFor="title">Título</label><input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required /></div>
+                        <div><label htmlFor="category">Categoría</label><input type="text" id="category" value={category} onChange={e => setCategory(e.target.value)} required /></div>
+                        <div><label htmlFor="image">URL de la Imagen</label><input type="text" id="image" value={image} onChange={e => setImage(e.target.value)} required /></div>
+                        <div className="flex items-center"><input id="featured" type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" /><label htmlFor="featured" className="ml-2">¿Es una noticia destacada?</label></div>
+                        <div className="flex justify-end space-x-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button><button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-green-800">Guardar</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const NoticiasPage: React.FC<{user: User | null}> = ({user}) => {
+    const [news, setNews] = useState<NewsArticle[]>(initialNews);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
+
+    useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
@@ -55,39 +163,55 @@ const NoticiasPage: React.FC = () => {
         elements.forEach((el) => observer.observe(el));
 
         return () => elements.forEach((el) => observer.unobserve(el));
-    }, []);
+    }, [news]);
+    
+    const handleOpenModal = (article: NewsArticle | null = null) => {
+        setEditingArticle(article);
+        setIsModalOpen(true);
+    };
+
+    const handleSaveArticle = (article: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
+        const date = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        if (article.id) {
+            setNews(news.map(n => n.id === article.id ? { ...n, ...article, date } : n));
+        } else {
+            const newArticle = { ...article, id: Date.now(), date };
+            setNews([newArticle, ...news]);
+        }
+        setIsModalOpen(false);
+    };
+
+    const handleDeleteArticle = (articleId: number) => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
+            setNews(news.filter(n => n.id !== articleId));
+        }
+    };
+    
+    const featuredArticle = news.find(n => n.featured);
+    const otherArticles = news.filter(n => !n.featured);
 
     return (
         <div className="bg-gray-50/50">
+            <NewsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveArticle} article={editingArticle} />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="text-center mb-12 fade-in-section">
                     <h1 className="text-4xl font-extrabold text-text-main">Noticias y Novedades</h1>
                     <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Mantenete al día con las últimas noticias, eventos y consejos de la comunidad de Formosa Recicla.</p>
+                    {user?.isAdmin && (
+                        <div className="mt-4">
+                            <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-green-800 transition-colors">
+                                Crear Nueva Noticia
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Main Content */}
                     <div className="lg:col-span-2">
                         <div className="grid md:grid-cols-2 gap-6">
-                            <NewsCard 
-                                featured 
-                                image="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1913&auto=format&fit=crop"
-                                category="Iniciativas"
-                                title="Lanzamos nuevo programa de reciclaje en escuelas primarias"
-                                date="15 de Julio, 2024"
-                            />
-                             <NewsCard 
-                                image="https://images.unsplash.com/photo-1605170425218-9df782293e27?q=80&w=2070&auto=format&fit=crop"
-                                category="Consejos"
-                                title="5 formas creativas de reutilizar frascos de vidrio en casa"
-                                date="12 de Julio, 2024"
-                            />
-                             <NewsCard 
-                                image="https://images.unsplash.com/photo-1588289223825-c6b7d5930e84?q=80&w=2070&auto=format&fit=crop"
-                                category="Eventos"
-                                title="Resumen de la jornada de limpieza en la costanera"
-                                date="10 de Julio, 2024"
-                            />
+                            {featuredArticle && <NewsCard article={featuredArticle} user={user} onEdit={handleOpenModal} onDelete={handleDeleteArticle} />}
+                            {otherArticles.map(article => <NewsCard key={article.id} article={article} user={user} onEdit={handleOpenModal} onDelete={handleDeleteArticle} />)}
                         </div>
                     </div>
 

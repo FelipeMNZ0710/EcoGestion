@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import type { Page } from '../types';
+import type { Page, User } from '../types';
+
+interface ImpactStats {
+    recycledKg: number;
+    participants: number;
+    points: number;
+}
 
 const useIntersectionObserver = (options: IntersectionObserverInit) => {
   const [entries, setEntries] = useState<IntersectionObserverEntry[]>([]);
@@ -104,16 +110,73 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
     </details>
 );
 
-const HomePage: React.FC<{setCurrentPage: (page: Page) => void}> = ({setCurrentPage}) => {
+const StatsEditModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    stats: ImpactStats;
+    onSave: (newStats: ImpactStats) => void;
+}> = ({ isOpen, onClose, stats, onSave }) => {
+    const [currentStats, setCurrentStats] = useState(stats);
+
+    useEffect(() => {
+        setCurrentStats(stats);
+    }, [stats]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(currentStats);
+    };
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="p-6">
+                    <h2 className="text-xl font-bold text-text-main mb-4">Editar Estadísticas de Impacto</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4 modal-form">
+                        <div>
+                            <label htmlFor="recycledKg">KGs de material reciclado</label>
+                            <input type="number" id="recycledKg" value={currentStats.recycledKg} onChange={e => setCurrentStats({...currentStats, recycledKg: Number(e.target.value)})} />
+                        </div>
+                        <div>
+                            <label htmlFor="participants">Participantes activos</label>
+                            <input type="number" id="participants" value={currentStats.participants} onChange={e => setCurrentStats({...currentStats, participants: Number(e.target.value)})}/>
+                        </div>
+                        <div>
+                            <label htmlFor="points">Puntos Verdes distribuidos</label>
+                            <input type="number" id="points" value={currentStats.points} onChange={e => setCurrentStats({...currentStats, points: Number(e.target.value)})}/>
+                        </div>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-green-800">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | null}> = ({setCurrentPage, user}) => {
   const { observe } = useIntersectionObserver({ threshold: 0.1 });
+  const [impactStats, setImpactStats] = useState<ImpactStats>({ recycledKg: 10000, participants: 5000, points: 45 });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const elements = document.querySelectorAll('.fade-in-section');
     elements.forEach(el => observe(el));
   }, [observe]);
+  
+  const handleSaveStats = (newStats: ImpactStats) => {
+      setImpactStats(newStats);
+      setIsModalOpen(false);
+  }
 
   return (
     <div className="w-full">
+      <StatsEditModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} stats={impactStats} onSave={handleSaveStats} />
       {/* Hero Section */}
       <section className="relative h-[60vh] md:h-[80vh] bg-cover bg-center text-white" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=2070&auto=format&fit=crop')" }}>
         <div className="absolute inset-0 bg-black/50"></div>
@@ -154,22 +217,27 @@ const HomePage: React.FC<{setCurrentPage: (page: Page) => void}> = ({setCurrentP
       </section>
 
         {/* Impact Section */}
-        <section className="py-20 bg-primary text-white">
+        <section className="py-20 bg-primary text-white admin-controls-container">
+            {user?.isAdmin && (
+                <button onClick={() => setIsModalOpen(true)} className="admin-controls-button px-3 py-2 text-sm font-semibold rounded-full bg-white/80 text-primary hover:bg-white transition-colors">
+                    Editar
+                </button>
+            )}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <div className="fade-in-section">
                     <h2 className="text-3xl font-bold mb-10">Nuestro Impacto Colectivo</h2>
                 </div>
                 <div className="grid md:grid-cols-3 gap-8">
                     <div className="fade-in-section" style={{ animationDelay: '0.2s' }}>
-                        <AnimatedNumber value={10000} />
+                        <AnimatedNumber value={impactStats.recycledKg} />
                         <p className="mt-2 text-lg">de KGs de material reciclado al mes</p>
                     </div>
                     <div className="fade-in-section" style={{ animationDelay: '0.4s' }}>
-                         <AnimatedNumber value={5000} />
+                         <AnimatedNumber value={impactStats.participants} />
                         <p className="mt-2 text-lg">participando activamente</p>
                     </div>
                     <div className="fade-in-section" style={{ animationDelay: '0.6s' }}>
-                        <AnimatedNumber value={45} />
+                        <AnimatedNumber value={impactStats.points} />
                         <p className="mt-2 text-lg">Puntos Verdes distribuidos</p>
                     </div>
                 </div>

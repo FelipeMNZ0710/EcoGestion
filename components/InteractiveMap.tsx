@@ -1,5 +1,7 @@
 import React from 'react';
 
+type LocationStatus = 'ok' | 'reported' | 'maintenance' | 'serviced';
+
 export interface LocationData {
   name: string;
   lat: number;
@@ -7,6 +9,7 @@ export interface LocationData {
   x: number;
   y: number;
   emoji: string;
+  status: LocationStatus;
 }
 
 interface InteractiveMapProps {
@@ -41,6 +44,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations, selectedLoca
                         isSelected ? 'selected' : '',
                         isHovered ? 'hovered' : ''
                     ].join(' ');
+                    const circleClasses = `map-pin-circle status-${location.status}`;
 
                     return (
                         <g
@@ -48,8 +52,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations, selectedLoca
                             className={pinClasses}
                             transform={`translate(${location.x}, ${location.y})`}
                             onClick={() => onPinClick(location)}
+                            aria-label={`Punto verde: ${location.name}`}
                         >
-                            <circle className="map-pin-circle" r="12" />
+                            <circle className="map-pin-halo" r="15" />
+                            <circle className={circleClasses} r="12" />
                             <text className="map-pin-emoji" y="2">{location.emoji}</text>
                         </g>
                     );
