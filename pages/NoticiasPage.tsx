@@ -196,7 +196,7 @@ const NoticiasPage: React.FC<{user: User | null}> = ({user}) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="text-center mb-12 fade-in-section">
                     <h1 className="text-4xl font-extrabold text-text-main">Noticias y Novedades</h1>
-                    <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Mantenete al día con las últimas noticias, eventos y consejos de la comunidad de Formosa Recicla.</p>
+                    <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Mantenete al día con las últimas noticias, eventos y consejos de la comunidad de EcoGestión.</p>
                     {user?.isAdmin && (
                         <div className="mt-4">
                             <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-green-800 transition-colors">

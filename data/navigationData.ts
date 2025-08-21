@@ -40,6 +40,6 @@ export const navigationData: NavInfo[] = [
   { 
     page: 'contacto', 
     title: 'Contacto', 
-    description: 'Un formulario para que los usuarios puedan ponerse en contacto con el equipo de Formosa Recicla.' 
+    description: 'Un formulario para que los usuarios puedan ponerse en contacto con el equipo de EcoGestión.' 
   },
 ];

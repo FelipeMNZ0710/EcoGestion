@@ -52,7 +52,7 @@ const getRandomColor = () => userColors[Math.floor(Math.random() * userColors.le
 // --- Initial Data ---
 const initialChannels: Channel[] = [
     { id: 'general', name: 'general', description: 'Discusiones generales sobre reciclaje y sostenibilidad en Formosa.' },
-    { id: 'anuncios', name: 'anuncios', description: 'Anuncios importantes del equipo de Formosa Recicla.', adminOnlyWrite: true },
+    { id: 'anuncios', name: 'anuncios', description: 'Anuncios importantes del equipo de EcoGestión.', adminOnlyWrite: true },
     { id: 'dudas', name: 'dudas', description: '¿No sabés dónde va algo? ¡Preguntá acá!' },
     { id: 'proyectos', name: 'proyectos', description: 'Compartí tus ideas y proyectos de reciclaje.' },
     { id: 'compostaje', name: 'compostaje', description: 'Todo sobre el arte de compostar en casa.' },
@@ -126,7 +126,7 @@ const messagesData: Record<string, Omit<Message, 'avatarInitials' | 'avatarColor
         { user: 'Felipe', time: '01:26 PM', text: 'Bienvenido @\'Miguel Mateo Badaracco\'! Cualquier consulta, chiflá nomás. Mirate el canal de #dudas que hay info útil.'}
     ],
     anuncios: [
-        { user: 'Admin Recicla', time: 'Ayer a las 9:00 AM', text: '¡Bienvenidos al canal de anuncios! Aquí publicaremos todas las novedades importantes sobre la iniciativa Formosa Recicla. Este es un canal de solo lectura para los miembros.' },
+        { user: 'Admin Recicla', time: 'Ayer a las 9:00 AM', text: '¡Bienvenidos al canal de anuncios! Aquí publicaremos todas las novedades importantes sobre la iniciativa EcoGestión. Este es un canal de solo lectura para los miembros.' },
         { user: 'Admin Recicla', time: 'Hoy a las 08:30 AM', text: 'Recordatorio: Mañana sábado estaremos en la Plaza San Martín de 10 a 13 hs recibiendo residuos electrónicos (RAEE). ¡No los tiren a la basura común! Traigan sus celulares viejos, cables, cargadores, etc.' },
         { user: 'Rolón Sergio Agustín', time: 'Hoy a las 02:00 PM', text: 'ATENCIÓN: Se suma un nuevo Punto Verde en el B° San Miguel, en la intersección de Av. Italia y Av. Napoleón Uriburu. Ya está operativo para recibir Plásticos, Vidrio y Papel/Cartón.'}
     ],

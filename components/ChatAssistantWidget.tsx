@@ -27,8 +27,8 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
   
   const setInitialMessage = useCallback((userName?: string) => {
      const welcomeText = userName 
-        ? `¡Hola, ${userName}! Soy EcoBot, tu asistente de "Formosa Recicla". ¿En qué te puedo ayudar hoy?`
-        : '¡Hola! Soy EcoBot, tu asistente virtual de "Formosa Recicla". ¿Cómo puedo ayudarte a reciclar mejor hoy?';
+        ? `¡Hola, ${userName}! Soy EcoBot, tu asistente de "EcoGestión". ¿En qué te puedo ayudar hoy?`
+        : '¡Hola! Soy EcoBot, tu asistente virtual de "EcoGestión". ¿Cómo puedo ayudarte a reciclar mejor hoy?';
      
      setMessages([
       {
