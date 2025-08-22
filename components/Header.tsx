@@ -8,6 +8,8 @@ interface HeaderProps {
   setCurrentPage: (page: Page) => void;
   user: User | null;
   setUser: (user: User | null) => void;
+  isAdminMode: boolean;
+  setIsAdminMode: (isActive: boolean) => void;
 }
 
 const ADMIN_USERS = ['Felipe', 'Rolón Sergio Agustín'];
@@ -29,7 +31,28 @@ const navLinks = navigationData.map(item => ({
   icon: iconMap[item.page],
 }));
 
-const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setUser }) => {
+const AdminModeToggle: React.FC<{
+  isAdminMode: boolean;
+  setIsAdminMode: (isActive: boolean) => void;
+}> = ({ isAdminMode, setIsAdminMode }) => (
+    <div className="flex items-center space-x-2">
+        <span className={`text-xs font-bold ${isAdminMode ? 'text-accent' : 'text-text-secondary'}`}>Modo Admin</span>
+        <label htmlFor="admin-toggle" className="custom-toggle-label">
+            <input
+                id="admin-toggle"
+                type="checkbox"
+                className="custom-toggle-input"
+                checked={isAdminMode}
+                onChange={(e) => setIsAdminMode(e.target.checked)}
+            />
+            <div className="custom-toggle-track">
+                <div className="custom-toggle-thumb"></div>
+            </div>
+        </label>
+    </div>
+);
+
+const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setUser, isAdminMode, setIsAdminMode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleNavClick = (page: Page) => {
@@ -56,6 +79,8 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
               pointsVisited: 3,
               reportsMade: 1,
               dailyLogins: 5,
+              completedQuizzes: [],
+              quizzesCompleted: 0,
           },
           lastLogin: '2024-01-01', // A date in the past to ensure daily login triggers
       });
@@ -70,7 +95,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   const AuthButtons: React.FC<{isMobile?: boolean}> = ({ isMobile }) => {
     if (user) {
         return (
-            <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'space-x-3'}`}>
+            <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'space-x-4'}`}>
                 <div className="flex items-center space-x-2">
                     <a 
                         href="#" 
@@ -79,10 +104,8 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                     >
                         ¡Hola, {user.name}!
                     </a>
-                    {user.isAdmin && (
-                        <span className="text-xs font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Admin</span>
-                    )}
                 </div>
+                 {user.isAdmin && !isMobile && <AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} />}
                 <button
                     onClick={handleLogout}
                     className="px-3 py-2 text-sm font-semibold text-red-600 bg-red-100 rounded-full hover:bg-red-200 transition-colors"
@@ -174,6 +197,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                 ))}
             </nav>
             <div className="pt-4 mt-4 border-t border-slate-200">
+                {user?.isAdmin && <div className="mb-4"><AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} /></div>}
                 <AuthButtons isMobile={true}/>
             </div>
           </div>

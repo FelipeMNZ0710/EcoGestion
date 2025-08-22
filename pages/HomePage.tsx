@@ -158,7 +158,7 @@ const StatsEditModal: React.FC<{
 };
 
 
-const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | null}> = ({setCurrentPage, user}) => {
+const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | null, isAdminMode: boolean}> = ({setCurrentPage, user, isAdminMode}) => {
   const { observe } = useIntersectionObserver({ threshold: 0.1 });
   const [impactStats, setImpactStats] = useState<ImpactStats>({ recycledKg: 10000, participants: 5000, points: 45 });
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -219,9 +219,9 @@ const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | nul
       </section>
 
         {/* Impact Section */}
-        <section className="py-20 bg-slate-800 text-white admin-controls-container">
-            {user?.isAdmin && (
-                <button onClick={() => setIsModalOpen(true)} className="absolute top-4 right-4 px-3 py-2 text-sm font-semibold rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors">
+        <section className="py-20 bg-slate-800 text-white relative">
+            {user?.isAdmin && isAdminMode && (
+                <button onClick={() => setIsModalOpen(true)} className="absolute top-4 right-4 px-3 py-2 text-sm font-semibold rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors z-10">
                     Editar
                 </button>
             )}

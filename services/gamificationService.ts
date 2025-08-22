@@ -1,4 +1,4 @@
-import type { User, GamificationAction, Notification } from '../types';
+import type { User, GamificationAction, Notification, Material } from '../types';
 import { allAchievements } from '../data/achievementsData';
 
 const actionPoints: Record<GamificationAction, number> = {
@@ -6,42 +6,65 @@ const actionPoints: Record<GamificationAction, number> = {
     check_in: 25,
     report_punto_verde: 15,
     daily_login: 10,
+    complete_quiz: 50,
 };
 
-export const processAction = (user: User, action: GamificationAction): { updatedUser: User; notifications: Omit<Notification, 'id'>[] } => {
+export const processAction = (user: User, action: GamificationAction, payload?: any): { updatedUser: User; notifications: Omit<Notification, 'id'>[] } => {
     if (user.isAdmin) {
         // Admins don't participate in the gamification system
         return { updatedUser: user, notifications: [] };
     }
 
-    const updatedUser = { ...user, stats: { ...user.stats }, achievements: [...user.achievements] };
+    const updatedUser = { 
+        ...user, 
+        stats: { ...user.stats }, 
+        achievements: user.achievements.map(a => ({...a})) // Deep copy achievements
+    };
+
+    // Ensure stats properties are initialized to prevent NaN errors
+    const stats = updatedUser.stats;
+    stats.messagesSent = stats.messagesSent || 0;
+    stats.pointsVisited = stats.pointsVisited || 0;
+    stats.reportsMade = stats.reportsMade || 0;
+    stats.dailyLogins = stats.dailyLogins || 0;
+    stats.completedQuizzes = stats.completedQuizzes || [];
+    stats.quizzesCompleted = stats.quizzesCompleted || 0;
+
     const notifications: Omit<Notification, 'id'>[] = [];
-    const pointsToAdd = actionPoints[action] || 0;
+    let pointsToAdd = actionPoints[action] || 0;
     
-    // 1. Update stats and points
-    updatedUser.points += pointsToAdd;
-    
+    // 1. Update stats based on action
     switch(action) {
         case 'send_message':
-            updatedUser.stats.messagesSent += 1;
+            stats.messagesSent += 1;
             break;
         case 'check_in':
-            updatedUser.stats.pointsVisited += 1;
+            stats.pointsVisited += 1;
             break;
         case 'report_punto_verde':
-            updatedUser.stats.reportsMade += 1;
+            stats.reportsMade += 1;
             break;
         case 'daily_login':
-            updatedUser.stats.dailyLogins += 1;
+            stats.dailyLogins += 1;
             updatedUser.lastLogin = new Date().toISOString().split('T')[0];
+            break;
+        case 'complete_quiz':
+            if (payload?.material && !stats.completedQuizzes.includes(payload.material as Material)) {
+                stats.completedQuizzes.push(payload.material as Material);
+                stats.quizzesCompleted = stats.completedQuizzes.length;
+            } else {
+                // If quiz was already completed, don't award points again
+                pointsToAdd = 0;
+            }
             break;
     }
 
     if (pointsToAdd > 0) {
+        updatedUser.points += pointsToAdd;
         notifications.push({
             type: 'points',
             title: '¡Puntos ganados!',
-            message: `Ganaste ${pointsToAdd} EcoPuntos.`,
+            message: `Ganaste ${pointsToAdd} EcoPuntos por esta acción.`,
             icon: '✨'
         });
     }
@@ -55,8 +78,14 @@ export const processAction = (user: User, action: GamificationAction): { updated
 
             if (type === 'points' && updatedUser.points >= value) {
                 isUnlocked = true;
-            } else if (type === 'stat' && stat && updatedUser.stats[stat] >= value) {
-                isUnlocked = true;
+            } else if (type === 'stat' && stat) {
+                const statValue = updatedUser.stats[stat];
+                // Check for both number and array length to be future-proof
+                if (typeof statValue === 'number' && statValue >= value) {
+                     isUnlocked = true;
+                } else if (Array.isArray(statValue) && statValue.length >= value) {
+                    isUnlocked = true;
+                }
             }
 
             if (isUnlocked) {

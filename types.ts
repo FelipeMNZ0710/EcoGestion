@@ -70,11 +70,39 @@ export interface Achievement {
   };
 }
 
+export type Material = 'papel' | 'plastico' | 'vidrio' | 'metales';
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number; // index of the correct option
+}
+
+export interface Quiz {
+  points: number;
+  questions: QuizQuestion[];
+}
+
+export interface MaterialContentItem {
+    text: string;
+    icon: string; // Emoji
+}
+
+export interface MaterialContent {
+    yes: MaterialContentItem[];
+    no: MaterialContentItem[];
+    tip: string;
+    quiz: Quiz;
+    commonMistakes: string[];
+}
+
 export interface UserStats {
     messagesSent: number;
     pointsVisited: number;
     reportsMade: number;
     dailyLogins: number;
+    completedQuizzes: Material[];
+    quizzesCompleted: number;
 }
 
 export interface User {
@@ -88,7 +116,7 @@ export interface User {
   lastLogin: string; // ISO date string 'YYYY-MM-DD'
 }
 
-export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login';
+export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz';
 
 export interface Notification {
     id: number;

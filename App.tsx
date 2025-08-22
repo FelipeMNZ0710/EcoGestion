@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [user, setUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const newNotification = { ...notification, id: Date.now() };
@@ -24,7 +25,7 @@ const App: React.FC = () => {
     }, 5000);
   }, []);
 
-  const handleUserAction = useCallback((action: GamificationAction) => {
+  const handleUserAction = useCallback((action: GamificationAction, payload?: any) => {
     if (!user) return;
     
     // For daily login, ensure it only runs once per day
@@ -33,12 +34,16 @@ const App: React.FC = () => {
         if (user.lastLogin === today) return;
     }
 
-    const result = processAction(user, action);
+    const result = processAction(user, action, payload);
     setUser(result.updatedUser);
     result.notifications.forEach(addNotification);
   }, [user, addNotification]);
   
   const handleSetUser = (newUser: User | null) => {
+    if (!newUser) {
+      setIsAdminMode(false); // Turn off admin mode on logout
+    }
+    
     if (newUser) {
       // This is where we trigger the daily login check
       const today = new Date().toISOString().split('T')[0];
@@ -58,15 +63,15 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} user={user} />;
+        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
       case 'como-reciclar':
-        return <ComoReciclarPage user={user} />;
+        return <ComoReciclarPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'puntos-verdes':
         return <PuntosVerdesPage user={user} onUserAction={handleUserAction} />;
       case 'juegos':
-        return <JuegosPage user={user} />;
+        return <JuegosPage user={user} isAdminMode={isAdminMode} />;
       case 'noticias':
-        return <NoticiasPage user={user} />;
+        return <NoticiasPage user={user} isAdminMode={isAdminMode} />;
       case 'comunidad':
         return <ComunidadPage user={user} onUserAction={handleUserAction} />;
       case 'contacto':
@@ -74,7 +79,7 @@ const App: React.FC = () => {
       case 'perfil':
         return <PerfilPage user={user} />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} user={user} />;
+        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
     }
   };
 
@@ -86,6 +91,8 @@ const App: React.FC = () => {
           user={user}
           setUser={handleSetUser}
           notifications={notifications}
+          isAdminMode={isAdminMode}
+          setIsAdminMode={setIsAdminMode}
         >
           {renderPage()}
         </Layout>

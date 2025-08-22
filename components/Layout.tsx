@@ -12,12 +12,21 @@ interface LayoutProps {
   user: User | null;
   setUser: (user: User | null) => void;
   notifications: Notification[];
+  isAdminMode: boolean;
+  setIsAdminMode: (isActive: boolean) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser, notifications }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser, notifications, isAdminMode, setIsAdminMode }) => {
   return (
     <div className="bg-gradient-subtle min-h-screen flex flex-col antialiased text-text-main">
-      <Header currentPage={currentPage} setCurrentPage={setCurrentPage} user={user} setUser={setUser} />
+      <Header 
+        currentPage={currentPage} 
+        setCurrentPage={setCurrentPage} 
+        user={user} 
+        setUser={setUser}
+        isAdminMode={isAdminMode}
+        setIsAdminMode={setIsAdminMode}
+      />
       <main className="flex-1 w-full">
         {children}
       </main>

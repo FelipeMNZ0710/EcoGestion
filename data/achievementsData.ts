@@ -84,5 +84,19 @@ export const allAchievements: Omit<Achievement, 'unlocked'>[] = [
         description: 'Alcanzaste 1000 EcoPuntos.',
         icon: '🏆',
         unlockCondition: { type: 'points', value: 1000 }
+    },
+    {
+        id: '13',
+        name: 'Eco-Estudiante',
+        description: 'Completaste tu primer cuestionario.',
+        icon: '🧠',
+        unlockCondition: { type: 'stat', stat: 'quizzesCompleted', value: 1 }
+    },
+    {
+        id: '14',
+        name: 'Sabelotodo del Reciclaje',
+        description: 'Completaste todos los cuestionarios de la guía.',
+        icon: '🧑‍🏫',
+        unlockCondition: { type: 'stat', stat: 'quizzesCompleted', value: 4 }
     }
 ];
