@@ -95,7 +95,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
     return (
         <button
             onClick={handleLogin}
-            className={`px-4 py-2 text-sm font-semibold text-white bg-primary rounded-full hover:bg-green-800 transition-transform duration-200 hover:scale-105 ${isMobile ? 'w-full' : ''}`}
+            className={`px-4 py-2 text-sm font-semibold text-white bg-primary rounded-full hover:bg-primary-dark transition-transform duration-200 hover:scale-105 ${isMobile ? 'w-full' : ''}`}
         >
             Iniciar Sesión
         </button>
@@ -103,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   }
   
   return (
-    <header className="main-header bg-background/80 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-200/80">
+    <header className="main-header bg-background/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -119,17 +119,17 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center">
-            <div className="modern-menu bg-white rounded-full p-2 shadow-sm border border-gray-200/80 flex items-center space-x-2">
+            <div className="header-nav bg-slate-100 rounded-full p-1.5 shadow-sm border border-slate-200/80 flex items-center space-x-1">
               {navLinks.map(({ page, title, icon }) => (
                 <a
                   key={page}
                   href="#"
                   onClick={(e) => { e.preventDefault(); handleNavClick(page); }}
-                  className={`group flex items-center p-3 rounded-full transition-all duration-300 ease-in-out ${currentPage === page ? 'active' : 'text-text-secondary hover:bg-gray-100'}`}
+                  className={`flex items-center px-4 py-2 rounded-full transition-colors duration-200 ${currentPage === page ? 'active' : 'text-text-secondary'}`}
                   aria-current={currentPage === page ? 'page' : undefined}
                 >
-                  <span className="flex-shrink-0 transition-transform duration-300 ease-in-out">{icon}</span>
-                  <span className="link-title whitespace-nowrap overflow-hidden max-w-0 opacity-0 transition-all duration-300 ease-in-out font-medium text-sm">
+                  <span className="flex-shrink-0">{icon}</span>
+                  <span className="ml-2 font-medium text-sm">
                     {title}
                   </span>
                 </a>
@@ -144,7 +144,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="hamburger p-2 rounded-md text-text-main hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-secondary"
+              className="hamburger p-2 rounded-md text-text-main hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-secondary"
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
             >
@@ -157,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
       </div>
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div id="mobile-menu" className="lg:hidden bg-background border-t border-gray-200">
+        <div id="mobile-menu" className="lg:hidden bg-background border-t border-slate-200">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <nav className="space-y-1">
                 {navLinks.map(({ page, title, icon }) => (
@@ -165,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                     key={page}
                     href="#"
                     onClick={(e) => { e.preventDefault(); handleNavClick(page); }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium ${currentPage === page ? 'bg-secondary/20 text-primary' : 'text-text-secondary hover:bg-gray-100'}`}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium ${currentPage === page ? 'bg-emerald-100 text-primary' : 'text-text-secondary hover:bg-slate-100'}`}
                     aria-current={currentPage === page ? 'page' : undefined}
                 >
                     {icon}
@@ -173,7 +173,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                 </a>
                 ))}
             </nav>
-            <div className="pt-4 mt-4 border-t border-gray-200">
+            <div className="pt-4 mt-4 border-t border-slate-200">
                 <AuthButtons isMobile={true}/>
             </div>
           </div>

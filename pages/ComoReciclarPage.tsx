@@ -20,18 +20,21 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; children: Reac
 
 const MaterialCard: React.FC<{ type: 'yes' | 'no'; title: string; items: string[] }> = ({ type, title, items }) => {
     const isYes = type === 'yes';
-    const borderColor = isYes ? 'border-secondary' : 'border-red-500';
+    const accentColor = isYes ? 'text-emerald-500' : 'text-red-500';
     const icon = isYes
-        ? <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-        : <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
+        ? <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${accentColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+        : <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${accentColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
 
     return (
-        <div className={`neo-card p-6 !border-2 ${borderColor}`} style={{boxShadow: `4px 4px 0 0 ${isYes ? '#66BB6A' : '#EF5350'}`}}>
-            <h3 className={`text-2xl font-bold mb-4 ${isYes ? 'text-secondary' : 'text-red-500'}`}>{title}</h3>
-            <ul className="space-y-2 text-left">
+        <div className="modern-card p-6">
+             <div className="flex items-center mb-4">
+                {icon}
+                <h3 className={`text-2xl font-bold ml-2 ${accentColor}`}>{title}</h3>
+            </div>
+            <ul className="space-y-2 text-left text-text-secondary">
                 {items.map(item => (
                     <li key={item} className="flex items-start">
-                        <span className="flex-shrink-0 mr-2 mt-1">{icon}</span>
+                        <span className="flex-shrink-0 mr-2 mt-1 text-primary">{isYes ? '✓' : '✗'}</span>
                         <span>{item}</span>
                     </li>
                 ))}
@@ -41,7 +44,7 @@ const MaterialCard: React.FC<{ type: 'yes' | 'no'; title: string; items: string[
 };
 
 const ProTip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="mt-8 p-4 bg-accent/20 border-l-4 border-accent text-text-main rounded-r-lg">
+    <div className="mt-8 p-4 bg-amber-100/60 border-l-4 border-accent text-amber-900 rounded-r-lg">
         <p><strong className="font-bold">Pro Tip:</strong> {children}</p>
     </div>
 );
@@ -112,8 +115,8 @@ const EditContentModal: React.FC<{
                             <input type="text" id="pro-tip" value={currentContent.tip} onChange={e => setCurrentContent({...currentContent, tip: e.target.value})}/>
                         </div>
                         <div className="flex justify-end space-x-3 pt-4">
-                            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
-                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-green-800">Guardar Cambios</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar Cambios</button>
                         </div>
                     </form>
                 </div>
@@ -166,9 +169,9 @@ const ComoReciclarPage: React.FC<{user: User | null}> = ({ user }) => {
                 <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Aprendé a separar correctamente cada tipo de material para maximizar el impacto de tu esfuerzo.</p>
             </div>
 
-            <div className="relative border-b border-gray-200 flex justify-center mb-8 fade-in-section" style={{animationDelay: '0.2s'}}>
+            <div className="relative border-b border-slate-200 flex justify-center mb-8 fade-in-section" style={{animationDelay: '0.2s'}}>
                 {user?.isAdmin && (
-                    <button onClick={() => setEditModalOpen(true)} className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2 text-sm font-semibold rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <button onClick={() => setEditModalOpen(true)} className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2 text-sm font-semibold rounded-full bg-emerald-100 text-primary hover:bg-emerald-200 transition-colors">
                         Editar
                     </button>
                 )}

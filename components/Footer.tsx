@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
     }, []);
 
     return (
-        <footer className="main-footer bg-text-main text-gray-300">
+        <footer className="main-footer bg-slate-800 text-slate-300">
             <div className="footer-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Column 1: Logo and Description */}
@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
                             </svg>
                             <span className="text-2xl font-bold text-white">EcoGestión</span>
                         </div>
-                        <p className="text-sm">
+                        <p className="text-sm text-slate-400">
                             Educando y facilitando el reciclaje para construir una Formosa más verde y sostenible. Juntos, hacemos la diferencia.
                         </p>
                     </div>
@@ -49,8 +49,8 @@ const Footer: React.FC = () => {
                         <h3 className="text-lg font-semibold text-white mb-4">Seguinos</h3>
                         <div className="flex items-center space-x-3">
                             {socialLinks.map(social => (
-                                <a key={social.name} href="#" className="group rounded-full p-3 bg-gray-700 hover:scale-110 transition-all duration-300" style={{'--social-color': social.color} as React.CSSProperties} aria-label={`Visita nuestro ${social.name}`}>
-                                    <div className="w-6 h-6 text-white group-hover:text-[var(--social-color)] transition-colors duration-300">
+                                <a key={social.name} href="#" className="group rounded-full p-3 bg-slate-700 hover:bg-slate-600 hover:scale-110 transition-all duration-300" aria-label={`Visita nuestro ${social.name}`}>
+                                    <div className="w-6 h-6 text-white transition-colors duration-300">
                                         {social.icon}
                                     </div>
                                 </a>
@@ -59,8 +59,8 @@ const Footer: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <div className="footer-bottom bg-black/20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm">
+            <div className="footer-bottom bg-slate-900">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-slate-400">
                     <p>&copy; {year} EcoGestión. Todos los derechos reservados.</p>
                 </div>
             </div>

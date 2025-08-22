@@ -79,15 +79,17 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout 
-      currentPage={currentPage} 
-      setCurrentPage={setCurrentPage}
-      user={user}
-      setUser={handleSetUser}
-      notifications={notifications}
-    >
-      {renderPage()}
-    </Layout>
+    <div className="bg-slate-50">
+        <Layout 
+          currentPage={currentPage} 
+          setCurrentPage={setCurrentPage}
+          user={user}
+          setUser={handleSetUser}
+          notifications={notifications}
+        >
+          {renderPage()}
+        </Layout>
+    </div>
   );
 };
 

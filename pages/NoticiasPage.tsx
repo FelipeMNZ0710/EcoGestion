@@ -46,7 +46,7 @@ const NewsCard: React.FC<{
     const { image, category, title, date, featured } = article;
     if (featured) {
         return (
-            <div className="col-span-1 md:col-span-2 bg-white rounded-lg border border-gray-200 overflow-hidden group fade-in-section relative">
+            <div className="col-span-1 md:col-span-2 modern-card overflow-hidden group fade-in-section relative">
                  {user?.isAdmin && (
                     <div className="card-admin-controls">
                         <button onClick={() => onEdit(article)} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
@@ -54,7 +54,7 @@ const NewsCard: React.FC<{
                     </div>
                 )}
                 <div className="grid md:grid-cols-2">
-                    <img src={image} alt={title} className="w-full h-64 object-cover"/>
+                    <img src={image} alt={title} className="w-full h-full object-cover min-h-[250px]"/>
                     <div className="p-6 flex flex-col justify-center">
                         <p className="text-sm text-secondary font-semibold mb-2">{category}</p>
                         <h3 className="text-2xl font-bold text-text-main mb-3 group-hover:text-primary transition-colors">{title}</h3>
@@ -66,7 +66,7 @@ const NewsCard: React.FC<{
         );
     }
     return (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden group fade-in-section relative">
+        <div className="modern-card overflow-hidden group fade-in-section relative">
              {user?.isAdmin && (
                 <div className="card-admin-controls">
                     <button onClick={() => onEdit(article)} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
@@ -85,8 +85,8 @@ const NewsCard: React.FC<{
 };
 
 const SidebarWidget: React.FC<{title: string; children: React.ReactNode}> = ({title, children}) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 fade-in-section">
-        <h3 className="font-bold text-lg text-text-main border-b-2 border-gray-100 pb-2 mb-3">{title}</h3>
+    <div className="modern-card p-4 fade-in-section">
+        <h3 className="font-bold text-lg text-text-main border-b-2 border-slate-100 pb-2 mb-3">{title}</h3>
         {children}
     </div>
 );
@@ -132,8 +132,8 @@ const NewsModal: React.FC<{
                         <div><label htmlFor="title">Título</label><input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required /></div>
                         <div><label htmlFor="category">Categoría</label><input type="text" id="category" value={category} onChange={e => setCategory(e.target.value)} required /></div>
                         <div><label htmlFor="image">URL de la Imagen</label><input type="text" id="image" value={image} onChange={e => setImage(e.target.value)} required /></div>
-                        <div className="flex items-center"><input id="featured" type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" /><label htmlFor="featured" className="ml-2">¿Es una noticia destacada?</label></div>
-                        <div className="flex justify-end space-x-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button><button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-green-800">Guardar</button></div>
+                        <div className="flex items-center"><input id="featured" type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="h-4 w-4 text-primary border-slate-300 rounded focus:ring-primary" /><label htmlFor="featured" className="ml-2">¿Es una noticia destacada?</label></div>
+                        <div className="flex justify-end space-x-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button><button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar</button></div>
                     </form>
                 </div>
             </div>
@@ -191,7 +191,7 @@ const NoticiasPage: React.FC<{user: User | null}> = ({user}) => {
     const otherArticles = news.filter(n => !n.featured);
 
     return (
-        <div className="bg-gray-50/50">
+        <div className="bg-background">
             <NewsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveArticle} article={editingArticle} />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="text-center mb-12 fade-in-section">
@@ -199,7 +199,7 @@ const NoticiasPage: React.FC<{user: User | null}> = ({user}) => {
                     <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Mantenete al día con las últimas noticias, eventos y consejos de la comunidad de EcoGestión.</p>
                     {user?.isAdmin && (
                         <div className="mt-4">
-                            <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-green-800 transition-colors">
+                            <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors">
                                 Crear Nueva Noticia
                             </button>
                         </div>

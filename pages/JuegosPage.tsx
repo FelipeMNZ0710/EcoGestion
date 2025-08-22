@@ -9,10 +9,10 @@ interface Game {
 }
 
 const initialGames: Game[] = [
-    { id: 1, title: 'Clasificador de Residuos', category: 'Habilidad', image: 'https://images.unsplash.com/photo-1599827552899-62506655c64e?q=80&w=2070&auto=format&fit=crop' },
-    { id: 2, title: 'Memoria Ecológica', category: 'Memoria', image: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=2070&auto=format&fit=crop' },
-    { id: 3, title: 'Trivia del Reciclaje', category: 'Conocimiento', image: 'https://images.unsplash.com/photo-1604187351543-05ac3e6e7399?q=80&w=2070&auto=format&fit=crop' },
-    { id: 4, title: 'Aventura del Compost', category: 'Simulación', image: 'https://images.unsplash.com/photo-1593113646773-535c85a0e4c0?q=80&w=2070&auto=format&fit=crop' },
+    { id: 1, title: 'Clasificador de Residuos', category: 'Habilidad', image: 'https://images.unsplash.com/photo-1599827552899-62506655c64e?q=80&w=2070&auto=format=fit=crop' },
+    { id: 2, title: 'Memoria Ecológica', category: 'Memoria', image: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=2070&auto=format=fit=crop' },
+    { id: 3, title: 'Trivia del Reciclaje', category: 'Conocimiento', image: 'https://images.unsplash.com/photo-1604187351543-05ac3e6e7399?q=80&w=2070&auto=format=fit=crop' },
+    { id: 4, title: 'Aventura del Compost', category: 'Simulación', image: 'https://images.unsplash.com/photo-1593113646773-535c85a0e4c0?q=80&w=2070&auto=format=fit=crop' },
 ];
 
 const GameCard: React.FC<{ 
@@ -21,7 +21,7 @@ const GameCard: React.FC<{
     onEdit: (game: Game) => void;
     onDelete: (gameId: number) => void;
 }> = ({ game, user, onEdit, onDelete }) => (
-    <div className="neo-card p-0 overflow-hidden fade-in-section relative">
+    <div className="modern-card p-0 overflow-hidden fade-in-section relative">
         {user?.isAdmin && (
             <div className="card-admin-controls">
                 <button onClick={() => onEdit(game)} className="admin-action-button" title="Editar juego">
@@ -36,7 +36,7 @@ const GameCard: React.FC<{
         <div className="p-4">
             <p className="text-sm text-secondary font-semibold mb-1">{game.category}</p>
             <h3 className="font-bold text-lg text-text-main mb-3">{game.title}</h3>
-            <button className="w-full bg-primary text-white font-semibold py-2 rounded-lg hover:bg-green-800 transition-colors">
+            <button className="w-full bg-primary text-white font-semibold py-2 rounded-lg hover:bg-primary-dark transition-colors">
                 Jugar
             </button>
         </div>
@@ -91,8 +91,8 @@ const GameModal: React.FC<{
                             <input type="text" id="image" value={image} onChange={e => setImage(e.target.value)} required />
                         </div>
                         <div className="flex justify-end space-x-3 pt-4">
-                            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
-                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-green-800">Guardar</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar</button>
                         </div>
                     </form>
                 </div>
@@ -154,7 +154,7 @@ const JuegosPage: React.FC<{user: User | null}> = ({user}) => {
                 <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Poné a prueba tus conocimientos y habilidades sobre reciclaje con nuestros juegos interactivos.</p>
                 {user?.isAdmin && (
                     <div className="mt-4">
-                        <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-green-800 transition-colors">
+                        <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors">
                             Crear Nuevo Juego
                         </button>
                     </div>

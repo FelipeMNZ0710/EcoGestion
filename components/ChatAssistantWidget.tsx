@@ -141,9 +141,9 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
       <div className={`fixed bottom-0 right-0 md:bottom-8 md:right-8 z-[1000] transition-all duration-500 ease-in-out ${isOpen ? 'w-full h-full md:w-[440px] md:h-[70vh] md:max-h-[700px]' : 'w-20 h-20'}`}>
           {isOpen ? (
               // Open State - Chat Window
-              <div className="flex flex-col w-full h-full bg-white md:rounded-2xl shadow-2xl animate-fade-in-up">
+              <div className="flex flex-col w-full h-full bg-surface md:rounded-2xl shadow-2xl animate-fade-in-up">
                   {/* Header */}
-                   <header className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+                   <header className="flex items-center justify-between p-4 border-b border-slate-200 flex-shrink-0">
                       <div className="flex items-center space-x-3">
                           <div className="relative">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
@@ -159,7 +159,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
                       <div className="flex items-center space-x-2">
                         <button 
                           onClick={handleClearChat}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
                           aria-label="Limpiar conversación"
                           title="Limpiar conversación"
                         >
@@ -167,7 +167,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
                         </button>
                         <button 
                           onClick={() => setIsOpen(false)}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
                           aria-label="Cerrar chat"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -175,7 +175,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
                       </div>
                   </header>
                   <ChatHistory ref={chatHistoryRef} messages={messages} isLoading={isLoading} onSendMessage={handleSendMessage} />
-                  <div className="p-4 border-t border-gray-200 flex-shrink-0 bg-white">
+                  <div className="p-4 border-t border-slate-200 flex-shrink-0 bg-white">
                       <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} injectBotMessage={injectBotMessage} />
                   </div>
               </div>
@@ -183,7 +183,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
               // Closed State - Floating Action Button
               <button
                   onClick={() => setIsOpen(true)}
-                  className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-green-800 transition-all duration-300 transform hover:scale-110"
+                  className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-primary-dark transition-all duration-300 transform hover:scale-110"
                   aria-label="Abrir asistente de chat"
               >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5,12A2.5,2.5 0 0,0 19,9.5A2.5,2.5 0 0,0 16.5,7A2.5,2.5 0 0,0 14,9.5A2.5,2.5 0 0,0 16.5,12M9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,13.24 19.62,14.4 19,15.41L15.41,19C14.4,19.62 13.24,20 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
