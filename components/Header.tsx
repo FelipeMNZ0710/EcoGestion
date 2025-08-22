@@ -82,6 +82,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
               completedQuizzes: [],
               quizzesCompleted: 0,
           },
+          favoriteLocations: [],
           lastLogin: '2024-01-01', // A date in the past to ensure daily login triggers
       });
       setIsMobileMenuOpen(false);

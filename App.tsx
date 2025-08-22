@@ -67,7 +67,7 @@ const App: React.FC = () => {
       case 'como-reciclar':
         return <ComoReciclarPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'puntos-verdes':
-        return <PuntosVerdesPage user={user} onUserAction={handleUserAction} />;
+        return <PuntosVerdesPage user={user} setUser={setUser} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'juegos':
         return <JuegosPage user={user} isAdminMode={isAdminMode} />;
       case 'noticias':

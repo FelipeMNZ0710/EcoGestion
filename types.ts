@@ -114,6 +114,7 @@ export interface User {
   isAdmin: boolean;
   stats: UserStats;
   lastLogin: string; // ISO date string 'YYYY-MM-DD'
+  favoriteLocations?: string[];
 }
 
 export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz';
@@ -124,4 +125,32 @@ export interface Notification {
     title: string;
     message: string;
     icon?: string;
+}
+
+// --- Puntos Verdes Types ---
+export type LocationStatus = 'ok' | 'reported' | 'maintenance' | 'serviced';
+
+export interface Schedule {
+  days: number[]; // 0 for Sunday, 1 for Monday, etc.
+  open: string; // "HH:MM"
+  close: string; // "HH:MM"
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  address: string;
+  hours: string; // Keep for display, but schedule is the source of truth
+  schedule: Schedule[];
+  materials: string[];
+  mapData: {
+    name: string;
+    id: string;
+    lat: number;
+    lng: number;
+    x: number;
+    y: number;
+  };
+  imageUrl: string;
+  status: LocationStatus;
 }
