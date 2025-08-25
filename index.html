@@ -11,13 +11,13 @@
     <meta name="author" content="EcoGestión" />
     <meta property="og:title" content="EcoGestión | Juntos por una ciudad más limpia" />
     <meta property="og:description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad." />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format=fit=crop" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop" />
     <meta property="og:url" content="[YOUR_APP_URL_HERE]" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="EcoGestión | Juntos por una ciudad más limpia" />
     <meta name="twitter:description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad." />
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format=fit=crop" />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop" />
     <meta name="theme-color" content="#10B981" />
 
     <!-- Favicons -->
@@ -170,14 +170,103 @@
         overflow: hidden;
       }
       
-      /* --- Header Menu Hover Effects --- */
-      .header-nav a.active {
-        background-color: #ecfdf5; /* emerald-50 */
-        color: #065f46; /* emerald-800 */
+      /* --- New Header Menu Styles --- */
+      .menu {
+        padding: 0.5rem;
+        background-color: #fff;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px 0 rgba(0, 0, 0, 0.075);
+        border: 1px solid #e2e8f0;
       }
-       .header-nav a:hover {
+
+      .link {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 70px;
+        height: 50px;
+        border-radius: 8px;
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        transform-origin: center left;
+        transition: width 0.2s ease-in, color 0.2s ease-in;
+        text-decoration: none;
+        color: #64748b; /* text-slate-500 */
+      }
+
+      .link:before {
+        position: absolute;
+        z-index: -1;
+        content: "";
+        display: block;
+        border-radius: 8px;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        transform: translateX(100%);
+        transition: transform 0.2s ease-in;
+        transform-origin: center right;
         background-color: #f1f5f9; /* slate-100 */
-        color: #1e293b; /* slate-800 */
+      }
+
+      .link:hover,
+      .link:focus,
+      .link.active {
+        outline: 0;
+        width: 150px;
+        color: #059669; /* primary */
+      }
+
+      .link:hover:before,
+      .link:focus:before,
+      .link.active:before {
+        transform: translateX(0);
+        background-color: #ecfdf5; /* emerald-50 */
+      }
+
+      .link:hover .link-title,
+      .link:focus .link-title,
+      .link.active .link-title {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      .link-icon {
+        width: 28px;
+        height: 28px;
+        display: block;
+        flex-shrink: 0;
+        left: 21px; /* Centered in 70px width */
+        position: absolute;
+        transition: left 0.2s ease-in;
+      }
+
+      .link:hover .link-icon,
+      .link:focus .link-icon,
+      .link.active .link-icon {
+          left: 18px; /* Move icon to the left on expand */
+      }
+
+      .link-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .link-title {
+        transform: translateX(100%);
+        opacity: 0;
+        transition: transform 0.2s 0.05s ease-in, opacity 0.2s 0.05s ease-in;
+        transform-origin: center right;
+        display: block;
+        text-align: center;
+        text-indent: 28px;
+        width: 100%;
+        font-weight: 600;
+        white-space: nowrap;
       }
       
       /* Scroll-triggered Animation */
@@ -715,6 +804,69 @@
         background-color: white; cursor: pointer; transition: 0.2s ease-in-out;
       }
       .form .btn:hover { border: 1px solid #059669; }
+
+      /* --- Achievements Modal Styles --- */
+      .achievements-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 1rem;
+      }
+
+      .achievement-tile {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1rem;
+          border-radius: 0.75rem;
+          border: 1px solid #e2e8f0; /* slate-200 */
+          background-color: #ffffff;
+          transition: all 0.2s ease;
+      }
+
+      .achievement-tile.locked {
+          background-color: #f8fafc; /* slate-50 */
+          filter: grayscale(80%);
+          opacity: 0.7;
+      }
+
+      .achievement-tile.unlocked {
+          border-color: #84cc16; /* secondary */
+          box-shadow: 0 4px 8px rgba(132, 204, 22, 0.1);
+      }
+
+      .achievement-icon {
+          font-size: 2rem;
+          flex-shrink: 0;
+          width: 3rem;
+          height: 3rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 9999px;
+          background-color: #f1f5f9; /* slate-100 */
+      }
+
+      .achievement-tile.unlocked .achievement-icon {
+          background-color: #ecfdf5; /* emerald-50 */
+      }
+
+      .achievement-info {
+          min-width: 0;
+      }
+
+      .achievement-name {
+          font-weight: 700;
+          color: #1e293b; /* slate-800 */
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+      }
+
+      .achievement-desc {
+          font-size: 0.875rem;
+          color: #64748b; /* slate-500 */
+          line-height: 1.4;
+      }
     </style>
     <script type="importmap">
     {

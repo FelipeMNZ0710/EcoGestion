@@ -12,22 +12,32 @@ interface HeaderProps {
   setIsAdminMode: (isActive: boolean) => void;
 }
 
-// Create a map to store JSX icons, keeping them inside the component file
-const iconMap: Record<string, JSX.Element> = {
-  home: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  'como-reciclar': <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
-  'puntos-verdes': <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  juegos: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  noticias: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3h2m0 0V7a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2Z" /></svg>,
-  comunidad: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-  contacto: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+const iconProps = {
+  width: "192",
+  height: "192",
+  fill: "currentColor",
+  viewBox: "0 0 256 256",
 };
 
-// Generate navLinks dynamically from the single source of truth
-const navLinks = navigationData.map(item => ({
-  ...item,
-  icon: iconMap[item.page],
-}));
+const iconPathProps = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  strokeWidth: "16",
+} as const;
+
+const iconMap: Record<string, JSX.Element> = {
+  home: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M213.3815,109.61945,133.376,36.88436a8,8,0,0,0-10.76339.00036l-79.9945,72.73477A8,8,0,0,0,40,115.53855V208a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8V115.53887A8,8,0,0,0,213.3815,109.61945Z" {...iconPathProps} /></svg>,
+  'como-reciclar': <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M176,80h40a8,8,0,0,1,6.54,12.28l-24,36A8,8,0,0,1,192,136H144l32-48A8,8,0,0,1,176,80ZM80,176H40a8,8,0,0,1-6.54-12.28l24-36A8,8,0,0,1,64,120h48L80,168A8,8,0,0,1,80,176Zm88-48h40a8,8,0,0,0,6.54-12.28l-24-36A8,8,0,0,0,184,72H136l32,48A8,8,0,0,0,168,128Z" {...iconPathProps} /></svg>,
+  'puntos-verdes': <svg {...iconProps}><rect width="256" height="256" fill="none" /><circle cx="128" cy="104" r="72" {...iconPathProps} /><path d="M183.5658,199.87543a111.9983,111.9983,0,0,1-111.1316,0" {...iconPathProps} /><path d="M208,224l-30.68652-30.70215" {...iconPathProps} /></svg>,
+  juegos: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M82.14214,197.45584,52.201,227.397a8,8,0,0,1-11.31371,0L28.603,215.11268a8,8,0,0,1,0-11.31371l29.94113-29.94112a8,8,0,0,0,0-11.31371L37.65685,141.65685a8,8,0,0,1,0-11.3137l12.6863-12.6863a8,8,0,0,1,11.3137,0l76.6863,76.6863a8,8,0,0,1,0,11.3137l-12.6863,12.6863a8,8,0,0,1-11.3137,0L93.45584,197.45584A8,8,0,0,0,82.14214,197.45584Z" {...iconPathProps} /><polyline points="76.201 132.201 152.201 40.201 216 40 215.799 103.799 123.799 179.799" {...iconPathProps} /></svg>,
+  noticias: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M216,40H40A16,16,0,0,0,24,56V216a8,8,0,0,0,16,0V56H216a8,8,0,0,1,0,16H160a24,24,0,0,0-24,24v88a24,24,0,0,0,24,24h56a8,8,0,0,1,0,16H40a16,16,0,0,0-16,16v0a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Z" {...iconPathProps} /></svg>,
+  comunidad: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M45.42853,176.99811A95.95978,95.95978,0,1,1,79.00228,210.5717l.00023-.001L45.84594,220.044a8,8,0,0,1-9.89-9.89l9.47331-33.15657Z" {...iconPathProps} /></svg>,
+  contacto: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-8,144H40V74.19629l82.59375,55.0625a8.00008,8.00008,0,0,0,9.40625,0L216,74.19629V192Z" {...iconPathProps} /></svg>,
+  perfil: <svg {...iconProps}><rect width="256" height="256" fill="none" /><circle cx="128" cy="96" r="64" {...iconPathProps} strokeMiterlimit="10" /><path d="M30.989,215.99064a112.03731,112.03731,0,0,1,194.02311.002" {...iconPathProps} /></svg>,
+};
+
 
 const AdminModeToggle: React.FC<{
   isAdminMode: boolean;
@@ -73,15 +83,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
     if (user) {
         return (
             <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'space-x-4'}`}>
-                <div className="flex items-center space-x-2">
-                    <a 
-                        href="#" 
-                        onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }}
-                        className="text-sm font-medium text-text-main hover:text-primary transition-colors"
-                    >
-                        ¡Hola, {user.name}!
-                    </a>
-                </div>
                  {user.isAdmin && !isMobile && <AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} />}
                 <button
                     onClick={handleLogout}
@@ -101,6 +102,23 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
         </button>
     )
   }
+
+  const baseNavLinks = navigationData.map(item => ({
+    ...item,
+    icon: iconMap[item.page],
+  }));
+
+  const navLinks = user
+    ? [
+        ...baseNavLinks,
+        {
+          page: 'perfil' as Page,
+          title: 'Perfil',
+          description: 'Tu perfil de usuario',
+          icon: iconMap['perfil'],
+        },
+      ]
+    : baseNavLinks;
   
   return (
     <>
@@ -120,17 +138,19 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center">
-            <div className="header-nav bg-slate-100 rounded-full p-1.5 shadow-sm border border-slate-200/80 flex items-center space-x-1">
+            <div className="menu">
               {navLinks.map(({ page, title, icon }) => (
                 <a
                   key={page}
                   href="#"
-                  onClick={(e) => { e.preventDefault(); handleNavClick(page); }}
-                  className={`flex items-center px-4 py-2 rounded-full transition-colors duration-200 ${currentPage === page ? 'active' : 'text-text-secondary'}`}
+                  onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
+                  className={`link ${currentPage === page ? 'active' : ''}`}
                   aria-current={currentPage === page ? 'page' : undefined}
                 >
-                  <span className="flex-shrink-0">{icon}</span>
-                  <span className="ml-2 font-medium text-sm">
+                  <span className="link-icon">
+                    {icon}
+                  </span>
+                  <span className="link-title">
                     {title}
                   </span>
                 </a>
@@ -161,22 +181,27 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
         <div id="mobile-menu" className="lg:hidden bg-background border-t border-slate-200">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <nav className="space-y-1">
-                {navLinks.map(({ page, title, icon }) => (
+                {baseNavLinks.map(({ page, title, icon }) => (
                 <a
                     key={page}
                     href="#"
-                    onClick={(e) => { e.preventDefault(); handleNavClick(page); }}
+                    onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
                     className={`flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium ${currentPage === page ? 'bg-emerald-100 text-primary' : 'text-text-secondary hover:bg-slate-100'}`}
                     aria-current={currentPage === page ? 'page' : undefined}
                 >
-                    {icon}
+                    <div className="h-6 w-6">{icon}</div>
                     <span>{title}</span>
                 </a>
                 ))}
             </nav>
             <div className="pt-4 mt-4 border-t border-slate-200">
                 {user?.isAdmin && <div className="mb-4"><AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} /></div>}
-                <AuthButtons isMobile={true}/>
+                {user ? (
+                     <div className="space-y-2">
+                        <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }} className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-text-secondary hover:bg-slate-100"><div className="h-6 w-6">{iconMap['perfil']}</div><span>Hola, {user.name}</span></a>
+                        <AuthButtons isMobile={true}/>
+                     </div>
+                ) : <AuthButtons isMobile={true}/>}
             </div>
           </div>
         </div>
