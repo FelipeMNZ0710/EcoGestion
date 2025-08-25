@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { User } from '../types';
+import { initialNews } from '../data/newsData';
 
 interface NewsArticle {
     id: number;
@@ -9,33 +10,6 @@ interface NewsArticle {
     date: string;
     featured: boolean;
 }
-
-const initialNews: NewsArticle[] = [
-    { 
-        id: 1,
-        featured: true, 
-        image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1913&auto=format&fit=crop",
-        category: "Iniciativas",
-        title: "Lanzamos nuevo programa de reciclaje en escuelas primarias",
-        date: "15 de Julio, 2024"
-    },
-    { 
-        id: 2,
-        featured: false,
-        image: "https://images.unsplash.com/photo-1605170425218-9df782293e27?q=80&w=2070&auto=format=fit=crop",
-        category: "Consejos",
-        title: "5 formas creativas de reutilizar frascos de vidrio en casa",
-        date: "12 de Julio, 2024"
-    },
-    { 
-        id: 3,
-        featured: false,
-        image: "https://images.unsplash.com/photo-1588289223825-c6b7d5930e84?q=80&w=2070&auto=format&fit=crop",
-        category: "Eventos",
-        title: "Resumen de la jornada de limpieza en la costanera",
-        date: "10 de Julio, 2024"
-    },
-];
 
 const NewsCard: React.FC<{ 
     article: NewsArticle; 
@@ -50,8 +24,8 @@ const NewsCard: React.FC<{
             <div className="col-span-1 md:col-span-2 modern-card overflow-hidden group fade-in-section relative">
                  {user?.isAdmin && isAdminMode && (
                     <div className="card-admin-controls">
-                        <button onClick={() => onEdit(article)} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
-                        <button onClick={() => onDelete(article.id)} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <button onClick={(e) => { e.stopPropagation(); onEdit(article); }} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(article.id); }} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                     </div>
                 )}
                 <div className="grid md:grid-cols-2">
@@ -70,8 +44,8 @@ const NewsCard: React.FC<{
         <div className="modern-card overflow-hidden group fade-in-section relative">
              {user?.isAdmin && isAdminMode && (
                 <div className="card-admin-controls">
-                    <button onClick={() => onEdit(article)} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
-                    <button onClick={() => onDelete(article.id)} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(article); }} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(article.id); }} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                 </div>
             )}
             <img src={image} alt={title} className="w-full h-48 object-cover"/>
@@ -133,7 +107,7 @@ const NewsModal: React.FC<{
                         <div><label htmlFor="title">Título</label><input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required /></div>
                         <div><label htmlFor="category">Categoría</label><input type="text" id="category" value={category} onChange={e => setCategory(e.target.value)} required /></div>
                         <div><label htmlFor="image">URL de la Imagen</label><input type="text" id="image" value={image} onChange={e => setImage(e.target.value)} required /></div>
-                        <div className="flex items-center"><input id="featured" type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="h-4 w-4 text-primary border-slate-300 rounded focus:ring-primary" /><label htmlFor="featured" className="ml-2">¿Es una noticia destacada?</label></div>
+                        <div className="flex items-center"><label htmlFor="featured" className="custom-toggle-label"><input id="featured" type="checkbox" className="custom-toggle-input" checked={featured} onChange={e => setFeatured(e.target.checked)} /><div className="custom-toggle-track"><div className="custom-toggle-thumb"></div></div><span className="ml-3 text-sm font-medium text-slate-700">¿Es una noticia destacada?</span></label></div>
                         <div className="flex justify-end space-x-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button><button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar</button></div>
                     </form>
                 </div>
@@ -172,7 +146,8 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
     };
 
     const handleSaveArticle = (article: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
-        const date = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        const date = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+
         if (article.id) {
             setNews(news.map(n => n.id === article.id ? { ...n, ...article, date } : n));
         } else {
@@ -199,9 +174,9 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
                     <h1 className="text-4xl font-extrabold text-text-main">Noticias y Novedades</h1>
                     <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Mantenete al día con las últimas noticias, eventos y consejos de la comunidad de EcoGestión.</p>
                     {user?.isAdmin && isAdminMode && (
-                        <div className="mt-4">
-                            <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors">
-                                Crear Nueva Noticia
+                        <div className="mt-6">
+                            <button onClick={() => handleOpenModal()} className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors shadow-sm">
+                                + Crear Nueva Noticia
                             </button>
                         </div>
                     )}

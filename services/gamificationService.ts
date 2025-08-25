@@ -1,7 +1,7 @@
 import type { User, GamificationAction, Notification, Material } from '../types';
 import { allAchievements } from '../data/achievementsData';
 
-const actionPoints: Record<GamificationAction, number> = {
+const actionPoints: Record<Exclude<GamificationAction, 'complete_game'>, number> = {
     send_message: 5,
     check_in: 25,
     report_punto_verde: 15,
@@ -29,9 +29,16 @@ export const processAction = (user: User, action: GamificationAction, payload?: 
     stats.dailyLogins = stats.dailyLogins || 0;
     stats.completedQuizzes = stats.completedQuizzes || [];
     stats.quizzesCompleted = stats.quizzesCompleted || 0;
+    stats.gamesPlayed = stats.gamesPlayed || 0;
 
     const notifications: Omit<Notification, 'id'>[] = [];
-    let pointsToAdd = actionPoints[action] || 0;
+    let pointsToAdd = 0;
+
+    if (action === 'complete_game') {
+        pointsToAdd = payload?.points || 0;
+    } else {
+        pointsToAdd = actionPoints[action as Exclude<GamificationAction, 'complete_game'>] || 0;
+    }
     
     // 1. Update stats based on action
     switch(action) {
@@ -56,6 +63,9 @@ export const processAction = (user: User, action: GamificationAction, payload?: 
                 // If quiz was already completed, don't award points again
                 pointsToAdd = 0;
             }
+            break;
+        case 'complete_game':
+            stats.gamesPlayed += 1;
             break;
     }
 

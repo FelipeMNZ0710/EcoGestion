@@ -103,6 +103,7 @@ export interface UserStats {
     dailyLogins: number;
     completedQuizzes: Material[];
     quizzesCompleted: number;
+    gamesPlayed: number;
 }
 
 export interface User {
@@ -117,7 +118,7 @@ export interface User {
   favoriteLocations?: string[];
 }
 
-export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz';
+export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz' | 'complete_game';
 
 export interface Notification {
     id: number;
@@ -153,4 +154,69 @@ export interface Location {
   };
   imageUrl: string;
   status: LocationStatus;
+}
+
+// --- Game Types ---
+export type GameType = 'trivia' | 'memory' | 'sorting' | 'hangman' | 'chain' | 'catcher' | 'repair';
+
+export interface MemoryCardData {
+  id: string;
+  content: string; // Could be an emoji or an image URL
+  type: 'icon' | 'image';
+}
+
+export type BinType = 'papel' | 'plastico' | 'vidrio' | 'metales' | 'organico';
+
+export interface SortableItemData {
+  id: string;
+  name: string;
+  image: string;
+  correctBin: BinType;
+}
+
+export interface HangmanWord {
+    word: string;
+    hint: string;
+}
+
+export interface CatcherItem {
+    id: string;
+    image: string;
+    type: 'recyclable' | 'trash';
+    points: number;
+}
+
+export interface RepairableItem {
+    id: string;
+    name: string;
+    image: string; // Emoji or URL
+    toolOptions: string[]; // Emojis
+    correctTool: string;
+}
+
+export interface Game {
+    id: number;
+    title: string;
+    category: string;
+    image: string;
+    type: GameType;
+    payload: {
+        points: number;
+        // For trivia
+        questions?: QuizQuestion[];
+        // For memory
+        cards?: MemoryCardData[];
+        // For sorting & chain
+        items?: SortableItemData[];
+        bins?: BinType[];
+        duration?: number; // in seconds
+        // For hangman
+        words?: HangmanWord[];
+        // For catcher
+        fallingItems?: CatcherItem[];
+        lives?: number;
+        // For repair
+        repairableItems?: RepairableItem[];
+        timePerItem?: number;
+    }
 }

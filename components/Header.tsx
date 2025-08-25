@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Page, User } from '../types';
 import { navigationData } from '../data/navigationData';
-import { allAchievements } from '../data/achievementsData';
+import LoginModal from './LoginModal';
 
 interface HeaderProps {
   currentPage: Page;
@@ -11,8 +11,6 @@ interface HeaderProps {
   isAdminMode: boolean;
   setIsAdminMode: (isActive: boolean) => void;
 }
-
-const ADMIN_USERS = ['Felipe', 'Rolón Sergio Agustín'];
 
 // Create a map to store JSX icons, keeping them inside the component file
 const iconMap: Record<string, JSX.Element> = {
@@ -54,37 +52,15 @@ const AdminModeToggle: React.FC<{
 
 const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setUser, isAdminMode, setIsAdminMode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const handleNavClick = (page: Page) => {
     setCurrentPage(page);
     setIsMobileMenuOpen(false);
   };
   
-  const handleLogin = () => {
-      const userName = 'Felipe'; // Can be dynamic in a real app
-      const isAdmin = ADMIN_USERS.includes(userName);
-      
-      setUser({
-          id: 'user-felipe-123',
-          name: userName,
-          email: 'felipe@example.com',
-          points: 1250,
-          achievements: allAchievements.map(ach => ({
-              ...ach,
-              unlocked: isAdmin ? true : (['1', '2'].includes(ach.id)), // Admins have all, demo user has first two
-          })),
-          isAdmin: isAdmin,
-          stats: {
-              messagesSent: 12,
-              pointsVisited: 3,
-              reportsMade: 1,
-              dailyLogins: 5,
-              completedQuizzes: [],
-              quizzesCompleted: 0,
-          },
-          favoriteLocations: [],
-          lastLogin: '2024-01-01', // A date in the past to ensure daily login triggers
-      });
+  const handleOpenLoginModal = () => {
+      setIsLoginModalOpen(true);
       setIsMobileMenuOpen(false);
   };
   
@@ -118,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
     }
     return (
         <button
-            onClick={handleLogin}
+            onClick={handleOpenLoginModal}
             className={`px-4 py-2 text-sm font-semibold text-white bg-primary rounded-full hover:bg-primary-dark transition-transform duration-200 hover:scale-105 ${isMobile ? 'w-full' : ''}`}
         >
             Iniciar Sesión
@@ -127,6 +103,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   }
   
   return (
+    <>
     <header className="main-header bg-background/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -205,6 +182,12 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
         </div>
       )}
     </header>
+    <LoginModal 
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={setUser}
+      />
+    </>
   );
 };
 

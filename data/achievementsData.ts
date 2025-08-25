@@ -98,5 +98,26 @@ export const allAchievements: Omit<Achievement, 'unlocked'>[] = [
         description: 'Completaste todos los cuestionarios de la guía.',
         icon: '🧑‍🏫',
         unlockCondition: { type: 'stat', stat: 'quizzesCompleted', value: 4 }
+    },
+    {
+        id: '15',
+        name: '¡A Jugar!',
+        description: 'Jugaste tu primer juego.',
+        icon: '🎮',
+        unlockCondition: { type: 'stat', stat: 'gamesPlayed', value: 1 }
+    },
+    {
+        id: '16',
+        name: 'Jugador Casual',
+        description: 'Jugaste 5 juegos.',
+        icon: '🕹️',
+        unlockCondition: { type: 'stat', stat: 'gamesPlayed', value: 5 }
+    },
+    {
+        id: '17',
+        name: 'Gamer Ecológico',
+        description: 'Jugaste 10 juegos.',
+        icon: '👾',
+        unlockCondition: { type: 'stat', stat: 'gamesPlayed', value: 10 }
     }
 ];

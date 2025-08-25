@@ -69,7 +69,7 @@ const App: React.FC = () => {
       case 'puntos-verdes':
         return <PuntosVerdesPage user={user} setUser={setUser} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'juegos':
-        return <JuegosPage user={user} isAdminMode={isAdminMode} />;
+        return <JuegosPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'noticias':
         return <NoticiasPage user={user} isAdminMode={isAdminMode} />;
       case 'comunidad':
