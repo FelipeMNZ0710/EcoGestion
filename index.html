@@ -11,13 +11,13 @@
     <meta name="author" content="EcoGestión" />
     <meta property="og:title" content="EcoGestión | Juntos por una ciudad más limpia" />
     <meta property="og:description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad." />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format=fit=crop" />
     <meta property="og:url" content="[YOUR_APP_URL_HERE]" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="EcoGestión | Juntos por una ciudad más limpia" />
     <meta name="twitter:description" content="Descubrí cómo, dónde y por qué reciclar en Formosa. Sumate al cambio y transformá tu comunidad." />
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop" />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format=fit=crop" />
     <meta name="theme-color" content="#10B981" />
 
     <!-- Favicons -->
@@ -656,14 +656,23 @@
       }
 
       /* --- Login Form Styles --- */
+      @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+      @keyframes scaleOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+
       .login-modal-backdrop {
         position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6);
         backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center;
         justify-content: center; padding: 1rem;
         animation: fadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
       }
+      .login-modal-backdrop.exiting {
+        animation: fadeOut 0.3s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+      }
       .login-modal-content {
         animation: scaleIn 0.3s 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      }
+      .login-modal-content.exiting {
+        animation: scaleOut 0.3s cubic-bezier(0.5, 0, 0.75, 0) forwards;
       }
       .form {
         display: flex; flex-direction: column; gap: 10px;

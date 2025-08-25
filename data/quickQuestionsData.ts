@@ -6,6 +6,7 @@ interface QuickQuestion {
 }
 
 export const quickQuestionsData: QuickQuestion[] = [
+  // --- Recycling Questions (Existing) ---
   {
     question: "¿Qué es el compostaje?",
     answer: [
@@ -137,7 +138,7 @@ export const quickQuestionsData: QuickQuestion[] = [
     ]
   },
   {
-    question: "¿Cómo puedo participar en las iniciativas de Formosa Recicla?",
+    question: "¿Cómo puedo participar en las iniciativas de EcoGestión?",
     answer: [
       { type: 'text', text: "¡Nos encanta tu entusiasmo! Puedes empezar por separar tus residuos. También puedes seguirnos en nuestras redes sociales para enterarte de eventos, talleres y jornadas de voluntariado. ¡Tu participación es clave!" },
       { type: 'link', title: "Visitar la sección de Comunidad", url: "#comunidad" }
@@ -251,6 +252,254 @@ export const quickQuestionsData: QuickQuestion[] = [
     question: "¿Qué es la huella de carbono y cómo la reduce el reciclaje?",
     answer: [
       { type: 'text', text: "La huella de carbono es la cantidad total de gases de efecto invernadero que emitimos. El reciclaje la reduce significativamente porque fabricar productos con materiales reciclados requiere mucha menos energía (y por lo tanto, quema menos combustibles fósiles) que fabricarlos desde cero con materias primas vírgenes." }
+    ]
+  },
+
+  // --- App Functionality Questions ---
+  {
+    question: "¿Cómo encuentro un Punto Verde cerca mío?",
+    answer: [
+      { type: 'text', text: "Puedes usar el mapa interactivo en la sección 'Puntos Verdes'. Tu navegador podría pedirte tu ubicación para mostrarte los más cercanos." },
+      { type: 'link', title: "Ir a Puntos Verdes", url: "#puntos-verdes" }
+    ]
+  },
+  {
+    question: "¿Qué significan los colores de los marcadores en el mapa?",
+    answer: [
+      { type: 'text', text: "Los colores indican el estado del Punto Verde: Verde (Operativo), Amarillo (Reportado con un problema), y Azul (En mantenimiento)." }
+    ]
+  },
+  {
+    question: "¿Cómo puedo filtrar los Puntos Verdes?",
+    answer: [
+      { type: 'text', text: "En la página 'Puntos Verdes', encima de la lista, hay botones para filtrar por el tipo de material que aceptan, como 'Plásticos' o 'Pilas'." }
+    ]
+  },
+  {
+    question: "¿Puedo ver los horarios de un Punto Verde?",
+    answer: [
+      { type: 'text', text: "¡Sí! Haz clic en cualquier Punto Verde de la lista o el mapa y se abrirá una ventana con todos sus detalles, incluyendo los horarios." }
+    ]
+  },
+  {
+    question: "¿Qué es 'Hacer Check-in' en un Punto Verde?",
+    answer: [
+      { type: 'text', text: "Es una forma de registrar tu visita. Al hacerlo, ganas EcoPuntos y nos ayudas a saber qué puntos son los más utilizados. ¡Solo puedes hacerlo si has iniciado sesión!" }
+    ]
+  },
+  {
+    question: "¿Para qué sirve el botón 'Reportar Problema'?",
+    answer: [
+      { type: 'text', text: "Si llegas a un Punto Verde y está lleno, sucio o dañado, puedes usar ese botón para notificarnos. Esto nos ayuda a mantener todo en orden y te da EcoPuntos por colaborar." }
+    ]
+  },
+  {
+    question: "¿Cómo guardo mis Puntos Verdes favoritos?",
+    answer: [
+      { type: 'text', text: "Al lado de cada Punto Verde en la lista, verás un ícono de estrella. Haz clic en él para añadirlo a tus favoritos y encontrarlo más fácilmente." }
+    ]
+  },
+  {
+    question: "Hice clic en un marcador del mapa y no pasa nada.",
+    answer: [
+      { type: 'text', text: "Al hacer clic en un marcador del mapa, la lista de la derecha se desplazará automáticamente para mostrarte esa ubicación. Asegúrate de mirar la lista para ver los detalles." }
+    ]
+  },
+  {
+    question: "¿Qué son los EcoPuntos?",
+    answer: [
+      { type: 'text', text: "Los EcoPuntos son una forma de recompensar tu participación. Los ganas realizando acciones positivas como visitar Puntos Verdes, jugar, completar cuestionarios o participar en la comunidad." }
+    ]
+  },
+  {
+    question: "¿Para qué sirven los EcoPuntos?",
+    answer: [
+      { type: 'text', text: "Acumular EcoPuntos te ayuda a desbloquear logros y a medir tu impacto positivo en la comunidad. ¡Es una forma divertida de ver tu progreso!" }
+    ]
+  },
+  {
+    question: "¿Cómo gano EcoPuntos?",
+    answer: [
+      { type: 'text', text: "Ganas puntos por: hacer check-in en Puntos Verdes, reportar problemas, participar en la comunidad, completar cuestionarios en la guía de reciclaje y jugar a los juegos." }
+    ]
+  },
+  {
+    question: "¿Qué son los Logros?",
+    answer: [
+      { type: 'text', text: "Son medallas virtuales que desbloqueas al alcanzar ciertas metas, como visitar 3 Puntos Verdes o completar todos los cuestionarios. ¡Colecciónalos todos!" }
+    ]
+  },
+  {
+    question: "¿Dónde puedo ver mis puntos y logros?",
+    answer: [
+      { type: 'text', text: "Toda tu información está en tu perfil. Haz clic en tu nombre en la parte superior derecha de la página para acceder." },
+      { type: 'link', title: "Ir a mi Perfil", url: "#perfil" }
+    ]
+  },
+  {
+    question: "¿Los administradores ganan puntos?",
+    answer: [
+      { type: 'text', text: "No, para mantener el sistema justo, los usuarios administradores no participan en el sistema de EcoPuntos ni en los logros." }
+    ]
+  },
+  {
+    question: "¿Cuántos puntos gano por jugar?",
+    answer: [
+      { type: 'text', text: "La cantidad de puntos varía según el juego. ¡La mejor forma de saberlo es jugar y descubrirlo!" }
+    ]
+  },
+  {
+    question: "¿Qué es el 'Identificador de Residuos con IA'?",
+    answer: [
+      { type: 'text', text: "Es una herramienta que usa la cámara de tu celular. Le tomas una foto a un objeto y la inteligencia artificial de EcoBot te dirá qué es y cómo reciclarlo." },
+      { type: 'link', title: "Probar el Identificador IA", url: "#como-reciclar" }
+    ]
+  },
+  {
+    question: "¿Necesito dar permiso para usar el Identificador con IA?",
+    answer: [
+      { type: 'text', text: "Sí, la primera vez que lo uses, tu navegador te pedirá permiso para acceder a tu cámara. Es necesario para que la función pueda tomar la foto." }
+    ]
+  },
+  {
+    question: "¿Para qué sirven los cuestionarios de la guía de reciclaje?",
+    answer: [
+      { type: 'text', text: "Son una forma rápida y divertida de poner a prueba lo que aprendiste sobre cada material. ¡Además, si los apruebas ganas EcoPuntos!" }
+    ]
+  },
+  {
+    question: "¿Cómo sé si ya completé un cuestionario?",
+    answer: [
+      { type: 'text', text: "En la página 'Cómo Reciclar', verás una barra de progreso. Los materiales cuyo cuestionario ya completaste aparecerán marcados." }
+    ]
+  },
+  {
+    question: "¿Qué es la sección 'Comunidad'?",
+    answer: [
+      { type: 'text', text: "Es nuestro foro de chat. Un lugar para hablar con otros miembros, hacer preguntas, compartir ideas y proyectos sobre reciclaje. ¡Como un Discord o un grupo de WhatsApp!" },
+      { type: 'link', title: "Unirme a la Comunidad", url: "#comunidad" }
+    ]
+  },
+  {
+    question: "¿Qué significan los canales como #general o #dudas?",
+    answer: [
+      { type: 'text', text: "Son diferentes salas de chat para organizar las conversaciones. #general es para charlas variadas, #dudas para hacer preguntas, #proyectos para compartir ideas, etc." }
+    ]
+  },
+  {
+    question: "¿Puedo hablar con un administrador en la Comunidad?",
+    answer: [
+      { type: 'text', text: "¡Sí! Los usuarios con la etiqueta 'Admin' son parte del equipo de EcoGestión. Están allí para ayudar y moderar la conversación." }
+    ]
+  },
+  {
+    question: "¿Puedo editar o borrar mis mensajes en la Comunidad?",
+    answer: [
+      { type: 'text', text: "Sí, si pasas el mouse sobre tu propio mensaje, aparecerán las opciones para editarlo o borrarlo." }
+    ]
+  },
+  {
+    question: "¿Por qué no puedo escribir en el canal #anuncios?",
+    answer: [
+      { type: 'text', text: "El canal #anuncios es de solo lectura. Solo los administradores pueden publicar allí para asegurarse de que las noticias importantes no se pierdan." }
+    ]
+  },
+  {
+    question: "¿Necesito iniciar sesión para jugar?",
+    answer: [
+      { type: 'text', text: "Sí, para poder jugar y que tu puntaje y logros se guarden, necesitas haber iniciado sesión en tu cuenta." }
+    ]
+  },
+  {
+    question: "¿Gano algo por jugar?",
+    answer: [
+      { type: 'text', text: "¡Sí! Cada vez que completas un juego, ganas EcoPuntos que se suman a tu perfil." },
+      { type: 'link', title: "Ir a los Juegos", url: "#juegos" }
+    ]
+  },
+  {
+    question: "¿Cómo cambio mi nombre de usuario?",
+    answer: [
+      { type: 'text', text: "Actualmente, no hay una opción para cambiar tu nombre directamente desde el perfil. Esta es una función que podríamos agregar en el futuro." }
+    ]
+  },
+  {
+    question: "¿Mi información es privada?",
+    answer: [
+      { type: 'text', text: "Tu perfil con tus puntos y logros es visible dentro de la comunidad para fomentar la participación, pero tu email y otros datos personales no se comparten." }
+    ]
+  },
+  {
+    question: "¿Qué pasa si olvido mi contraseña?",
+    answer: [
+      { type: 'text', text: "En la ventana de inicio de sesión, hay una opción que dice '¿Olvidaste tu contraseña?'. Haz clic ahí para iniciar el proceso de recuperación." }
+    ]
+  },
+  {
+    question: "¿Cómo cierro sesión?",
+    answer: [
+      { type: 'text', text: "En la parte superior derecha de la página, verás un botón que dice 'Cerrar Sesión' al lado de tu nombre." }
+    ]
+  },
+  {
+    question: "¿Qué es el 'Modo Admin'?",
+    answer: [
+      { type: 'text', text: "Es una vista especial para los administradores que les permite editar y borrar contenido directamente desde la página, como noticias, juegos o Puntos Verdes." }
+    ]
+  },
+  {
+    question: "¿Cómo activo el Modo Admin?",
+    answer: [
+      { type: 'text', text: "Si tu cuenta es de administrador, verás un interruptor en la cabecera de la página para activar o desactivar este modo." }
+    ]
+  },
+  {
+    question: "¿Por qué veo botones de editar y borrar por todos lados?",
+    answer: [
+      { type: 'text', text: "Probablemente tengas el Modo Admin activado. Esos botones solo son visibles para los administradores en ese modo y te permiten gestionar el contenido." }
+    ]
+  },
+  {
+    question: "¿Esta página funciona en celulares?",
+    answer: [
+      { type: 'text', text: "¡Sí! La aplicación está diseñada para ser completamente responsiva y funcionar bien tanto en computadoras de escritorio como en celulares y tablets." }
+    ]
+  },
+  {
+    question: "¿Cómo puedo volver a la página de inicio?",
+    answer: [
+      { type: 'text', text: "Puedes hacer clic en el logo de 'EcoGestión' en la esquina superior izquierda en cualquier momento para volver a la página principal." }
+    ]
+  },
+  {
+    question: "¿Quién está detrás de EcoGestión?",
+    answer: [
+      { type: 'text', text: "Somos un equipo dedicado a promover la cultura del reciclaje y la sostenibilidad en Formosa, trabajando para hacer de nuestra ciudad un lugar más limpio." }
+    ]
+  },
+  {
+    question: "¿Cómo puedo contactarlos?",
+    answer: [
+      { type: 'text', text: "Tenemos una sección de 'Contacto' con un formulario para que nos envíes tus preguntas, sugerencias o propuestas de colaboración." },
+      { type: 'link', title: "Ir a Contacto", url: "#contacto" }
+    ]
+  },
+  {
+    question: "¿Qué es EcoBot?",
+    answer: [
+      { type: 'text', text: "¡Soy yo! Soy un asistente de inteligencia artificial diseñado para responder tus preguntas sobre reciclaje y también para ayudarte a navegar y usar esta aplicación." }
+    ]
+  },
+  {
+    question: "¿EcoBot puede cometer errores?",
+    answer: [
+      { type: 'text', text: "Aunque intento ser lo más preciso posible, soy una IA y siempre estoy aprendiendo. Si encuentras una respuesta que crees que es incorrecta, te agradecemos que nos lo hagas saber." }
+    ]
+  },
+  {
+    question: "¿Cómo puedo sugerir una mejora para la página?",
+    answer: [
+      { type: 'text', text: "¡Nos encantan las sugerencias! La mejor manera es usar el formulario en la página de 'Contacto' para enviarnos tu idea." }
     ]
   }
 ];

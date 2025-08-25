@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '../types';
 import { allAchievements } from '../data/achievementsData';
 
@@ -17,11 +17,28 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState(''); // for registration
+    const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsAnimatingOut(false);
+        }
+    }, [isOpen]);
+    
+    const handleClose = () => {
+        setIsAnimatingOut(true);
+        setTimeout(() => {
+            onClose();
+            // Reset form for next time
+            setEmail('');
+            setPassword('');
+            setName('');
+            setIsRegister(false);
+        }, 300); // Match animation duration
+    };
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, this would be an API call.
-        // For now, we log in a mock user if the email is a known admin, or a regular user.
         const isAdmin = ['felipe@example.com', 'admin@ecogestion.com'].includes(email.toLowerCase());
         const userName = name || (isAdmin ? 'Felipe' : 'Nuevo Usuario');
         
@@ -47,14 +64,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
           favoriteLocations: [],
           lastLogin: '2024-01-01',
         });
-        onClose();
+        handleClose();
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="login-modal-backdrop" onClick={onClose}>
-            <div className="login-modal-content" onClick={e => e.stopPropagation()}>
+        <div className={`login-modal-backdrop ${isAnimatingOut ? 'exiting' : ''}`} onClick={handleClose}>
+            <div className={`login-modal-content ${isAnimatingOut ? 'exiting' : ''}`} onClick={e => e.stopPropagation()}>
                 <form className="form" onSubmit={handleFormSubmit}>
                     <h2 className="text-2xl font-bold text-center text-text-main mb-4">{isRegister ? 'Crear Cuenta' : 'Iniciar Sesión'}</h2>
 
