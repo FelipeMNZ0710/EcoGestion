@@ -13,8 +13,6 @@ interface HeaderProps {
 }
 
 const iconProps = {
-  width: "192",
-  height: "192",
   fill: "currentColor",
   viewBox: "0 0 256 256",
 };
@@ -109,17 +107,13 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   }));
 
   const navLinks = user
-    ? [
-        ...baseNavLinks,
-        {
-          page: 'perfil' as Page,
-          title: 'Perfil',
-          description: 'Tu perfil de usuario',
-          icon: iconMap['perfil'],
-        },
-      ]
-    : baseNavLinks;
+    ? baseNavLinks
+    : baseNavLinks.filter(link => link.page !== 'perfil');
   
+  const userSpecificLinks = user 
+    ? [{ page: 'perfil' as Page, title: 'Perfil', description: 'Tu perfil de usuario', icon: iconMap['perfil'] }]
+    : [];
+
   return (
     <>
     <header className="main-header bg-background/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200/80">
@@ -147,12 +141,20 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                   className={`link ${currentPage === page ? 'active' : ''}`}
                   aria-current={currentPage === page ? 'page' : undefined}
                 >
-                  <span className="link-icon">
-                    {icon}
-                  </span>
-                  <span className="link-title">
-                    {title}
-                  </span>
+                  <span className="link-icon">{icon}</span>
+                  <span className="link-title">{title}</span>
+                </a>
+              ))}
+               {user && userSpecificLinks.map(({ page, title, icon }) => (
+                <a
+                  key={page}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
+                  className={`link ${currentPage === page ? 'active' : ''}`}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                >
+                  <span className="link-icon">{icon}</span>
+                  <span className="link-title">{title}</span>
                 </a>
               ))}
             </div>
@@ -178,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
       </div>
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div id="mobile-menu" className="lg:hidden bg-background border-t border-slate-200">
+        <div id="mobile-menu" className="lg:hidden bg-background border-t border-slate-200 mobile-menu-animate">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <nav className="space-y-1">
                 {baseNavLinks.map(({ page, title, icon }) => (
@@ -186,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                     key={page}
                     href="#"
                     onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium ${currentPage === page ? 'bg-emerald-100 text-primary' : 'text-text-secondary hover:bg-slate-100'}`}
+                    className={`flex items-center space-x-4 px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 ${currentPage === page ? 'bg-emerald-100 text-primary font-semibold' : 'text-text-secondary hover:bg-slate-100 hover:text-text-main'}`}
                     aria-current={currentPage === page ? 'page' : undefined}
                 >
                     <div className="h-6 w-6">{icon}</div>
@@ -198,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                 {user?.isAdmin && <div className="mb-4"><AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} /></div>}
                 {user ? (
                      <div className="space-y-2">
-                        <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }} className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-text-secondary hover:bg-slate-100"><div className="h-6 w-6">{iconMap['perfil']}</div><span>Hola, {user.name}</span></a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }} className={`flex items-center space-x-4 px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 ${currentPage === 'perfil' ? 'bg-emerald-100 text-primary font-semibold' : 'text-text-secondary hover:bg-slate-100 hover:text-text-main'}`}><div className="h-6 w-6">{iconMap['perfil']}</div><span>Hola, {user.name.split(' ')[0]}</span></a>
                         <AuthButtons isMobile={true}/>
                      </div>
                 ) : <AuthButtons isMobile={true}/>}

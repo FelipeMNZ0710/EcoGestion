@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import ComoReciclarPage from './pages/ComoReciclarPage';
@@ -13,9 +13,29 @@ import { processAction } from './services/gamificationService';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('ecoUser');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      return null;
+    }
+  });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAdminMode, setIsAdminMode] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (user) {
+        localStorage.setItem('ecoUser', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('ecoUser');
+      }
+    } catch (error) {
+      console.error("Failed to save user to localStorage", error);
+    }
+  }, [user]);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const newNotification = { ...notification, id: Date.now() };
@@ -28,7 +48,6 @@ const App: React.FC = () => {
   const handleUserAction = useCallback((action: GamificationAction, payload?: any) => {
     if (!user) return;
     
-    // For daily login, ensure it only runs once per day
     if(action === 'daily_login') {
         const today = new Date().toISOString().split('T')[0];
         if (user.lastLogin === today) return;
@@ -39,26 +58,26 @@ const App: React.FC = () => {
     result.notifications.forEach(addNotification);
   }, [user, addNotification]);
   
-  const handleSetUser = (newUser: User | null) => {
+  const handleLogin = (newUser: User | null) => {
     if (!newUser) {
-      setIsAdminMode(false); // Turn off admin mode on logout
+      setIsAdminMode(false);
+      setUser(null);
+      return;
     }
     
-    if (newUser) {
-      // This is where we trigger the daily login check
-      const today = new Date().toISOString().split('T')[0];
-      if (newUser.lastLogin !== today) {
-          handleUserAction('daily_login');
-          // The gamification service will update the user object, so we use its result
-          const { updatedUser, notifications } = processAction(newUser, 'daily_login');
-          setUser(updatedUser);
-          notifications.forEach(addNotification);
-          return; // Exit to avoid setting user twice
-      }
+    const today = new Date().toISOString().split('T')[0];
+    let userToSet = newUser;
+    if (newUser.lastLogin !== today) {
+        const { updatedUser, notifications } = processAction(newUser, 'daily_login');
+        userToSet = updatedUser;
+        notifications.forEach(addNotification);
     }
-    setUser(newUser);
+    setUser(userToSet);
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -77,7 +96,7 @@ const App: React.FC = () => {
       case 'contacto':
         return <ContactoPage />;
       case 'perfil':
-        return <PerfilPage user={user} />;
+        return <PerfilPage user={user} updateUser={updateUser} />;
       default:
         return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
     }
@@ -89,7 +108,7 @@ const App: React.FC = () => {
           currentPage={currentPage} 
           setCurrentPage={setCurrentPage}
           user={user}
-          setUser={handleSetUser}
+          setUser={handleLogin}
           notifications={notifications}
           isAdminMode={isAdminMode}
           setIsAdminMode={setIsAdminMode}

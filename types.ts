@@ -116,6 +116,16 @@ export interface User {
   stats: UserStats;
   lastLogin: string; // ISO date string 'YYYY-MM-DD'
   favoriteLocations?: string[];
+  // New fields for customization
+  bannerUrl?: string;
+  profilePictureUrl?: string;
+  title?: string;
+  bio?: string;
+  socials?: {
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
 }
 
 export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz' | 'complete_game';

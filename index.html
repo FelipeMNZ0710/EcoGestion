@@ -170,15 +170,14 @@
         overflow: hidden;
       }
       
-      /* --- New Header Menu Styles --- */
+      /* --- Improved Header Menu Styles --- */
       .menu {
         padding: 0.5rem;
         background-color: #fff;
-        position: relative;
         display: flex;
         justify-content: center;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px 0 rgba(0, 0, 0, 0.075);
+        border-radius: 9999px; /* Pill Shape */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         border: 1px solid #e2e8f0;
       }
 
@@ -186,16 +185,15 @@
         display: inline-flex;
         justify-content: center;
         align-items: center;
-        width: 70px;
-        height: 50px;
-        border-radius: 8px;
+        width: 56px;
+        height: 56px;
+        border-radius: 9999px;
         position: relative;
         z-index: 1;
         overflow: hidden;
-        transform-origin: center left;
-        transition: width 0.2s ease-in, color 0.2s ease-in;
         text-decoration: none;
         color: #64748b; /* text-slate-500 */
+        transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease-in;
       }
 
       .link:before {
@@ -203,14 +201,13 @@
         z-index: -1;
         content: "";
         display: block;
-        border-radius: 8px;
+        border-radius: 9999px;
         width: 100%;
         height: 100%;
         top: 0;
         transform: translateX(100%);
-        transition: transform 0.2s ease-in;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         transform-origin: center right;
-        background-color: #f1f5f9; /* slate-100 */
       }
 
       .link:hover,
@@ -227,7 +224,7 @@
         transform: translateX(0);
         background-color: #ecfdf5; /* emerald-50 */
       }
-
+      
       .link:hover .link-title,
       .link:focus .link-title,
       .link.active .link-title {
@@ -240,15 +237,16 @@
         height: 28px;
         display: block;
         flex-shrink: 0;
-        left: 21px; /* Centered in 70px width */
+        left: 14px; /* Centered in 56px width */
         position: absolute;
-        transition: left 0.2s ease-in;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .link:hover .link-icon,
       .link:focus .link-icon,
       .link.active .link-icon {
-          left: 18px; /* Move icon to the left on expand */
+        left: 18px; /* Move icon to the left on expand */
+        transform: scale(1.05);
       }
 
       .link-icon svg {
@@ -257,16 +255,31 @@
       }
 
       .link-title {
-        transform: translateX(100%);
         opacity: 0;
-        transition: transform 0.2s 0.05s ease-in, opacity 0.2s 0.05s ease-in;
-        transform-origin: center right;
         display: block;
         text-align: center;
         text-indent: 28px;
         width: 100%;
         font-weight: 600;
         white-space: nowrap;
+        transform: translateX(100%);
+        transform-origin: center right;
+        transition: opacity 0.2s 0.1s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* --- Mobile Menu Animation --- */
+      @keyframes slideInDownSmall {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .mobile-menu-animate {
+        animation: slideInDownSmall 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       }
       
       /* Scroll-triggered Animation */
@@ -600,48 +613,74 @@
       
       /* --- Profile Card Styles --- */
       .profile-card {
-        position: relative;
-        width: 340px;
-        background: rgba(255, 255, 255, 0.9);
-        -webkit-backdrop-filter: blur(24px);
-        backdrop-filter: blur(24px);
+        background: #ffffff;
         border-radius: 20px;
-        padding: 2rem;
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        transform-style: preserve-3d;
+        border: 1px solid #e2e8f0;
       }
 
-      .profile-image {
-        width: 100px;
-        height: 100px;
+      .profile-card-banner {
+        height: 140px;
+        background-color: #e2e8f0;
+        background-size: cover;
+        background-position: center;
+        border-radius: 20px 20px 0 0;
+        position: relative;
+      }
+      
+      .profile-image-wrapper {
+        margin-top: -60px;
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .profile-image-custom {
+        width: 120px;
+        height: 120px;
         border-radius: 50%;
-        background-color: #f0f2f5;
-        margin: 0 auto 1rem;
-        overflow: hidden;
-        border: 3px solid white;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        border: 4px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: #f1f5f9;
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative;
-        z-index: 1;
+        object-fit: cover;
       }
-      .profile-image::before {
-        content: "";
-        position: absolute;
-        left: -2rem;
-        top: -2rem;
-        width: calc(100% + 4rem);
+      .profile-image-wrapper .profile-avatar-default {
+        width: 120px;
         height: 120px;
-        background-color: #7d988a;
-        border-radius: 20px 20px 0 0;
-        z-index: -2;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: #f1f5f9;
+        padding: 0.5rem;
       }
+
+      .edit-overlay {
+        position: absolute;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        cursor: pointer;
+      }
+      .profile-card-banner:hover .edit-overlay,
+      .profile-image-wrapper:hover .edit-overlay {
+        opacity: 1;
+      }
+      .profile-card-banner .edit-overlay { border-radius: 20px 20px 0 0; }
+      .profile-image-wrapper .edit-overlay { border-radius: 50%; }
 
       .profile-info {
         text-align: center;
-        margin-bottom: 1.5rem;
+        padding: 1rem 1.5rem 1.5rem;
       }
 
       .profile-name {
@@ -656,6 +695,7 @@
         font-weight: 500;
         color: #059669;
         margin-bottom: 0.5rem;
+        min-height: 20px;
       }
 
       .profile-bio {
@@ -663,7 +703,45 @@
         color: #64748b;
         line-height: 1.5;
         margin-bottom: 1.5rem;
+        min-height: 40px;
       }
+      
+      .profile-card .form-input-inline {
+        width: 100%;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.375rem;
+        text-align: center;
+      }
+      .profile-card .form-input-inline:focus {
+        outline: none;
+        border-color: #059669;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+      }
+      .profile-card .profile-name input { font-size: 1.5rem; font-weight: 700; color: #1a1a1a; background: #f8fafc; }
+      .profile-card .profile-title input { font-size: 0.9rem; font-weight: 500; color: #059669; background: #f8fafc; }
+      .profile-card .profile-bio textarea { font-size: 0.85rem; color: #64748b; line-height: 1.5; background: #f8fafc; resize: vertical; text-align: center; }
+
+      .edit-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding: 0 1.5rem 1.5rem;
+      }
+      .edit-actions .btn {
+        flex-grow: 1;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .edit-actions .btn-save { background: #059669; color: white; }
+      .edit-actions .btn-save:hover { background: #047857; }
+      .edit-actions .btn-cancel { background: #e2e8f0; color: #475569; }
+      .edit-actions .btn-cancel:hover { background: #cbd5e1; }
+      
 
       .social-links {
         display: flex;
@@ -683,6 +761,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        color: #475569;
       }
 
       .social-btn:hover {
@@ -693,55 +772,57 @@
       .social-btn svg {
         width: 20px;
         height: 20px;
-        fill: #475569;
+        fill: currentColor;
         transition: all 0.2s ease;
       }
       
-      .social-btn.twitter:hover svg { fill: #1da1f2; }
-      .social-btn.instagram:hover svg { fill: #e4405f; }
-      .social-btn.linkedin:hover svg { fill: #0a66c2; }
-      .social-btn.github:hover svg { fill: #333333; }
-
-      .cta-button {
-        width: 100%;
-        padding: 0.8rem;
-        border: none;
-        border-radius: 10px;
-        background: #059669;
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.2s, background 0.2s;
+      .social-btn.twitter:hover { color: #1da1f2; }
+      .social-btn.instagram:hover { color: #e4405f; }
+      .social-btn.linkedin:hover { color: #0a66c2; }
+      
+      /* --- Profile Page Dashboard & Activity Feed --- */
+      .activity-feed {
+        position: relative;
       }
 
-      .cta-button:hover {
-        background: #047857;
-        transform: translateY(-2px);
+      .feed-item {
+          position: relative;
+          padding-left: 2rem; /* space for icon and line */
+          padding-bottom: 1.5rem;
       }
 
-      .stats {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e2e8f0;
+      .feed-item:last-child {
+          padding-bottom: 0;
       }
 
-      .stat-item {
-        text-align: center;
+      .feed-item::before { /* The timeline vertical bar */
+          content: '';
+          position: absolute;
+          left: 11px; /* Center of the icon */
+          top: 24px;
+          height: calc(100% - 14px);
+          width: 2px;
+          background-color: #e2e8f0; /* slate-200 */
       }
 
-      .stat-value {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1e293b;
+      .feed-item:last-child::before {
+          display: none;
       }
 
-      .stat-label {
-        font-size: 0.75rem;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+      .feed-icon {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background-color: #f1f5f9; /* slate-100 */
+          color: #475569; /* slate-600 */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1;
+          font-size: 0.8rem;
       }
 
       /* --- Login Form Styles --- */

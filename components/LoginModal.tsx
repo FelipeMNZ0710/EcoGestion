@@ -43,13 +43,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         const isAdmin = ['felipe@example.com', 'admin@ecogestion.com', 'felipemonzon0710@gmail.com'].includes(lowerCaseEmail);
         
         let userName = name; // From registration form
-        if (!userName) { // This is a login attempt
+        if (!isRegister) { // This is a login attempt
             if (lowerCaseEmail === 'felipemonzon0710@gmail.com') {
                 userName = 'Felipe Monzón';
             } else if (isAdmin) {
-                userName = 'Felipe';
+                userName = 'Admin';
             } else {
-                userName = 'Nuevo Usuario';
+                userName = 'Eco Miembro';
             }
         }
         
@@ -74,6 +74,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
           },
           favoriteLocations: [],
           lastLogin: '2024-01-01',
+          // Initialize new customizable fields
+          bannerUrl: '',
+          profilePictureUrl: '',
+          title: isRegister ? 'Eco-Entusiasta' : 'Guardián del Reciclaje',
+          bio: isRegister ? '¡Nuevo en la comunidad! Aprendiendo a reciclar.' : 'Comprometido con una Formosa más limpia.',
+          socials: { twitter: '', instagram: '', linkedin: '' }
         });
         handleClose();
     };
