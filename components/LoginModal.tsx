@@ -39,8 +39,19 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const isAdmin = ['felipe@example.com', 'admin@ecogestion.com'].includes(email.toLowerCase());
-        const userName = name || (isAdmin ? 'Felipe' : 'Nuevo Usuario');
+        const lowerCaseEmail = email.toLowerCase();
+        const isAdmin = ['felipe@example.com', 'admin@ecogestion.com', 'felipemonzon0710@gmail.com'].includes(lowerCaseEmail);
+        
+        let userName = name; // From registration form
+        if (!userName) { // This is a login attempt
+            if (lowerCaseEmail === 'felipemonzon0710@gmail.com') {
+                userName = 'Felipe Monzón';
+            } else if (isAdmin) {
+                userName = 'Felipe';
+            } else {
+                userName = 'Nuevo Usuario';
+            }
+        }
         
         onLogin({
           id: `user-${Date.now()}`,
