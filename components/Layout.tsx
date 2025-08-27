@@ -18,7 +18,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser, notifications, isAdminMode, setIsAdminMode }) => {
   return (
-    <div className="bg-gradient-subtle min-h-screen flex flex-col antialiased text-text-main">
+    <div className="bg-background min-h-screen flex flex-col antialiased text-text-main">
       <Header 
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 

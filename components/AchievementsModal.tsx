@@ -33,12 +33,12 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({ isOpen, onClose, 
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-content !max-w-3xl !max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <header className="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                <header className="p-4 border-b border-white/10 flex justify-between items-center sticky top-0 bg-surface z-10">
                     <div>
                         <h2 className="text-xl font-bold text-text-main">Mis Logros</h2>
                         <p className="text-sm text-text-secondary">Desbloqueados: {unlockedCount} de {totalCount}</p>
                     </div>
-                    <button onClick={onClose} className="text-3xl leading-none px-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">&times;</button>
+                    <button onClick={onClose} className="text-3xl leading-none px-2 text-text-secondary hover:text-text-main rounded-full transition-colors">&times;</button>
                 </header>
                 <div className="p-6">
                     <div className="achievements-grid">

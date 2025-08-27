@@ -12,7 +12,7 @@ const FAQList: React.FC<FAQListProps> = ({ questions, onSendMessage }) => {
         <button
           key={index}
           onClick={() => onSendMessage(question)}
-          className="w-full text-left p-3 bg-white/80 text-primary border border-gray-200 rounded-lg hover:bg-secondary/20 hover:border-secondary/50 transition-all duration-200 text-sm font-medium"
+          className="w-full text-left p-3 bg-white/5 text-text-secondary border border-white/10 rounded-lg hover:bg-primary/20 hover:border-primary/50 hover:text-text-main transition-all duration-200 text-sm font-medium"
         >
           {question}
         </button>

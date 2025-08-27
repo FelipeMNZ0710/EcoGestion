@@ -2,7 +2,7 @@ import React from 'react';
 
 const ProfileAvatar: React.FC = () => (
   <svg
-    fill="#000000"
+    fill="currentColor"
     xmlSpace="preserve"
     viewBox="0 0 64 64"
     xmlns="http://www.w3.org/2000/svg"

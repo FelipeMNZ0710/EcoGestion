@@ -44,20 +44,11 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
     setInitialMessage(user?.name);
   }, [setInitialMessage, user]);
 
-  // Effect to initialize or reset chat when the user state changes (login/logout)
   useEffect(() => {
-    // Only reset if the chat is open, to avoid changing state unnecessarily in the background.
     if (isOpen) {
       setInitialMessage(user?.name);
     }
   }, [user, isOpen, setInitialMessage]);
-
-  // Effect to initialize chat when it's first opened
-  useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      setInitialMessage(user?.name);
-    }
-  }, [isOpen, messages.length, user, setInitialMessage]);
 
   useEffect(() => {
     if (chatHistoryRef.current) {
@@ -92,7 +83,6 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
     if (image) {
       newApiParts.push({ inlineData: { mimeType: image.mimeType, data: image.data } });
     }
-    // Always add text, even if empty, as Gemini API expects it for certain multimodal prompts
     const promptText = inputText.trim() || (image ? '¿Qué es esto y cómo lo reciclo?' : '');
     newApiParts.push({ text: promptText });
     
@@ -134,61 +124,48 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user }) => {
       setIsLoading(false);
     }
   }, [isLoading, apiHistory, user]);
-
+  
   return (
     <>
-      {/* Chat Widget Container */}
-      <div className={`fixed bottom-0 right-0 md:bottom-8 md:right-8 z-[1000] transition-all duration-500 ease-in-out ${isOpen ? 'w-full h-full md:w-[440px] md:h-[70vh] md:max-h-[700px]' : 'w-20 h-20'}`}>
-          {isOpen ? (
-              // Open State - Chat Window
-              <div className="flex flex-col w-full h-full bg-surface md:rounded-2xl shadow-2xl animate-fade-in-up">
-                  {/* Header */}
-                   <header className="flex items-center justify-between p-4 border-b border-slate-200 flex-shrink-0">
-                      <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5,12A2.5,2.5 0 0,0 19,9.5A2.5,2.5 0 0,0 16.5,7A2.5,2.5 0 0,0 14,9.5A2.5,2.5 0 0,0 16.5,12M9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,13.24 19.62,14.4 19,15.41L15.41,19C14.4,19.62 13.24,20 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
-                            </div>
-                            <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
-                          </div>
-                          <div>
-                            <h2 className="font-bold text-lg text-text-main">EcoBot</h2>
-                            <p className="text-sm text-green-600 font-semibold">En línea</p>
-                          </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={handleClearChat}
-                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-                          aria-label="Limpiar conversación"
-                          title="Limpiar conversación"
-                        >
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                        <button 
-                          onClick={() => setIsOpen(false)}
-                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-                          aria-label="Cerrar chat"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </div>
-                  </header>
-                  <ChatHistory ref={chatHistoryRef} messages={messages} isLoading={isLoading} onSendMessage={handleSendMessage} />
-                  <div className="p-4 border-t border-slate-200 flex-shrink-0 bg-white">
-                      <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} injectBotMessage={injectBotMessage} />
-                  </div>
+      <div className={`fixed bottom-5 right-5 z-[1000] transition-all duration-300 ${isOpen ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}`}>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-16 h-16 bg-primary rounded-full text-white shadow-lg flex items-center justify-center hover:bg-primary-dark transition-all duration-200 transform hover:scale-110"
+          aria-label="Abrir asistente de chat"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+        </button>
+      </div>
+
+      <div
+        className={`fixed bottom-5 right-5 z-[1000] w-[calc(100%-40px)] max-w-sm h-[70vh] max-h-[600px] flex flex-col bg-surface shadow-2xl rounded-2xl border border-white/10 transition-all duration-300 ease-in-out ${
+          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        }`}
+      >
+        <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-background rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5,12A2.5,2.5 0 0,0 19,9.5A2.5,2.5 0 0,0 16.5,7A2.5,2.5 0 0,0 14,9.5A2.5,2.5 0 0,0 16.5,12M9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,13.24 19.62,14.4 19,15.41L15.41,19C14.4,19.62 13.24,20 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
               </div>
-          ) : (
-              // Closed State - Floating Action Button
-              <button
-                  onClick={() => setIsOpen(true)}
-                  className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-primary-dark transition-all duration-300 transform hover:scale-110"
-                  aria-label="Abrir asistente de chat"
-              >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5,12A2.5,2.5 0 0,0 19,9.5A2.5,2.5 0 0,0 16.5,7A2.5,2.5 0 0,0 14,9.5A2.5,2.5 0 0,0 16.5,12M9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,13.24 19.62,14.4 19,15.41L15.41,19C14.4,19.62 13.24,20 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
-              </button>
-          )}
+              <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-background"></span>
+            </div>
+            <div>
+              <h3 className="font-bold text-text-main text-sm">EcoBot</h3>
+              <p className="text-xs text-text-secondary">En línea</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+             <button onClick={handleClearChat} className="p-1.5 text-text-secondary hover:text-primary transition-colors rounded-full" aria-label="Limpiar chat"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.186A1.001 1.001 0 0116.05 8.5A5.002 5.002 0 006.05 8.5a1 1 0 01-2 0 7.002 7.002 0 0110.198-4.95A1 1 0 1115 5.5a5.002 5.002 0 00-9.05 3.5 1 1 0 01-2 0A7.002 7.002 0 015 5.101V7a1 1 0 01-2 0V3a1 1 0 011-1zm12 11a1 1 0 01-1 1v2.101a7.002 7.002 0 01-11.898-2.186A1.001 1.001 0 013.95 11.5a5.002 5.002 0 009.05-3.5 1 1 0 012 0 7.002 7.002 0 01-10.198 4.95A1 1 0 115 14.5a5.002 5.002 0 009.05-3.5 1 1 0 012 0 7.002 7.002 0 01-1.802 4.95V18a1 1 0 01-2 0v-3a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
+            <button onClick={() => setIsOpen(false)} className="p-1.5 text-text-secondary hover:text-primary transition-colors rounded-full" aria-label="Cerrar chat"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
+          </div>
+        </header>
+        
+        <ChatHistory ref={chatHistoryRef} messages={messages} isLoading={isLoading} onSendMessage={handleSendMessage} />
+        
+        <footer className="p-4 border-t border-white/10 flex-shrink-0">
+          <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} injectBotMessage={injectBotMessage} />
+        </footer>
       </div>
     </>
   );

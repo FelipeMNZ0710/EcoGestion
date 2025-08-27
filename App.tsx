@@ -103,7 +103,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50">
+    <div>
         <Layout 
           currentPage={currentPage} 
           setCurrentPage={setCurrentPage}

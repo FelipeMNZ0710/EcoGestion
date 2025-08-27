@@ -171,10 +171,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, injectB
     <div>
         {image && (
             <div className="relative inline-block mb-2 animate-scale-in">
-                <img src={image.preview} alt="Vista previa" className="h-20 w-20 object-cover rounded-lg border-2 border-gray-300" />
+                <img src={image.preview} alt="Vista previa" className="h-20 w-20 object-cover rounded-lg border-2 border-slate-500" />
                 <button 
                     onClick={removeImage} 
-                    className="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold hover:bg-red-500 transition-colors"
+                    className="absolute -top-2 -right-2 bg-slate-700 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold hover:bg-red-500 transition-colors"
                     aria-label="Quitar imagen"
                 >
                     &times;
@@ -187,7 +187,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, injectB
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="flex-shrink-0 p-2 text-gray-500 hover:text-primary disabled:opacity-50 transition-colors rounded-full hover:bg-gray-100"
+                className="flex-shrink-0 p-2 text-text-secondary hover:text-primary disabled:opacity-50 transition-colors rounded-full hover:bg-white/10"
                 aria-label="Adjuntar imagen"
                 title="Adjuntar imagen"
             >
@@ -197,7 +197,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, injectB
                 type="button"
                 onClick={handleMicClick}
                 disabled={isLoading}
-                className={`flex-shrink-0 p-2 text-gray-500 hover:text-primary disabled:opacity-50 transition-colors rounded-full hover:bg-gray-100 ${isListening ? 'mic-listening' : ''}`}
+                className={`flex-shrink-0 p-2 text-text-secondary hover:text-primary disabled:opacity-50 transition-colors rounded-full hover:bg-white/10 ${isListening ? '!text-red-500' : ''}`}
                 aria-label="Usar micrófono"
                 title="Usar micrófono"
             >
@@ -209,13 +209,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, injectB
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Escribe o adjunta una foto..."
                 disabled={isLoading}
-                className="flex-1 w-full px-4 py-2 text-gray-800 bg-gray-100 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-shadow"
+                className="flex-1 w-full px-4 py-2 text-text-main bg-background border border-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-shadow"
                 aria-label="Mensaje de chat"
             />
             <button
                 type="submit"
                 disabled={isLoading || (!inputText.trim() && !image)}
-                className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 text-white bg-primary rounded-full hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 text-white bg-primary rounded-full hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
                 aria-label="Enviar mensaje"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

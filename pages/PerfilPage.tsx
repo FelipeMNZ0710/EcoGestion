@@ -86,7 +86,7 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
     return (
         <>
             <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => setIsAchievementsModalOpen(false)} user={user} />
-            <div className="bg-slate-100 min-h-[calc(100vh-80px)] p-4 sm:p-6 lg:p-8">
+            <div className="bg-background min-h-[calc(100vh-80px)] p-4 sm:p-6 lg:p-8">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <aside className="lg:col-span-1 animate-fade-in-up">
@@ -115,13 +115,13 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
                                 </div>
                                 <div className="profile-info">
                                     <div className="profile-name">{isEditing ? <input type="text" name="name" value={editedUser.name} onChange={handleInputChange} className="form-input-inline" /> : editedUser.name}</div>
-                                    <div className="profile-title">{isEditing ? <input type="text" name="title" value={editedUser.title} onChange={handleInputChange} className="form-input-inline" /> : editedUser.title}</div>
-                                    <div className="profile-bio">{isEditing ? <textarea name="bio" value={editedUser.bio} onChange={handleInputChange} className="form-input-inline" rows={3}></textarea> : editedUser.bio}</div>
+                                    <div className="profile-title">{isEditing ? <input type="text" name="title" value={editedUser.title || ''} onChange={handleInputChange} className="form-input-inline" /> : editedUser.title}</div>
+                                    <div className="profile-bio">{isEditing ? <textarea name="bio" value={editedUser.bio || ''} onChange={handleInputChange} className="form-input-inline" rows={3}></textarea> : editedUser.bio}</div>
                                     
                                     {!isEditing && (
                                         <div className="social-links">
-                                            <SocialButton platform="twitter" url={editedUser.socials?.twitter}><svg viewBox="0 0 24 24"><path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84 0 0 0 .497-3.753C20.18 7.773 21.692 5.25 22 4.009z"></path></svg></SocialButton>
-                                            <SocialButton platform="instagram" url={editedUser.socials?.instagram}><svg viewBox="0 0 24 24"><path d="M16.98 0a6.9 6.9 0 0 1 5.08 1.98A6.94 6.94 0 0 1 24 7.02v9.96c0 2.08-.68 3.87-1.98 5.13A7.14 7.14 0 0 1 16.94 24H7.06a7.06 7.06 0 0 1-5.03-1.89A6.96 6.96 0 0 1 0 16.94V7.02C0 2.8 2.8 0 7.02 0h9.96zm.05 2.23H7.06c-1.45 0-2.7.43-3.53 1.25a4.82 4.82 0 0 0-1.3 3.54v9.92c0 1.5.43 2.7 1.3 3.58a5 5 0 0 0 3.53 1.25h9.88a5 5 0 0 0 3.53-1.25 4.73 4.73 0 0 0 1.4-3.54V7.02a5 5 0 0 0-1.3-3.49 4.82 4.82 0 0 0-3.54-1.3zM12 5.76c3.39 0 6.2 2.8 6.2 6.2a6.2 6.2 0 0 1-12.4 0 6.2 6.2 0 0 1 6.2-6.2zm0 2.22a3.99 3.99 0 0 0-3.97 3.97A3.99 3.99 0 0 0 12 15.92a3.99 3.99 0 0 0 3.97-3.97A3.99 3.99 0 0 0 12 7.98z"></path></svg></SocialButton>
+                                            <SocialButton platform="twitter" url={editedUser.socials?.twitter}><svg viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg></SocialButton>
+                                            <SocialButton platform="instagram" url={editedUser.socials?.instagram}><svg viewBox="0 0 24 24"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.314.935 20.644.523 19.854.218 19.09.083 18.22.015 16.947 0 15.667 0 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.06 1.17-.249 1.805-.413 2.227a3.48 3.48 0 0 1-.896 1.382c-.42.419-.82.679-1.38.896-.423.164-1.057.36-2.227.413-1.266.057-1.646.07-4.85.07s-3.585-.015-4.85-.07c-1.17-.06-1.805-.249-2.227-.413a3.493 3.493 0 0 1-1.382-.896c-.42-.42-.679-.82-.896-1.38a3.37 3.37 0 0 1-.413-2.227c-.057-1.266-.07-1.646-.07-4.85s.015-3.585.07-4.85c.06-1.17.249-1.805.413-2.227.217-.562.477-.96.896-1.382.42-.419.819-.679 1.381-.896.422-.164 1.057-.36 2.227-.413C8.415 2.18 8.797 2.16 12 2.16zm0 5.48c-3.12 0-5.64 2.52-5.64 5.64s2.52 5.64 5.64 5.64 5.64-2.52 5.64-5.64-2.52-5.64-5.64-5.64zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm6.406-11.845a1.44 1.44 0 1 1 0 2.88 1.44 1.44 0 0 1 0-2.88z"/></svg></SocialButton>
                                             <SocialButton platform="linkedin" url={editedUser.socials?.linkedin}><svg viewBox="0 0 24 24"><path d="M22.23 0H1.77C.8 0 0 .8 0 1.77v20.46C0 23.2.8 24 1.77 24h20.46c.98 0 1.77-.8 1.77-1.77V1.77C24 .8 23.2 0 22.23 0zM7.27 20.1H3.65V9.24h3.62V20.1zM5.47 7.76h-.03c-1.22 0-2-.83-2-1.87 0-1.06.8-1.87 2.05-1.87 1.24 0 2 .8 2.02 1.87 0 1.04-.78 1.87-2.05 1.87zM20.34 20.1h-3.63v-5.8c0-1.45-.52-2.45-1.83-2.45-1 0-1.6.67-1.87 1.32-.1.23-.11.55-.11.88v6.05H9.28s.05-9.82 0-10.84h3.63v1.54a3.6 3.6 0 0 1 3.26-1.8c2.39 0 4.18 1.56 4.18 4.89v6.21z"></path></svg></SocialButton>
                                         </div>
                                     )}
@@ -146,10 +146,10 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
 
                             <div className="modern-card p-6">
                                 <h3 className="text-xl font-bold text-text-main mb-4">Progreso de Logros</h3>
-                                <div className="w-full bg-slate-200 rounded-full h-2.5 mb-4"><div className="bg-secondary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+                                <div className="w-full bg-surface rounded-full h-2.5 mb-4"><div className="bg-secondary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
                                 <h4 className="font-semibold text-text-main mb-3">Últimos Desbloqueados:</h4>
                                 <ul className="space-y-3">
-                                    {latestUnlocked.map(ach => (<li key={ach.id} className="flex items-center"><div className="text-2xl mr-4 w-8 h-8 flex items-center justify-center bg-emerald-100 rounded-full">{ach.icon}</div><div><p className="font-semibold text-text-main">{ach.name}</p><p className="text-sm text-text-secondary">{ach.description}</p></div></li>))}
+                                    {latestUnlocked.map(ach => (<li key={ach.id} className="flex items-center"><div className="text-2xl mr-4 w-8 h-8 flex items-center justify-center bg-emerald-500/20 text-emerald-300 rounded-full">{ach.icon}</div><div><p className="font-semibold text-text-main">{ach.name}</p><p className="text-sm text-text-secondary">{ach.description}</p></div></li>))}
                                     {latestUnlocked.length === 0 && <p className="text-text-secondary text-sm">¡Sigue participando para desbloquear tu primer logro!</p>}
                                 </ul>
                             </div>

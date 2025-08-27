@@ -3,130 +3,112 @@ import type { User } from '../types';
 import { allAchievements } from '../data/achievementsData';
 
 // SVGs as components for cleanliness
-const EmailIcon = () => <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg" fill="currentColor" className="text-slate-400"><g id="Layer_3" data-name="Layer 3"><path d="m30.853 13.87a15 15 0 0 0 -29.729 4.082 15.1 15.1 0 0 0 12.876 12.918 15.6 15.6 0 0 0 2.016.13 14.85 14.85 0 0 0 7.715-2.145 1 1 0 1 0 -1.031-1.711 13.007 13.007 0 1 1 5.458-6.529 2.149 2.149 0 0 1 -4.158-.759v-10.856a1 1 0 0 0 -2 0v1.726a8 8 0 1 0 .2 10.325 4.135 4.135 0 0 0 7.83.274 15.2 15.2 0 0 0 .823-7.455zm-14.853 8.13a6 6 0 1 1 6-6 6.006 6.006 0 0 1 -6 6z"></path></g></svg>;
-const PasswordIcon = () => <svg height="20" viewBox="-64 0 512 512" width="20" xmlns="http://www.w3.org/2000/svg" fill="currentColor" className="text-slate-400"><path d="m336 512h-288c-26.453125 0-48-21.523438-48-48v-224c0-26.476562 21.546875-48 48-48h288c26.453125 0 48 21.523438 48 48v224c0 26.476562-21.546875 48-48 48zm-288-288c-8.8125 0-16 7.167969-16 16v224c0 8.832031 7.1875 16 16 16h288c8.8125 0 16-7.167969 16-16v-224c0-8.832031-7.1875-16-16-16zm0 0"></path><path d="m304 224c-8.832031 0-16-7.167969-16-16v-80c0-52.929688-43.070312-96-96-96s-96 43.070312-96 96v80c0 8.832031-7.167969 16-16 16s-16-7.167969-16-16v-80c0-70.59375 57.40625-128 128-128s128 57.40625 128 128v80c0 8.832031-7.167969 16-16 16zm0 0"></path></svg>;
+const EmailIcon = () => <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg" className="text-text-secondary"><path d="m31.71 7.29-14-5a1 1 0 0 0-.58 0l-14 5A1 1 0 0 0 3 8v16a1 1 0 0 0 .71.95l14 5a1 1 0 0 0 .58 0l14-5A1 1 0 0 0 31 24V8a1 1 0 0 0-.29-.71ZM17 19.83V29l12-4.28V10.54Zm-2-10.12L27.64 5l-12.28 4.38-12.64-4.51L15 9.71ZM5 10.54v14.17L15 29V19.83L3.36 5Z" data-name="Layer 47" id="Layer_47"></path></svg>;
+const PasswordIcon = () => <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg" className="text-text-secondary"><path d="M22 13h-2v-4a4 4 0 0 0-8 0v4H9a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V14a1 1 0 0 0-1-1zm-11-4a3 3 0 0 1 6 0v4h-6zM22 24H10V15h12z"></path><circle cx="16" cy="20" r="2"></circle></svg>;
+const UserIcon = () => <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg" className="text-text-secondary"><path d="M16 16A5 5 0 1 0 11 11a5 5 0 0 0 5 5zm0-8a3 3 0 1 1-3 3 3 3 0 0 1 3-3zM16 2a14 14 0 1 0 14 14A14 14 0 0 0 16 2zm0 26a12 12 0 1 1 12-12 12 12 0 0 1-12 12zm8.59 2.59-3.32-3.32A7 7 0 0 0 16 20a7 7 0 0 0-5.27 2.27l-3.32 3.32A11.91 11.91 0 0 1 4 18a12 12 0 0 1 24 0 11.91 11.91 0 0 1-3.41 7.59z"></path></svg>;
 
 interface LoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onLogin: (user: User) => void;
+    isOpen: boolean;
+    onClose: () => void;
+    onLogin: (user: User | null) => void;
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
-    const [isRegister, setIsRegister] = useState(false);
+    const [isExiting, setIsExiting] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [name, setName] = useState(''); // for registration
-    const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+    const [name, setName] = useState('');
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        if (isOpen) {
-            setIsAnimatingOut(false);
-        }
-    }, [isOpen]);
-    
-    const handleClose = () => {
-        setIsAnimatingOut(true);
-        setTimeout(() => {
-            onClose();
-            // Reset form for next time
+        if (!isOpen) {
+            setError('');
             setEmail('');
             setPassword('');
             setName('');
-            setIsRegister(false);
-        }, 300); // Match animation duration
+            setIsRegistering(false);
+        }
+    }, [isOpen]);
+
+    const handleClose = () => {
+        setIsExiting(true);
+        setTimeout(() => {
+            setIsExiting(false);
+            onClose();
+        }, 300);
     };
 
-    const handleFormSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const lowerCaseEmail = email.toLowerCase();
-        const isAdmin = ['felipe@example.com', 'admin@ecogestion.com', 'felipemonzon0710@gmail.com'].includes(lowerCaseEmail);
-        
-        let userName = name; // From registration form
-        if (!isRegister) { // This is a login attempt
-            if (lowerCaseEmail === 'felipemonzon0710@gmail.com') {
-                userName = 'Felipe Monzón';
-            } else if (isAdmin) {
-                userName = 'Admin';
-            } else {
-                userName = 'Eco Miembro';
+        setError('');
+
+        if (isRegistering) {
+            if (!name.trim()) {
+                setError('Por favor, ingresa tu nombre.');
+                return;
             }
         }
         
-        onLogin({
-          id: `user-${Date.now()}`,
-          name: userName,
-          email: email,
-          points: isRegister ? 0 : 1250,
-          isAdmin: isAdmin,
-          achievements: allAchievements.map(ach => ({
-              ...ach,
-              unlocked: isRegister ? false : (isAdmin ? true : ['1', '2'].includes(ach.id)),
-          })),
-          stats: {
-              messagesSent: isRegister ? 0 : 12,
-              pointsVisited: isRegister ? 0 : 3,
-              reportsMade: isRegister ? 0 : 1,
-              dailyLogins: isRegister ? 0 : 5,
-              completedQuizzes: [],
-              quizzesCompleted: 0,
-              gamesPlayed: 0,
-          },
-          favoriteLocations: [],
-          lastLogin: '2024-01-01',
-          // Initialize new customizable fields
-          bannerUrl: '',
-          profilePictureUrl: '',
-          title: isRegister ? 'Eco-Entusiasta' : 'Guardián del Reciclaje',
-          bio: isRegister ? '¡Nuevo en la comunidad! Aprendiendo a reciclar.' : 'Comprometido con una Formosa más limpia.',
-          socials: { twitter: '', instagram: '', linkedin: '' }
-        });
+        // Mock Login/Register Logic
+        const defaultUser: User = {
+            id: '123',
+            name: isRegistering ? name : 'Rolón Sergio Agustín',
+            email: email,
+            points: 1250,
+            isAdmin: email.includes('admin'),
+            achievements: allAchievements.map(ach => ({ ...ach, unlocked: false })),
+            stats: { messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 0, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0 },
+            lastLogin: new Date().toISOString().split('T')[0],
+            bannerUrl: 'https://images.unsplash.com/photo-1549605656-1596705599a4?q=80&w=800&auto=format&fit=crop',
+            profilePictureUrl: '',
+            title: 'Reciclador Entusiasta',
+            bio: 'Apasionado por la ecología y el futuro de nuestro planeta. Siempre buscando formas de reducir mi huella de carbono.',
+            socials: { twitter: '#', instagram: '#', linkedin: '#' }
+        };
+
+        onLogin(defaultUser);
         handleClose();
     };
 
-    if (!isOpen) return null;
+    if (!isOpen && !isExiting) return null;
 
     return (
-        <div className={`login-modal-backdrop ${isAnimatingOut ? 'exiting' : ''}`} onClick={handleClose}>
-            <div className={`login-modal-content ${isAnimatingOut ? 'exiting' : ''}`} onClick={e => e.stopPropagation()}>
-                <form className="form" onSubmit={handleFormSubmit}>
-                    <h2 className="text-2xl font-bold text-center text-text-main mb-4">{isRegister ? 'Crear Cuenta' : 'Iniciar Sesión'}</h2>
-
-                    {isRegister && (
-                        <>
-                            <div className="flex-column"><label>Nombre</label></div>
-                            <div className="inputForm">
-                                <input type="text" className="input" placeholder="Ingresa tu nombre" value={name} onChange={e => setName(e.target.value)} required />
-                            </div>
-                        </>
+        <div className={`login-modal-backdrop ${isExiting ? 'exiting' : ''}`} onClick={handleClose}>
+            <div className={`login-modal-content ${isExiting ? 'exiting' : ''}`} onClick={e => e.stopPropagation()}>
+                <div className="text-right p-2">
+                     <button onClick={handleClose} className="text-3xl leading-none px-2 text-text-secondary hover:text-text-main rounded-full transition-colors">&times;</button>
+                </div>
+                <h3 className="text-3xl font-bold font-display text-center text-text-main mb-6">
+                    {isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}
+                </h3>
+                <form className="form" onSubmit={handleSubmit}>
+                    {isRegistering && (
+                        <div className="inputForm">
+                            <UserIcon />
+                            <input type="text" className="input" placeholder="Nombre Completo" value={name} onChange={e => setName(e.target.value)} />
+                        </div>
                     )}
-
-                    <div className="flex-column"><label>Email</label></div>
                     <div className="inputForm">
                         <EmailIcon />
-                        <input type="email" className="input" placeholder="Ingresa tu Email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="email" className="input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
                     </div>
-                
-                    <div className="flex-column"><label>Contraseña</label></div>
                     <div className="inputForm">
                         <PasswordIcon />
-                        <input type="password" className="input" placeholder="Ingresa tu Contraseña" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <input type="password" className="input" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} />
                     </div>
-                
-                    <div className="flex-row">
-                        <div>
-                            <input type="checkbox" id="rememberMe" />
-                            <label htmlFor="rememberMe" className="ml-2"> Recordarme</label>
+                    {!isRegistering && (
+                        <div className="flex-row">
+                            <label><input type="checkbox" /> Recordarme</label>
+                            <button type="button" className="span">¿Olvidaste tu contraseña?</button>
                         </div>
-                        <button type="button" className="span">¿Olvidaste tu contraseña?</button>
-                    </div>
-
-                    <button type="submit" className="button-submit">{isRegister ? 'Registrarse' : 'Ingresar'}</button>
-                    
+                    )}
+                    {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
+                    <button type="submit" className="button-submit">{isRegistering ? 'Registrarse' : 'Iniciar Sesión'}</button>
                     <p className="p">
-                        {isRegister ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'}
-                        <button type="button" className="span" onClick={() => setIsRegister(!isRegister)}>
-                            {isRegister ? 'Ingresar' : 'Registrarse'}
+                        {isRegistering ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'}
+                        <button type="button" onClick={() => setIsRegistering(!isRegistering)} className="span ml-1">
+                            {isRegistering ? 'Inicia Sesión' : 'Regístrate'}
                         </button>
                     </p>
                 </form>

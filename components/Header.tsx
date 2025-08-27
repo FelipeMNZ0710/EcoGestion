@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Page, User } from '../types';
 import { navigationData } from '../data/navigationData';
 import LoginModal from './LoginModal';
@@ -12,204 +12,149 @@ interface HeaderProps {
   setIsAdminMode: (isActive: boolean) => void;
 }
 
-const iconProps = {
-  fill: "currentColor",
-  viewBox: "0 0 256 256",
-};
+const BigMenu: React.FC<{
+  isOpen: boolean;
+  user: User | null;
+  onNavClick: (page: Page) => void;
+}> = ({ isOpen, user, onNavClick }) => {
+    const [activeBg, setActiveBg] = useState(navigationData[0].page);
+    
+    const menuImages: Record<string, string> = {
+        'home': 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop',
+        'como-reciclar': 'https://images.unsplash.com/photo-1599378249363-233f283d8234?q=80&w=800&auto=format&fit=crop',
+        'puntos-verdes': 'https://images.unsplash.com/photo-1517009336183-50f2886216ec?q=80&w=800&auto=format&fit=crop',
+        'juegos': 'https://images.unsplash.com/photo-1566576912321-d58674a27524?q=80&w=800&auto=format&fit=crop',
+        'noticias': 'https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=800&auto=format&fit=crop',
+        'comunidad': 'https://images.unsplash.com/photo-1520095972714-EA196d4078d8?q=80&w=800&auto=format&fit=crop',
+        'contacto': 'https://images.unsplash.com/photo-1596524430615-b46475ddff6e?q=80&w=800&auto=format&fit=crop',
+        'perfil': 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=800&auto=format&fit=crop',
+    };
 
-const iconPathProps = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeLinecap: "round",
-  strokeLinejoin: "round",
-  strokeWidth: "16",
-} as const;
+    const navLinks = user ? navigationData : navigationData.filter(link => link.page !== 'perfil');
 
-const iconMap: Record<string, JSX.Element> = {
-  home: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M213.3815,109.61945,133.376,36.88436a8,8,0,0,0-10.76339.00036l-79.9945,72.73477A8,8,0,0,0,40,115.53855V208a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8V115.53887A8,8,0,0,0,213.3815,109.61945Z" {...iconPathProps} /></svg>,
-  'como-reciclar': <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M176,80h40a8,8,0,0,1,6.54,12.28l-24,36A8,8,0,0,1,192,136H144l32-48A8,8,0,0,1,176,80ZM80,176H40a8,8,0,0,1-6.54-12.28l24-36A8,8,0,0,1,64,120h48L80,168A8,8,0,0,1,80,176Zm88-48h40a8,8,0,0,0,6.54-12.28l-24-36A8,8,0,0,0,184,72H136l32,48A8,8,0,0,0,168,128Z" {...iconPathProps} /></svg>,
-  'puntos-verdes': <svg {...iconProps}><rect width="256" height="256" fill="none" /><circle cx="128" cy="104" r="72" {...iconPathProps} /><path d="M183.5658,199.87543a111.9983,111.9983,0,0,1-111.1316,0" {...iconPathProps} /><path d="M208,224l-30.68652-30.70215" {...iconPathProps} /></svg>,
-  juegos: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M82.14214,197.45584,52.201,227.397a8,8,0,0,1-11.31371,0L28.603,215.11268a8,8,0,0,1,0-11.31371l29.94113-29.94112a8,8,0,0,0,0-11.31371L37.65685,141.65685a8,8,0,0,1,0-11.3137l12.6863-12.6863a8,8,0,0,1,11.3137,0l76.6863,76.6863a8,8,0,0,1,0,11.3137l-12.6863,12.6863a8,8,0,0,1-11.3137,0L93.45584,197.45584A8,8,0,0,0,82.14214,197.45584Z" {...iconPathProps} /><polyline points="76.201 132.201 152.201 40.201 216 40 215.799 103.799 123.799 179.799" {...iconPathProps} /></svg>,
-  noticias: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M216,40H40A16,16,0,0,0,24,56V216a8,8,0,0,0,16,0V56H216a8,8,0,0,1,0,16H160a24,24,0,0,0-24,24v88a24,24,0,0,0,24,24h56a8,8,0,0,1,0,16H40a16,16,0,0,0-16,16v0a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Z" {...iconPathProps} /></svg>,
-  comunidad: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M45.42853,176.99811A95.95978,95.95978,0,1,1,79.00228,210.5717l.00023-.001L45.84594,220.044a8,8,0,0,1-9.89-9.89l9.47331-33.15657Z" {...iconPathProps} /></svg>,
-  contacto: <svg {...iconProps}><rect width="256" height="256" fill="none" /><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-8,144H40V74.19629l82.59375,55.0625a8.00008,8.00008,0,0,0,9.40625,0L216,74.19629V192Z" {...iconPathProps} /></svg>,
-  perfil: <svg {...iconProps}><rect width="256" height="256" fill="none" /><circle cx="128" cy="96" r="64" {...iconPathProps} strokeMiterlimit="10" /><path d="M30.989,215.99064a112.03731,112.03731,0,0,1,194.02311.002" {...iconPathProps} /></svg>,
-};
-
-
-const AdminModeToggle: React.FC<{
-  isAdminMode: boolean;
-  setIsAdminMode: (isActive: boolean) => void;
-}> = ({ isAdminMode, setIsAdminMode }) => (
-    <div className="flex items-center space-x-2">
-        <span className={`text-xs font-bold ${isAdminMode ? 'text-accent' : 'text-text-secondary'}`}>Modo Admin</span>
-        <label htmlFor="admin-toggle" className="custom-toggle-label">
-            <input
-                id="admin-toggle"
-                type="checkbox"
-                className="custom-toggle-input"
-                checked={isAdminMode}
-                onChange={(e) => setIsAdminMode(e.target.checked)}
-            />
-            <div className="custom-toggle-track">
-                <div className="custom-toggle-thumb"></div>
+    return (
+        <div className={`big-menu ${isOpen ? 'active' : ''}`}>
+            <div className="big-menu-bg">
+                {Object.entries(menuImages).map(([page, url]) => (
+                    <div key={page} className={`image ${activeBg === page ? 'active' : ''}`} style={{ backgroundImage: `url(${url})` }}></div>
+                ))}
             </div>
-        </label>
-    </div>
-);
+            <div className="relative w-full h-full flex items-center justify-center text-center">
+                <div className="flex flex-col h-full p-8 md:p-12">
+                    <nav className="main-menu my-auto">
+                        <ul>
+                            {navLinks.map(({ page, title }) => (
+                                <li key={page} onMouseEnter={() => setActiveBg(page)}>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); onNavClick(page); }}>{title}</a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                    <div className="menu-socials flex justify-center items-center gap-6 mt-auto">
+                        <a href="#" aria-label="Instagram"><svg className="w-6 h-6" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>Instagram</title><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.314.935 20.644.523 19.854.218 19.09.083 18.22.015 16.947 0 15.667 0 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.06 1.17-.249 1.805-.413 2.227a3.48 3.48 0 0 1-.896 1.382c-.42.419-.82.679-1.38.896-.423.164-1.057.36-2.227.413-1.266.057-1.646.07-4.85.07s-3.585-.015-4.85-.07c-1.17-.06-1.805-.249-2.227-.413a3.493 3.493 0 0 1-1.382-.896c-.42-.42-.679-.82-.896-1.38a3.37 3.37 0 0 1-.413-2.227c-.057-1.266-.07-1.646-.07-4.85s.015-3.585.07-4.85c.06-1.17.249-1.805.413-2.227.217-.562.477-.96.896-1.382.42-.419.819-.679 1.381-.896.422-.164 1.057-.36 2.227-.413C8.415 2.18 8.797 2.16 12 2.16zm0 5.48c-3.12 0-5.64 2.52-5.64 5.64s2.52 5.64 5.64 5.64 5.64-2.52 5.64-5.64-2.52-5.64-5.64-5.64zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm6.406-11.845a1.44 1.44 0 1 1 0 2.88 1.44 1.44 0 0 1 0-2.88z"/></svg></a>
+                        <a href="#" aria-label="Twitter"><svg className="w-6 h-6" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>X</title><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg></a>
+                        <a href="#" aria-label="WhatsApp"><svg className="w-6 h-6" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>WhatsApp</title><path d="M19.11 4.91A9.81 9.81 0 0 0 12.008.02C6.077.02 1.252 4.92 1.252 11.12c0 1.99.51 3.86 1.45 5.54L1.2 22.99l6.53-1.74c1.61.88 3.39 1.36 5.26 1.36 5.93 0 10.75-4.9 10.75-11.11a9.78 9.78 0 0 0-5.63-9.58zM12 20.45c-1.73 0-3.39-.45-4.83-1.25l-.35-.2-3.58.95.97-3.48-.22-.37c-.85-1.48-1.3-3.15-1.3-4.94 0-5.18 4.11-9.4 9.17-9.4s9.17 4.22 9.17 9.4c0 5.18-4.1 9.4-9.17 9.4zm5.5-7.3c-.28-.14-1.63-.8-1.88-.89-.25-.09-.43-.14-.61.14-.18.28-.71.89-.87 1.08-.16.19-.32.21-.6.07-.28-.14-1.18-.43-2.25-1.38-1.07-.95-1.79-2.13-2-2.49-.21-.36-.02-.55.12-.68.12-.12.28-.32.41-.48.14-.17.18-.28.28-.46.09-.18.05-.35-.02-.49-.07-.14-.61-1.45-.83-1.98-.23-.53-.47-.45-.65-.45h-.58c-.18 0-.47.07-.7.35-.23.28-.87.84-.87 2.05 0 1.21.89 2.37 1.01 2.55.12.18 1.75 2.63 4.24 3.73 2.49 1.1 2.49.73 2.93.7.44-.02 1.63-.67 1.86-1.32.23-.65.23-1.2.16-1.32-.07-.12-.25-.2-.53-.34z"/></svg></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setUser, isAdminMode, setIsAdminMode }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsHeaderScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleNavClick = (page: Page) => {
     setCurrentPage(page);
-    setIsMobileMenuOpen(false);
+    setIsMenuOpen(false);
   };
   
   const handleOpenLoginModal = () => {
       setIsLoginModalOpen(true);
-      setIsMobileMenuOpen(false);
+      setIsMenuOpen(false);
   };
   
   const handleLogout = () => {
       setUser(null);
-      setIsMobileMenuOpen(false);
+      setIsMenuOpen(false);
+      // Navigate to home on logout if on a user-only page
+      if (currentPage === 'perfil') {
+          setCurrentPage('home');
+      }
   }
-
-  const AuthButtons: React.FC<{isMobile?: boolean}> = ({ isMobile }) => {
-    if (user) {
-        return (
-            <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'space-x-4'}`}>
-                 {user.isAdmin && !isMobile && <AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} />}
-                <button
-                    onClick={handleLogout}
-                    className="px-3 py-2 text-sm font-semibold text-red-600 bg-red-100 rounded-full hover:bg-red-200 transition-colors"
-                >
-                    Cerrar Sesión
-                </button>
-            </div>
-        )
-    }
-    return (
-        <button
-            onClick={handleOpenLoginModal}
-            className={`px-4 py-2 text-sm font-semibold text-white bg-primary rounded-full hover:bg-primary-dark transition-transform duration-200 hover:scale-105 ${isMobile ? 'w-full' : ''}`}
-        >
-            Iniciar Sesión
-        </button>
-    )
-  }
-
-  const baseNavLinks = navigationData.map(item => ({
-    ...item,
-    icon: iconMap[item.page],
-  }));
-
-  const navLinks = user
-    ? baseNavLinks
-    : baseNavLinks.filter(link => link.page !== 'perfil');
-  
-  const userSpecificLinks = user 
-    ? [{ page: 'perfil' as Page, title: 'Perfil', description: 'Tu perfil de usuario', icon: iconMap['perfil'] }]
-    : [];
 
   return (
     <>
-    <header className="main-header bg-background/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('home'); }} className="flex items-center space-x-2 flex-shrink-0" aria-label="Página de inicio de EcoGestión">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12.88 7.43A2 2 0 0 0 11 6.15V4a1 1 0 0 0-2 0v2.15a2 2 0 0 0-1.88 1.28C4.53 8.3 3 10.91 3 14h18c0-3.09-1.53-5.7-4.12-6.57zM5.51 16c.32-1.63 1.42-3 2.9-3.66l.33-.14.15-.33c.4-1.04 1.39-1.77 2.6-1.86a.5.5 0 0 1 .51.5v.05c0 1.23-.9 2.25-2.12 2.37L9 13.01a.5.5 0 0 1-.49-.58l.12-.5c.21-.83.6-1.58 1.13-2.19l.01-.01c.21-.24.4-.38.53-.41a.5.5 0 0 1 .58.41l.01.12V11.5a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h.19c.13 0 .25.06.34.16l.1.13c.18.23.33.5.45.79l.13.3c.04.1.06.2.06.31v.9l-.02.26-.2.13c-.8.54-1.4 1.34-1.66 2.28H5.51zM6 18h12v2H6v-2z" />
-            </svg>
-            <span className="text-2xl font-bold text-text-main">EcoGestión</span>
-          </a>
+      <header className={`main-header ${isHeaderScrolled ? 'scrolled' : ''} ${isMenuOpen ? 'menu-open' : ''}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-20">
+                <div id="hamburger" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                    <div className="bars">
+                        <div className="bar"></div>
+                        <div className="bar"></div>
+                        <div className="bar"></div>
+                    </div>
+                    <div className="label">
+                        <div className="innerLabel">Menu</div>
+                        <div className="innerLabel">Cerrar</div>
+                    </div>
+                </div>
 
-          {/* Spacer */}
-          <div className="flex-1"></div>
+                <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('home'); }} className="absolute left-1/2 -translate-x-1/2" aria-label="Página de inicio de EcoGestión">
+                    <svg className="h-6 text-white" viewBox="0 0 162 19" xmlns="http://www.w3.org/2000/svg">
+                        <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontFamily="Oswald, sans-serif" fontSize="18" fill="currentColor" letterSpacing="1">
+                            ECOGESTIÓN
+                        </text>
+                    </svg>
+                </a>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center">
-            <div className="menu">
-              {navLinks.map(({ page, title, icon }) => (
-                <a
-                  key={page}
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
-                  className={`link ${currentPage === page ? 'active' : ''}`}
-                  aria-current={currentPage === page ? 'page' : undefined}
-                >
-                  <span className="link-icon">{icon}</span>
-                  <span className="link-title">{title}</span>
-                </a>
-              ))}
-               {user && userSpecificLinks.map(({ page, title, icon }) => (
-                <a
-                  key={page}
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
-                  className={`link ${currentPage === page ? 'active' : ''}`}
-                  aria-current={currentPage === page ? 'page' : undefined}
-                >
-                  <span className="link-icon">{icon}</span>
-                  <span className="link-title">{title}</span>
-                </a>
-              ))}
+                <div className="flex items-center gap-2">
+                    {user?.isAdmin && (
+                         <label htmlFor="admin-toggle" className="flex items-center cursor-pointer">
+                            <div className="relative">
+                                <input type="checkbox" id="admin-toggle" className="sr-only" checked={isAdminMode} onChange={() => setIsAdminMode(!isAdminMode)} />
+                                <div className="block bg-surface w-12 h-6 rounded-full"></div>
+                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isAdminMode ? 'transform translate-x-6 !bg-primary' : ''}`}></div>
+                            </div>
+                            <div className="ml-2 text-xs font-bold uppercase text-primary">Admin</div>
+                        </label>
+                    )}
+                    {user ? (
+                        <button className="relative w-11 h-[38px] header-icon" title="Cerrar Sesión" onClick={handleLogout}>
+                            <svg viewBox="0 0 60.68 52.87"><path className="background" d="m44.36,50.87h-28.03L2.31,26.43,16.33,2h28.03l14.02,24.43-14.02,24.43Z"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="absolute w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                        </button>
+                    ) : (
+                         <button className="relative w-11 h-[38px] header-icon" title="Iniciar Sesión" onClick={handleOpenLoginModal}>
+                            <svg viewBox="0 0 60.68 52.87"><path className="background" d="m44.36,50.87h-28.03L2.31,26.43,16.33,2h28.03l14.02,24.43-14.02,24.43Z"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="absolute w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 003 3h1a3 3 0 003-3v-1a3 3 0 00-3-3h-1a3 3 0 00-3 3zm-9-4v1a3 3 0 003 3h1a3 3 0 003-3v-1a3 3 0 00-3-3h-1a3 3 0 00-3 3z" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
             </div>
-            <div className="ml-6">
-                <AuthButtons />
-            </div>
-          </nav>
-          
-          <div className="flex items-center lg:hidden">
-            {/* Mobile Hamburger Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="hamburger p-2 rounded-md text-text-main hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-secondary"
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-menu"
-            >
-              <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-              </svg>
-            </button>
-          </div>
         </div>
-      </div>
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div id="mobile-menu" className="lg:hidden bg-background border-t border-slate-200 mobile-menu-animate">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <nav className="space-y-1">
-                {baseNavLinks.map(({ page, title, icon }) => (
-                <a
-                    key={page}
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); handleNavClick(page as Page); }}
-                    className={`flex items-center space-x-4 px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 ${currentPage === page ? 'bg-emerald-100 text-primary font-semibold' : 'text-text-secondary hover:bg-slate-100 hover:text-text-main'}`}
-                    aria-current={currentPage === page ? 'page' : undefined}
-                >
-                    <div className="h-6 w-6">{icon}</div>
-                    <span>{title}</span>
-                </a>
-                ))}
-            </nav>
-            <div className="pt-4 mt-4 border-t border-slate-200">
-                {user?.isAdmin && <div className="mb-4"><AdminModeToggle isAdminMode={isAdminMode} setIsAdminMode={setIsAdminMode} /></div>}
-                {user ? (
-                     <div className="space-y-2">
-                        <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }} className={`flex items-center space-x-4 px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 ${currentPage === 'perfil' ? 'bg-emerald-100 text-primary font-semibold' : 'text-text-secondary hover:bg-slate-100 hover:text-text-main'}`}><div className="h-6 w-6">{iconMap['perfil']}</div><span>Hola, {user.name.split(' ')[0]}</span></a>
-                        <AuthButtons isMobile={true}/>
-                     </div>
-                ) : <AuthButtons isMobile={true}/>}
-            </div>
-          </div>
-        </div>
-      )}
-    </header>
-    <LoginModal 
+      </header>
+      <BigMenu 
+        isOpen={isMenuOpen} 
+        user={user} 
+        onNavClick={handleNavClick}
+      />
+      <LoginModal 
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={setUser}
