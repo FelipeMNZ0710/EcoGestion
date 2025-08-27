@@ -88,12 +88,27 @@ export interface MaterialContentItem {
     icon: string; // Emoji
 }
 
+export interface ProcessStep {
+    step: number;
+    title: string;
+    description: string;
+    icon: string;
+}
+
+export interface ImpactStat {
+    stat: string;
+    value: string;
+    icon: string;
+}
+
 export interface MaterialContent {
     yes: MaterialContentItem[];
     no: MaterialContentItem[];
     tip: string;
     quiz: Quiz;
     commonMistakes: string[];
+    recyclingProcess: ProcessStep[];
+    impactStats: ImpactStat[];
 }
 
 export interface UserStats {
