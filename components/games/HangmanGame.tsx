@@ -88,7 +88,7 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
      useEffect(() => {
         if (maskedWord === word && word !== '') {
             setGameState('won');
-            onComplete();
+            setTimeout(onComplete, 1000);
         } else if (incorrectGuesses >= MAX_MISTAKES) {
             setGameState('lost');
         }
@@ -101,12 +101,12 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
 
     if (gameState !== 'playing') {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-4 sm:p-8 flex-col animate-fade-in-up">
+            <div className="w-full h-full flex items-center justify-center text-center p-4 sm:p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
                 <div className={`text-6xl mb-4 ${gameState === 'won' ? 'animate-bounce' : ''}`}>{gameState === 'won' ? '🎉' : '😥'}</div>
                 <h2 className="text-2xl font-bold text-text-main">{gameState === 'won' ? '¡Lo lograste!' : '¡Oh, no!'}</h2>
                 <p className="text-text-secondary mt-2">La palabra era: <strong className="text-primary">{word}</strong></p>
-                <div className="mt-4 p-4 bg-slate-200 rounded-lg text-sm text-text-main">
-                    <strong className="text-accent">Dato Curioso:</strong> {hint}
+                <div className="mt-4 p-4 bg-background rounded-lg text-sm text-text-secondary">
+                    <strong className="text-primary">Dato Curioso:</strong> {hint}
                 </div>
                 <button onClick={setupNewGame} className="mt-6 bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary-dark transition-colors">
                     {gameState === 'won' ? 'Jugar de Nuevo' : 'Volver a Intentar'}
@@ -116,19 +116,19 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
     }
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-around">
+        <div className="w-full h-full flex flex-col items-center justify-around bg-surface rounded-lg text-text-main">
             <SadPlanet mistakes={incorrectGuesses} />
             
             <div className="text-center">
                 <p className="text-sm text-text-secondary mb-2">Adivina la palabra:</p>
                 <div className="flex justify-center gap-2 text-2xl sm:text-4xl font-bold tracking-widest">
                     {maskedWord.split('').map((letter, index) => (
-                        <span key={index} className={`w-8 sm:w-12 h-12 sm:h-16 flex items-center justify-center border-b-4 ${letter === '_' ? 'border-slate-300' : 'border-primary'}`}>
+                        <span key={index} className={`w-8 sm:w-12 h-12 sm:h-16 flex items-center justify-center border-b-4 ${letter === '_' ? 'border-slate-700' : 'border-primary'}`}>
                             {letter !== '_' ? letter : ''}
                         </span>
                     ))}
                 </div>
-                <p className="text-sm text-accent mt-4 h-6">Pista: {hint}</p>
+                <p className="text-sm text-primary mt-4 h-6">Pista: {hint}</p>
             </div>
 
             <div className="grid grid-cols-7 sm:grid-cols-10 gap-1 sm:gap-2 p-2">
@@ -143,8 +143,8 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
                             disabled={isGuessed}
                             className={`w-9 h-9 sm:w-10 sm:h-10 font-bold rounded-md transition-all duration-200
                                 ${isGuessed 
-                                    ? (isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white opacity-70')
-                                    : 'bg-white hover:bg-secondary text-text-main shadow-sm'
+                                    ? (isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-600 text-slate-400 opacity-70')
+                                    : 'bg-background hover:bg-primary/20 text-text-main shadow-sm'
                                 }`}
                         >
                             {letter}

@@ -88,7 +88,7 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     useEffect(() => {
         if (lives <= 0 && !isFinished) {
             setIsFinished(true);
-            onComplete();
+            setTimeout(onComplete, 1000);
         }
     }, [lives, isFinished, onComplete]);
 
@@ -103,7 +103,7 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     
     if (isFinished) {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
                 <div className="text-6xl mb-4">♻️</div>
                 <h2 className="text-2xl font-bold text-text-main">¡Juego Terminado!</h2>
                 <p className="text-text-secondary mt-2">Tu puntaje final es <strong className="text-primary">{score}</strong>. ¡Ganaste EcoPuntos!</p>
@@ -112,8 +112,8 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     }
     
     return (
-        <div className="w-full h-full flex flex-col items-center p-2 relative" onMouseMove={handleMouseMove} ref={gameAreaRef}>
-             <header className="w-full flex justify-between items-center text-xl font-bold z-10">
+        <div className="w-full h-full flex flex-col items-center p-2 relative bg-surface rounded-lg text-text-main" onMouseMove={handleMouseMove} ref={gameAreaRef}>
+             <header className="w-full flex justify-between items-center text-xl font-bold z-10 p-2">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
                 <div>Vidas: {'❤️'.repeat(lives)}</div>
             </header>
@@ -131,7 +131,7 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
 
             <div
                 ref={cartRef}
-                className="absolute bottom-5 w-24 h-16 bg-blue-500 rounded-t-lg border-4 border-blue-700"
+                className="absolute bottom-5 w-24 h-16 bg-primary rounded-t-lg border-4 border-primary-dark"
                 style={{ left: `${cartX}%`, transform: 'translateX(-50%)' }}
             ></div>
         </div>

@@ -15,13 +15,11 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete }) => {
     
     const PASS_PERCENTAGE = 0.7;
     
-    const currentScore = useMemo(() => {
-        if (!isFinished) return score;
-        const lastAnswerCorrect = selectedAnswer === questions[questions.length - 1].correctAnswer;
-        return lastAnswerCorrect ? score + 1 : score;
-    }, [isFinished, score, selectedAnswer, questions]);
+    const finalScore = useMemo(() => {
+        return score;
+    }, [score]);
 
-    const passed = (currentScore / questions.length) >= PASS_PERCENTAGE;
+    const passed = (finalScore / questions.length) >= PASS_PERCENTAGE;
 
     const handleAnswer = (answerIndex: number) => {
         setSelectedAnswer(answerIndex);
@@ -32,14 +30,15 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete }) => {
     };
     
     const handleNext = () => {
-        setShowFeedback(false);
-        setSelectedAnswer(null);
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(i => i + 1);
+            setShowFeedback(false);
+            setSelectedAnswer(null);
         } else {
             setIsFinished(true);
-            if ((score / questions.length) >= PASS_PERCENTAGE) {
-                onComplete();
+            // We call onComplete only if the user passes.
+            if (((score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0)) / questions.length) >= PASS_PERCENTAGE) {
+                 setTimeout(onComplete, 1000); // Give user time to see result
             }
         }
     };
@@ -48,18 +47,18 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete }) => {
 
     if (isFinished) {
          return (
-            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
                 {passed ? (
                     <>
                         <div className="text-6xl mb-4">🎉</div>
                         <h2 className="text-2xl font-bold text-text-main">¡Felicitaciones!</h2>
-                        <p className="text-text-secondary mt-2">Superaste la trivia y ganaste EcoPuntos.</p>
+                        <p className="text-text-secondary mt-2">Superaste la trivia con {finalScore}/{questions.length} respuestas correctas y ganaste EcoPuntos.</p>
                     </>
                 ) : (
                      <>
                         <div className="text-6xl mb-4">🤔</div>
                         <h2 className="text-2xl font-bold text-text-main">¡Casi lo logras!</h2>
-                        <p className="text-text-secondary mt-2">Obtuviste {score} de {questions.length}. Necesitas al menos {Math.ceil(questions.length * PASS_PERCENTAGE)} para ganar. ¡Volvé a intentarlo!</p>
+                        <p className="text-text-secondary mt-2">Obtuviste {finalScore} de {questions.length}. Necesitas al menos {Math.ceil(questions.length * PASS_PERCENTAGE)} para ganar. ¡Volvé a intentarlo!</p>
                     </>
                 )}
             </div>
@@ -67,25 +66,25 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete }) => {
     }
 
     return (
-        <div className="max-w-xl mx-auto p-4 h-full flex flex-col justify-center">
+        <div className="max-w-xl mx-auto p-4 h-full flex flex-col justify-center text-text-main bg-surface rounded-lg">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-text-main">Trivia de Reciclaje</h2>
+                <h2 className="text-xl font-bold">Trivia de Reciclaje</h2>
                 <span className="text-sm font-semibold text-text-secondary">Pregunta {currentQuestionIndex + 1}/{questions.length}</span>
             </div>
-            <p className="text-lg text-text-main mb-6 min-h-[5rem]">{currentQuestion.question}</p>
+            <p className="text-lg mb-6 min-h-[5rem]">{currentQuestion.question}</p>
             <div className="space-y-3">
                 {currentQuestion.options.map((option, index) => {
                     let buttonClass = "w-full text-left p-3 border-2 rounded-lg transition-all duration-200 text-sm font-medium ";
                     if (showFeedback) {
                         if (index === currentQuestion.correctAnswer) {
-                            buttonClass += "bg-emerald-100 border-emerald-500 text-emerald-800";
+                            buttonClass += "bg-emerald-500/20 border-emerald-500 text-text-main";
                         } else if (index === selectedAnswer) {
-                            buttonClass += "bg-red-100 border-red-500 text-red-800";
+                            buttonClass += "bg-red-500/20 border-red-500 text-text-main";
                         } else {
-                            buttonClass += "border-slate-300 opacity-60";
+                            buttonClass += "border-slate-700 opacity-60";
                         }
                     } else {
-                       buttonClass += "border-slate-300 hover:border-primary hover:bg-primary/10";
+                       buttonClass += "border-slate-700 hover:border-primary hover:bg-primary/10";
                     }
                     return <button key={index} onClick={() => handleAnswer(index)} disabled={showFeedback} className={buttonClass}>{option}</button>;
                 })}

@@ -22,7 +22,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
             setTimeLeft(timePerItem);
         } else {
             setIsFinished(true);
-            onComplete();
+            setTimeout(onComplete, 1000);
         }
     }, [currentItemIndex, gameItems.length, timePerItem, onComplete]);
     
@@ -58,7 +58,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
 
     if (isFinished) {
         return (
-             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
                 <div className="text-6xl mb-4">🛠️</div>
                 <h2 className="text-2xl font-bold text-text-main">¡Juego Terminado!</h2>
                 <p className="text-text-secondary mt-2">Reparaste {score / 10} objetos y ganaste <strong className="text-primary">{score}</strong> EcoPuntos.</p>
@@ -66,31 +66,32 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
         );
     }
     
-    if (!currentItem) return <div>Cargando...</div>;
+    if (!currentItem) return <div className="text-text-main">Cargando...</div>;
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-around p-2">
+        <div className="w-full h-full flex flex-col items-center justify-around p-2 bg-surface rounded-lg text-text-main">
             <header className="w-full flex justify-between items-center text-xl font-bold">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
                 <div>Objetos: {currentItemIndex + 1}/{gameItems.length}</div>
             </header>
             
             <div className="w-full max-w-sm mx-auto my-4">
-                <div className="h-4 w-full bg-slate-300 rounded-full overflow-hidden">
-                    <div className="h-full bg-secondary rounded-full transition-all duration-1000 linear" style={{ width: `${progress}%` }}></div>
+                <div className="h-4 w-full bg-background rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-1000 linear" style={{ width: `${progress}%` }}></div>
                 </div>
             </div>
 
             <div className="flex flex-col items-center">
-                <p className="text-lg mb-4">¿Qué herramienta usas para arreglar esto?</p>
+                <p className="text-lg mb-4 text-text-secondary">¿Qué herramienta usas para arreglar esto?</p>
                 <div
-                    className={`w-48 h-48 bg-white rounded-full shadow-lg flex flex-col items-center justify-center p-4 border-8 transition-colors duration-300 ${
+                    className={`w-48 h-48 bg-background rounded-full shadow-lg flex flex-col items-center justify-center p-4 border-8 transition-colors duration-300
+                        ${
                         feedback === 'correct' ? 'border-emerald-500' :
-                        feedback === 'incorrect' ? 'border-red-500' : 'border-slate-200'
+                        feedback === 'incorrect' ? 'border-red-500' : 'border-slate-700'
                     }`}
                 >
                     <span className="text-7xl">{currentItem.image}</span>
-                    <span className="font-bold text-center mt-2">{currentItem.name}</span>
+                    <span className="font-bold text-center mt-2 text-text-main">{currentItem.name}</span>
                 </div>
             </div>
 
@@ -100,7 +101,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
                         key={tool}
                         onClick={() => handleToolSelection(tool)}
                         disabled={!!feedback}
-                        className="p-4 bg-white rounded-lg shadow-md text-5xl flex items-center justify-center transition-transform duration-200 hover:scale-110 disabled:scale-100 disabled:opacity-50"
+                        className="p-4 bg-background rounded-lg shadow-md text-5xl flex items-center justify-center transition-transform duration-200 hover:scale-110 disabled:scale-100 disabled:opacity-50"
                     >
                         {tool}
                     </button>

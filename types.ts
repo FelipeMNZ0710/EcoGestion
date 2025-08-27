@@ -239,6 +239,7 @@ export interface Game {
     category: string;
     image: string;
     type: GameType;
+    learningObjective: string;
     payload: {
         points: number;
         // For trivia

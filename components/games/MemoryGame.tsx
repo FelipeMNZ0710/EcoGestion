@@ -41,18 +41,23 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
                 setGameCards(prev => prev.map((card, index) => 
                     index === firstIndex || index === secondIndex ? { ...card, isMatched: true } : card
                 ));
+                 setFlippedIndexes([]);
+            } else {
+                 // No Match
+                setTimeout(() => {
+                    setGameCards(prev => prev.map((card, index) => 
+                        index === firstIndex || index === secondIndex ? { ...card, isFlipped: false } : card
+                    ));
+                    setFlippedIndexes([]);
+                }, 1000);
             }
-
-            setTimeout(() => {
-                setFlippedIndexes([]);
-            }, 1000);
         }
     }, [flippedIndexes, gameCards]);
     
     useEffect(() => {
         if (gameCards.length > 0 && gameCards.every(card => card.isMatched)) {
             setIsFinished(true);
-            onComplete();
+            setTimeout(onComplete, 1000);
         }
     }, [gameCards, onComplete]);
 
@@ -60,8 +65,11 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
         if (flippedIndexes.length >= 2 || gameCards[index].isFlipped || gameCards[index].isMatched) {
             return;
         }
+        
+        if(flippedIndexes.length === 0) {
+            setMoves(prev => prev + 1);
+        }
 
-        setMoves(prev => prev + 1);
         setFlippedIndexes(prev => [...prev, index]);
         setGameCards(prev => prev.map((card, i) => 
             i === index ? { ...card, isFlipped: true } : card
@@ -70,27 +78,27 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
 
     if (isFinished) {
         return (
-             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
                 <div className="text-6xl mb-4">🧠</div>
                 <h2 className="text-2xl font-bold text-text-main">¡Memoria Prodigiosa!</h2>
-                <p className="text-text-secondary mt-2">Completaste el juego en {Math.ceil(moves/2)} intentos y ganaste EcoPuntos.</p>
+                <p className="text-text-secondary mt-2">Completaste el juego en {moves} intentos y ganaste EcoPuntos.</p>
             </div>
         )
     }
 
     return (
-        <div className="w-full h-full flex flex-col items-center">
-            <div className="mb-4 text-lg font-bold text-text-main">Intentos: {Math.ceil(moves/2)}</div>
+        <div className="w-full h-full flex flex-col items-center bg-surface rounded-lg p-4">
+            <div className="mb-4 text-lg font-bold text-text-main">Intentos: {moves}</div>
             <div className={`grid gap-2 sm:gap-4 justify-center ${gameCards.length > 12 ? 'grid-cols-4 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-4'}`}>
                 {gameCards.map((card, index) => (
-                    <div key={card.id} className="w-20 h-20 sm:w-24 sm:h-24 perspective" onClick={() => handleCardClick(index)}>
-                        <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${card.isFlipped || card.isMatched ? 'rotate-y-180' : ''}`}>
+                    <div key={card.id} className="w-20 h-20 sm:w-24 sm:h-24 [perspective:1000px]" onClick={() => handleCardClick(index)}>
+                        <div className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] ${card.isFlipped || card.isMatched ? '[transform:rotateY(180deg)]' : ''}`}>
                             {/* Card Back */}
-                            <div className="absolute w-full h-full backface-hidden bg-primary rounded-lg flex items-center justify-center text-white text-4xl cursor-pointer">
+                            <div className="absolute w-full h-full [backface-visibility:hidden] bg-primary rounded-lg flex items-center justify-center text-white text-4xl cursor-pointer">
                                 ♻️
                             </div>
                             {/* Card Front */}
-                             <div className="absolute w-full h-full backface-hidden bg-slate-200 rounded-lg flex items-center justify-center text-4xl rotate-y-180">
+                             <div className="absolute w-full h-full [backface-visibility:hidden] bg-slate-700 rounded-lg flex items-center justify-center text-4xl [transform:rotateY(180deg)]">
                                 {card.content}
                             </div>
                         </div>

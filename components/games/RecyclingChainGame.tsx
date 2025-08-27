@@ -65,7 +65,7 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
             return () => clearTimeout(timer);
         } else if (timeLeft === 0 && !isFinished) {
             setIsFinished(true);
-            onComplete();
+            setTimeout(onComplete, 1000);
         }
     }, [timeLeft, isFinished, onComplete]);
 
@@ -93,7 +93,7 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
 
     if (isFinished) {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
                 <div className="text-6xl mb-4">🏆</div>
                 <h2 className="text-2xl font-bold text-text-main">¡Tiempo!</h2>
                 <p className="text-text-secondary mt-2">Tu puntaje final es <strong className="text-primary">{score}</strong>. ¡Ganaste EcoPuntos!</p>
@@ -102,17 +102,17 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     }
     
     return (
-        <div className="w-full h-full flex flex-col items-center justify-between p-2">
+        <div className="w-full h-full flex flex-col items-center justify-between p-2 bg-surface rounded-lg text-text-main">
             <header className="w-full flex justify-between items-center text-xl font-bold">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
-                {combo > 1 && <div className="text-secondary animate-bounce">COMBO x{combo}!</div>}
-                <div>Tiempo: <span className="text-accent">{timeLeft}s</span></div>
+                {combo > 1 && <div className="text-primary animate-bounce">COMBO x{combo}!</div>}
+                <div>Tiempo: <span className="text-primary">{timeLeft}s</span></div>
             </header>
 
-            <div ref={gameAreaRef} className="relative w-full h-48 my-4 bg-slate-300 rounded-lg overflow-hidden">
+            <div ref={gameAreaRef} className="relative w-full h-48 my-4 bg-background rounded-lg overflow-hidden">
                 {/* Conveyor Belt */}
-                <div className="absolute inset-0 bg-slate-600"></div>
-                <div className="absolute top-1/2 -translate-y-1/2 w-full h-24 bg-slate-500 opacity-50"></div>
+                <div className="absolute inset-0 bg-slate-800"></div>
+                <div className="absolute top-1/2 -translate-y-1/2 w-full h-24 bg-slate-700 opacity-50"></div>
                 
                 {gameItems.map(({ item, id, position }) => (
                     <div
@@ -120,7 +120,7 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
                         draggable
                         onDragStart={e => handleDragStart(e, id)}
                         onDragEnd={() => setIsDragging(null)}
-                        className="absolute top-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-md shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing"
+                        className="absolute top-1/2 -translate-y-1/2 w-16 h-16 bg-surface rounded-md shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-800"
                         style={{ left: `${position}px` }}
                     >
                         <span className="text-4xl">{item.image}</span>
