@@ -1,10 +1,12 @@
 import React from 'react';
+import type { User } from '../types';
 
-export type Category = 'Todos' | 'Plásticos' | 'Vidrio' | 'Papel/Cartón' | 'Pilas';
+export type Category = 'Todos' | 'Plásticos' | 'Vidrio' | 'Papel/Cartón' | 'Pilas' | 'Favoritos';
 
 interface FilterMenuProps {
   activeFilter: Category;
   setActiveFilter: (filter: Category) => void;
+  user: User | null;
 }
 
 interface FilterItem {
@@ -41,7 +43,7 @@ const filterItems: FilterItem[] = [
   },
 ];
 
-const FilterMenu: React.FC<FilterMenuProps> = ({ activeFilter, setActiveFilter }) => {
+const FilterMenu: React.FC<FilterMenuProps> = ({ activeFilter, setActiveFilter, user }) => {
   return (
     <div className="filter-menu">
       {filterItems.map(({ id, title, icon }) => (
@@ -60,6 +62,22 @@ const FilterMenu: React.FC<FilterMenuProps> = ({ activeFilter, setActiveFilter }
           <span className="link-title">{title}</span>
         </a>
       ))}
+      {user && (
+        <a
+          key="Favoritos"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            setActiveFilter('Favoritos');
+          }}
+          className={`filter-link ${activeFilter === 'Favoritos' ? 'active' : ''}`}
+        >
+          <span className="link-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M128,24,157.66,83.33,224,92.54l-50.37,45.3,14.63,65.83L128,170.13,67.74,203.67,82.37,137.84,32,92.54l66.34-9.21Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></path></svg>
+          </span>
+          <span className="link-title">Favoritos</span>
+        </a>
+      )}
     </div>
   );
 };

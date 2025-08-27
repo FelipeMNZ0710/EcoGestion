@@ -23,7 +23,7 @@ interface InteractiveMapProps {
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations, selectedLocation, hoveredLocationId, onPinClick, onPinMouseEnter, onPinMouseLeave }) => {
     return (
-        <div className="map-container rounded-lg border-2 border-slate-200/80 bg-slate-50 shadow-inner">
+        <div className="map-container rounded-lg border border-white/10 shadow-inner">
             <svg
                 className="map-svg"
                 viewBox="0 0 800 600"
@@ -35,13 +35,30 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations, selectedLoca
                         <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.2"/>
                     </filter>
                 </defs>
-                {/* Simplified map paths */}
-                <path className="map-river" d="M 0,300 C 100,250 150,350 250,300 S 400,200 500,300 S 650,400 800,350 L 800,600 L 0,600 Z" />
-                <path className="map-city" d="M 50,50 L 750,50 L 750,550 L 50,550 Z" opacity="0.5" />
-                <path className="map-city" d="M 100,80 L 300,80 L 350,150 L 150,150 Z" />
-                <path className="map-city" d="M 400,100 L 700,100 L 700,300 L 450,300 Z" />
-                <path className="map-city" d="M 150,400 L 400,400 L 400,500 L 150,500 Z" />
-                <path className="map-city" d="M 500,450 L 700,450 L 700,550 L 500,550 Z" />
+
+                {/* -- Detailed Map Background -- */}
+                <g id="map-background">
+                    {/* River */}
+                    <path className="map-water" d="M0 550 C 50 500, 150 600, 250 550 S 400 450, 500 550 S 650 600, 800 500 V 600 H 0 Z" />
+                    
+                    {/* City Blocks */}
+                    <path className="map-block" d="M100 50 H 700 V 500 H 100 Z" />
+                    
+                    {/* Avenues */}
+                    <line className="map-avenue" x1="100" y1="280" x2="700" y2="280" />
+                    <line className="map-avenue" x1="100" y1="320" x2="700" y2="320" />
+                    <line className="map-avenue" x1="380" y1="50" x2="380" y2="500" />
+                    <line className="map-avenue" x1="420" y1="50" x2="420" y2="500" />
+                    
+                    {/* Streets */}
+                    <line className="map-street" x1="100" y1="150" x2="700" y2="150" />
+                    <line className="map-street" x1="100" y1="420" x2="700" y2="420" />
+                    <line className="map-street" x1="250" y1="50" x2="250" y2="500" />
+                    <line className="map-street" x1="550" y1="50" x2="550" y2="500" />
+                    
+                    {/* Plaza San Martin */}
+                    <rect className="map-plaza" x="385" y="285" width="30" height="30" rx="5" />
+                </g>
                 
                 {locations.map(location => {
                     const isSelected = selectedLocation?.id === location.id;

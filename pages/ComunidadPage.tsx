@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { User, GamificationAction } from '../types';
 
 // --- Types ---
@@ -109,7 +109,7 @@ const processInitialMessages = (): MessagesState => {
             { user: 'Felipe', time: 'Hoy a las 09:32 AM', text: 'Ojo con eso! La mayoría de los tickets son de papel térmico, que tiene químicos y no se puede reciclar. Van a la basura común.' },
         ],
         proyectos: [
-            { user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿' },
+            { user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format&fit=crop' },
             { user: 'Vallejos Ignacio Alejandro', time: 'Ayer a las 06:05 PM', text: '¡Qué genia! Quedó increíble. Me das la idea para hacer uno. ¿Usaste botellas de 2L?', reactions: {'❤️': ['Rossi Fabiana', 'Felipe']} },
             { user: 'Jarzinski Kiara', time: 'Ayer a las 06:07 PM', text: '@\'Vallejos Ignacio Alejandro\' Sí! Las de gaseosa de 2.25L son perfectas. Las corté con un cutter y las colgué con alambre.' },
         ],
@@ -143,6 +143,70 @@ const initialMessages = processInitialMessages();
 const allUserNames = Object.keys(initialUsers);
 const members = allUserNames.map(name => ({ name, online: Math.random() > 0.3 }));
 
+// --- Sub-Components ---
+const CommunityChatInput: React.FC<{
+    onSendMessage: (text: string, imageUrl?: string) => void;
+    channelName: string;
+    disabled: boolean;
+}> = ({ onSendMessage, channelName, disabled }) => {
+    const [inputText, setInputText] = useState('');
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removePreview = () => {
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if ((!inputText.trim() && !imagePreview) || disabled) return;
+
+        onSendMessage(inputText, imagePreview || undefined);
+        setInputText('');
+        removePreview();
+    };
+
+    return (
+        <div className="bg-[color:var(--input-bg)] p-2 rounded-lg">
+            {imagePreview && (
+                <div className="relative w-24 h-24 mb-2 p-2 bg-black/20 rounded-md">
+                    <img src={imagePreview} alt="Vista previa" className="w-full h-full object-cover rounded" />
+                    <button onClick={removePreview} className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 text-xs rounded-full flex items-center justify-center">&times;</button>
+                </div>
+            )}
+            <form onSubmit={handleSubmit} className="flex items-center">
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-400 hover:text-white transition-colors">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                </button>
+                <input
+                    type="text"
+                    value={inputText}
+                    onChange={e => setInputText(e.target.value)}
+                    placeholder={`Enviar mensaje a #${channelName}`}
+                    disabled={disabled}
+                    className="flex-1 bg-transparent outline-none text-[color:var(--text-normal)] placeholder-gray-500"
+                />
+            </form>
+        </div>
+    );
+};
+
+
 // --- Main Component ---
 interface ComunidadPageProps {
   user: User | null;
@@ -152,7 +216,6 @@ interface ComunidadPageProps {
 const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => {
     const [activeChannel, setActiveChannel] = useState('general');
     const [messages, setMessages] = useState<MessagesState>(initialMessages);
-    const [inputText, setInputText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
     const [editingText, setEditingText] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -170,20 +233,19 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
         }
     }, [messages, activeChannel]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!inputText.trim() || !user) return;
+    const handleSendMessage = (text: string, imageUrl?: string) => {
+        if ((!text.trim() && !imageUrl) || !user) return;
 
         const newUserMessage: Message = {
             id: Date.now(),
             user: user.name,
-            text: inputText.trim(),
+            text: text.trim(),
+            imageUrl,
             timestamp: new Date(),
             avatarInitials: initialUsers[user.name]?.initials || getUserInitials(user.name),
             avatarColor: initialUsers[user.name]?.color || getRandomColor(),
         };
         setMessages(prev => ({ ...prev, [activeChannel]: [...(prev[activeChannel] || []), newUserMessage] }));
-        setInputText('');
         onUserAction('send_message');
     };
     
@@ -211,18 +273,26 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
         setEditingText('');
     };
 
-    const renderMessageText = (text: string) => {
-        return text.split(/(@'[^']+'|#[\w-]+)/g).map((part, i) => {
-            if (part && part.startsWith("@'")) {
-                const name = part.slice(2, -1);
-                return <strong key={i} className="text-text-mention bg-bg-mention font-semibold p-0.5 rounded">{`@${name}`}</strong>;
-            }
-            if (part && part.startsWith('#')) {
-                const channel = part.slice(1);
-                return <strong key={i} className="text-text-mention bg-bg-mention font-semibold p-0.5 rounded cursor-pointer" onClick={() => setActiveChannel(channel)}>{part}</strong>;
-            }
-            return part;
-        });
+    const renderMessageContent = (message: Message) => {
+      const textParts = message.text.split(/(@'[^']+'|#[\w-]+)/g).map((part, i) => {
+          if (part && part.startsWith("@'")) {
+              const name = part.slice(2, -1);
+              return <strong key={i} className="text-text-mention bg-bg-mention font-semibold p-0.5 rounded">{`@${name}`}</strong>;
+          }
+          if (part && part.startsWith('#')) {
+              const channel = part.slice(1);
+              return <strong key={i} className="text-text-mention bg-bg-mention font-semibold p-0.5 rounded cursor-pointer" onClick={() => setActiveChannel(channel)}>{part}</strong>;
+          }
+          return part;
+      });
+
+      return (
+        <div>
+          {message.text && <div className="discord-message-content">{textParts}</div>}
+          {message.imageUrl && <img src={message.imageUrl} alt="Contenido adjunto" className="mt-2 rounded-lg max-w-xs max-h-64" />}
+          {message.edited && <span className="text-xs text-[color:var(--text-muted)] ml-2">(editado)</span>}
+        </div>
+      );
     };
 
     const sortedMembers = useMemo(() => {
@@ -329,8 +399,7 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
                                                         <div><input type="text" value={editingText} onChange={e => setEditingText(e.target.value)} onKeyDown={e => {if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditingMessageId(null);}} className="w-full px-2 py-1 border border-secondary rounded-md bg-[color:var(--input-bg)]" /></div>
                                                     ) : (
                                                         <>
-                                                            {message.text && <div className="discord-message-content">{renderMessageText(message.text)}</div>}
-                                                            {message.edited && <span className="text-xs text-[color:var(--text-muted)] ml-2">(editado)</span>}
+                                                          {renderMessageContent(message)}
                                                             <div className="absolute top-0 right-4 -translate-y-1/2 hidden group-hover:flex items-center bg-[color:var(--bg-primary)] border border-[color:var(--bg-tertiary)] rounded-md discord-message-actions">
                                                                 {user && (user.name === message.user || isAdmin) && <button onClick={() => handleStartEditing(message)} className="p-1.5 text-[color:var(--text-muted)] hover:text-white"><svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /></svg></button>}
                                                                 {isAdmin && <button onClick={() => handleDeleteMessage(message.id)} className="p-1.5 text-[color:var(--text-muted)] hover:text-red-400"><svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>}
@@ -345,9 +414,9 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
                             })}
                            <div className="h-4"></div>
                         </div>
-                        <footer className="px-4 pb-6 flex-shrink-0">
+                        <footer className="px-4 pb-4 flex-shrink-0">
                              {canWrite ? (
-                                <form onSubmit={handleSendMessage}><input type="text" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={`Enviar mensaje a #${activeChannelInfo?.name}`} className="w-full discord-chat-input py-2.5 pl-4 pr-4 text-[color:var(--text-normal)]" /></form>
+                                <CommunityChatInput onSendMessage={handleSendMessage} channelName={activeChannelInfo?.name || 'chat'} disabled={!user} />
                             ) : (
                                 <div className="text-center text-sm text-[color:var(--text-muted)] bg-[color:var(--input-bg)] p-3 rounded-lg">{user ? 'Solo los administradores pueden enviar mensajes en este canal.' : 'Debes iniciar sesión para enviar mensajes.'}</div>
                             )}

@@ -162,6 +162,16 @@ export interface Schedule {
   close: string; // "HH:MM"
 }
 
+export interface Report {
+  userId: string;
+  userName: string;
+  reason: 'full' | 'dirty' | 'damaged' | 'other';
+  comment: string;
+  imageUrl?: string;
+  timestamp: string;
+}
+
+
 export interface Location {
   id: string;
   name: string;
@@ -177,8 +187,12 @@ export interface Location {
     x: number;
     y: number;
   };
-  imageUrl: string;
   status: LocationStatus;
+  description: string;
+  lastServiced: string; // ISO date string
+  checkIns: number;
+  reports: Report[];
+  imageUrls: string[];
 }
 
 // --- Game Types ---
