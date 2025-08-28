@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { NewsArticle, ContentBlock } from '../types';
 
 interface NewsDetailModalProps {
@@ -7,6 +7,25 @@ interface NewsDetailModalProps {
 }
 
 const NewsDetailModal: React.FC<NewsDetailModalProps> = ({ article, onClose }) => {
+    const [isExiting, setIsExiting] = useState(false);
+
+    const handleClose = () => {
+        if (isExiting) return;
+        setIsExiting(true);
+        setTimeout(onClose, 300); // Match animation duration
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                handleClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
     
     const renderContentBlock = (block: ContentBlock, index: number) => {
         switch (block.type) {
@@ -31,11 +50,11 @@ const NewsDetailModal: React.FC<NewsDetailModalProps> = ({ article, onClose }) =
     }).format(new Date(`${article.date}T00:00:00`));
     
     return (
-        <div className="news-detail-modal-backdrop" onClick={onClose}>
-            <div className="news-detail-content" onClick={e => e.stopPropagation()}>
+        <div className={`news-detail-modal-backdrop ${isExiting ? 'exiting' : ''}`} onClick={handleClose}>
+            <div className={`news-detail-content ${isExiting ? 'exiting' : ''}`} onClick={e => e.stopPropagation()}>
                 <header className="relative">
                     <img src={article.image} alt={article.title} className="w-full h-64 object-cover rounded-t-lg" />
-                    <button onClick={onClose} className="absolute top-3 right-3 text-white bg-black/50 rounded-full p-1.5 hover:bg-black/75 transition-colors">
+                    <button onClick={handleClose} className="absolute top-3 right-3 text-white bg-black/50 rounded-full p-1.5 hover:bg-black/75 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </header>
