@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { User, GamificationAction, CommunityMessage, ReplyInfo } from '../types';
+import type { User, GamificationAction, CommunityMessage, ReplyInfo, Reaction } from '../types';
 import { botAvatarUrl } from '../data/botAvatar';
 
 // --- Types ---
@@ -82,45 +82,44 @@ const processInitialMessages = (): MessagesState => {
     const processed: MessagesState = {};
     const mockMessages: Record<string, any[]> = {
         general: [
-            { user: 'Ana Gómez', time: 'Ayer a las 04:30 PM', text: '¡Buen día! ¿Alguien sabe si los envases de tetrabrik van con el cartón o los plásticos?' },
-            { user: 'Admin Recicla', time: 'Ayer a las 04:32 PM', text: 'Hola Ana! Van con el cartón, pero asegurate de enjuagarlos y aplastarlos bien. 👍', reactions: {'👍': ['Carlos Ruiz', 'Jarzinski Kiara']} },
-            { user: 'Felipe Monzón', time: 'Hoy a las 11:15 AM', text: 'Confirmado, es como dice el admin. La clave es que estén limpios y secos.', replyingTo: { messageId: 2, user: 'Admin Recicla', text: 'Hola Ana! Van con el cartón...' } },
-            { user: 'Rossi Fabiana', time: 'Hoy a las 11:18 AM', text: 'Exacto! Una vez me rechazaron un montón de cartón porque una botella de yogurt estaba mal enjuagada y lo manchó todo. 😞' },
-            { user: 'Vega Ezequiel Tomás Alejandro', time: 'Hoy a las 12:05 PM', text: 'Uhh que mal. Buen dato para tener en cuenta.'}
+            { id: 1, user: 'Ana Gómez', time: 'Ayer a las 04:30 PM', text: '¡Buen día! ¿Alguien sabe si los envases de tetrabrik van con el cartón o los plásticos?' },
+            { id: 2, user: 'Admin Recicla', time: 'Ayer a las 04:32 PM', text: 'Hola Ana! Van con el cartón, pero asegurate de enjuagarlos y aplastarlos bien. 👍', reactions: {'👍': ['Carlos Ruiz', 'Jarzinski Kiara']} },
+            { id: 3, user: 'Felipe Monzón', time: 'Hoy a las 11:15 AM', text: 'Confirmado, es como dice el admin. La clave es que estén limpios y secos.', replyingTo: { messageId: 2, user: 'Admin Recicla', text: 'Hola Ana! Van con el cartón...' } },
+            { id: 4, user: 'Rossi Fabiana', time: 'Hoy a las 11:18 AM', text: 'Exacto! Una vez me rechazaron un montón de cartón porque una botella de yogurt estaba mal enjuagada y lo manchó todo. 😞' },
+            { id: 5, user: 'Vega Ezequiel Tomás Alejandro', time: 'Hoy a las 12:05 PM', text: 'Uhh que mal. Buen dato para tener en cuenta.'}
         ],
         anuncios: [
-            { user: 'Admin Recicla', time: 'Ayer a las 9:00 AM', text: '¡Bienvenidos al canal de anuncios! Aquí publicaremos todas las novedades importantes sobre la iniciativa EcoGestión. Este es un canal de solo lectura para los miembros.' },
-            { user: 'Admin Recicla', time: 'Hoy a las 10:00 AM', text: '📢 **¡Nuevo Punto Verde!** 📢\nNos complace anunciar la inauguración de un nuevo Punto Verde en el Barrio San Miguel, frente al Supermercado El Económico. Ya está operativo para recibir Plásticos y Pilas. ¡A reciclar!' },
+            { id: 6, user: 'Admin Recicla', time: 'Ayer a las 9:00 AM', text: '¡Bienvenidos al canal de anuncios! Aquí publicaremos todas las novedades importantes sobre la iniciativa EcoGestión. Este es un canal de solo lectura para los miembros.' },
+            { id: 7, user: 'Admin Recicla', time: 'Hoy a las 10:00 AM', text: '📢 **¡Nuevo Punto Verde!** 📢\nNos complace anunciar la inauguración de un nuevo Punto Verde en el Barrio San Miguel, frente al Supermercado El Económico. Ya está operativo para recibir Plásticos y Pilas. ¡A reciclar!' },
         ],
         dudas: [
-            { user: 'Gonzalez, Agostina', time: 'Ayer a las 08:10 PM', text: 'Hola gente, tengo una duda existencial... ¿el telgopor (EPS) se recicla o no? Porque en algunos lados dicen que sí y en otros que no.'},
-            { user: 'Mendoza José Francisco Rafael', time: 'Ayer a las 08:12 PM', text: 'Uf, el eterno dilema. Técnicamente es reciclable, pero es 95% aire y muy liviano, entonces el proceso es caro y complicado. La mayoría de los municipios no lo aceptan.' },
-            { user: 'Admin Recicla', time: 'Ayer a las 08:15 PM', text: 'Hola Agostina! José tiene razón. Por ahora, en Formosa **no** estamos procesando telgopor en los Puntos Verdes. Lo mejor es evitarlo lo más posible. Si tenés bandejitas, tratá de limpiarlas y reutilizarlas en casa.' },
-            { user: 'Gonzalez, Agostina', time: 'Ayer a las 08:16 PM', text: '¡Gracias por la aclaración a ambos! 🙏' },
-            { user: 'Benítez Gonzalo', time: 'Hoy a las 09:30 AM', text: 'Consulta, ¿qué hago con los tickets de supermercado? ¿Van con el papel?' },
-            { user: 'Felipe Monzón', time: 'Hoy a las 09:32 AM', text: 'Ojo con eso! La mayoría de los tickets son de papel térmico, que tiene químicos y no se puede reciclar. Van a la basura común.' },
+            { id: 8, user: 'Gonzalez, Agostina', time: 'Ayer a las 08:10 PM', text: 'Hola gente, tengo una duda existencial... ¿el telgopor (EPS) se recicla o no? Porque en algunos lados dicen que sí y en otros que no.'},
+            { id: 9, user: 'Mendoza José Francisco Rafael', time: 'Ayer a las 08:12 PM', text: 'Uf, el eterno dilema. Técnicamente es reciclable, pero es 95% aire y muy liviano, entonces el proceso es caro y complicado. La mayoría de los municipios no lo aceptan.' },
+            { id: 10, user: 'Admin Recicla', time: 'Ayer a las 08:15 PM', text: 'Hola Agostina! José tiene razón. Por ahora, en Formosa **no** estamos procesando telgopor en los Puntos Verdes. Lo mejor es evitarlo lo más posible. Si tenés bandejitas, tratá de limpiarlas y reutilizarlas en casa.' },
+            { id: 11, user: 'Gonzalez, Agostina', time: 'Ayer a las 08:16 PM', text: '¡Gracias por la aclaración a ambos! 🙏' },
+            { id: 12, user: 'Benítez Gonzalo', time: 'Hoy a las 09:30 AM', text: 'Consulta, ¿qué hago con los tickets de supermercado? ¿Van con el papel?' },
+            { id: 13, user: 'Felipe Monzón', time: 'Hoy a las 09:32 AM', text: 'Ojo con eso! La mayoría de los tickets son de papel térmico, que tiene químicos y no se puede reciclar. Van a la basura común.' },
         ],
         proyectos: [
-            { user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format&fit=crop' },
-            { user: 'Vallejos Ignacio Alejandro', time: 'Ayer a las 06:05 PM', text: '¡Qué genia! Quedó increíble. Me das la idea para hacer uno. ¿Usaste botellas de 2L?', reactions: {'❤️': ['Rossi Fabiana', 'Felipe Monzón']} },
-            { user: 'Jarzinski Kiara', time: 'Ayer a las 06:07 PM', text: 'Sí! Las de gaseosa de 2.25L son perfectas. Las corté con un cutter y las colgué con alambre.', replyingTo: { messageId: 2, user: 'Vallejos Ignacio Alejandro', text: '¡Qué genia! Quedó increíble...' } },
+            { id: 14, user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format&fit=crop' },
+            { id: 15, user: 'Vallejos Ignacio Alejandro', time: 'Ayer a las 06:05 PM', text: '¡Qué genia! Quedó increíble. Me das la idea para hacer uno. ¿Usaste botellas de 2L?', reactions: {'❤️': ['Rossi Fabiana', 'Felipe Monzón']} },
+            { id: 16, user: 'Jarzinski Kiara', time: 'Ayer a las 06:07 PM', text: 'Sí! Las de gaseosa de 2.25L son perfectas. Las corté con un cutter y las colgué con alambre.', replyingTo: { messageId: 15, user: 'Vallejos Ignacio Alejandro', text: '¡Qué genia! Quedó increíble...' } },
         ],
         compostaje: [
-            { user: 'Martínez, Javier Nicolás', time: 'Hoy a las 08:45 AM', text: 'Buenas! Soy nuevo en esto del compost. ¿Puedo tirar cáscaras de naranja y limón?' },
-            { user: 'Cristaldo Facundo', time: 'Hoy a las 08:50 AM', text: 'Hola Javier! Con los cítricos hay que tener cuidado. En grandes cantidades pueden acidificar mucho el compost y tardan en descomponerse. Yo tiro, pero muy poquito y bien cortado.' },
-            { user: 'Martínez, Javier Nicolás', time: 'Hoy a las 08:51 AM', text: 'Buen dato, gracias! ¿Y restos de cebolla y ajo?' },
-            { user: 'Cristaldo Facundo', time: 'Hoy a las 08:55 AM', text: 'Lo mismo, en pequeñas cantidades no pasa nada. El problema es que pueden ahuyentar a las lombrices si tenés vermicompostera.' },
-            { user: 'Admin Recicla', time: 'Hoy a las 09:00 AM', text: 'Exacto lo que dice Facundo. La clave en el compost es el **equilibrio**. No hay que abusar de ningún ingrediente. ¡Bienvenidos al mundo del compost, Javier!' },
+            { id: 17, user: 'Martínez, Javier Nicolás', time: 'Hoy a las 08:45 AM', text: 'Buenas! Soy nuevo en esto del compost. ¿Puedo tirar cáscaras de naranja y limón?' },
+            { id: 18, user: 'Cristaldo Facundo', time: 'Hoy a las 08:50 AM', text: 'Hola Javier! Con los cítricos hay que tener cuidado. En grandes cantidades pueden acidificar mucho el compost y tardan en descomponerse. Yo tiro, pero muy poquito y bien cortado.' },
+            { id: 19, user: 'Martínez, Javier Nicolás', time: 'Hoy a las 08:51 AM', text: 'Buen dato, gracias! ¿Y restos de cebolla y ajo?' },
+            { id: 20, user: 'Cristaldo Facundo', time: 'Hoy a las 08:55 AM', text: 'Lo mismo, en pequeñas cantidades no pasa nada. El problema es que pueden ahuyentar a las lombrices si tenés vermicompostera.' },
+            { id: 21, user: 'Admin Recicla', time: 'Hoy a las 09:00 AM', text: 'Exacto lo que dice Facundo. La clave en el compost es el **equilibrio**. No hay que abusar de ningún ingrediente. ¡Bienvenidos al mundo del compost, Javier!' },
         ]
     };
     
     Object.keys(initialChannels).forEach(key => {
         const channelId = initialChannels[key].id;
-        processed[channelId] = (mockMessages[channelId] || []).map((msg, index) => {
+        processed[channelId] = (mockMessages[channelId] || []).map((msg) => {
             const user = initialUsers[msg.user] || { initials: '?', color: 'bg-gray-200' };
             const fullMessage: CommunityMessage = {
                 ...msg,
-                id: Date.now() + index,
                 timestamp: parseRelativeTime(msg.time),
                 avatarUrl: user.avatarUrl,
                 avatarInitials: user.initials,
@@ -137,6 +136,99 @@ const initialMessages = processInitialMessages();
 const allUserNames = Object.keys(initialUsers);
 const members = allUserNames.map(name => ({ name, online: Math.random() > 0.3 }));
 
+// --- Sub-Components ---
+const DateDivider: React.FC<{ date: Date }> = ({ date }) => (
+    <div className="discord-date-divider"><span>{new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(date)}</span></div>
+);
+
+const MessageItem: React.FC<{
+    message: CommunityMessage; isGroupStart: boolean; user: User | null; isAdmin: boolean;
+    setReplyingTo: (msg: CommunityMessage | null) => void; setEditingMessage: (msg: CommunityMessage | null) => void;
+    handleDeleteMessage: (id: number) => void; handleReaction: (id: number, emoji: string) => void;
+    handleEditMessage: (id: number, newText: string) => void; editingMessage: CommunityMessage | null;
+}> = ({ message, isGroupStart, user, isAdmin, setReplyingTo, setEditingMessage, handleDeleteMessage, handleReaction, handleEditMessage, editingMessage }) => {
+    const [hovered, setHovered] = useState(false);
+    const [editedText, setEditedText] = useState(message.text);
+    
+    const isEditing = editingMessage?.id === message.id;
+    const canInteract = user?.name === message.user || isAdmin;
+
+    const handleSaveEdit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editedText.trim()) {
+            handleEditMessage(message.id, editedText.trim());
+        }
+    };
+    
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSaveEdit(e);
+        } else if (e.key === 'Escape') {
+            setEditingMessage(null);
+            setEditedText(message.text);
+        }
+    };
+    
+    return (
+        <div className={`discord-message-item ${isGroupStart ? 'mt-4' : ''}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+            {isGroupStart && (
+                <div className="discord-message-avatar">
+                    {message.avatarUrl ? <img src={message.avatarUrl} alt={message.user} className="w-10 h-10 rounded-full object-cover" />
+                    : <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${message.avatarColor}`}>{message.avatarInitials}</div>}
+                </div>
+            )}
+            
+            <div className="flex flex-col">
+                {message.replyingTo && (
+                    <div className="discord-reply-container">
+                        <div className="discord-reply-line"></div>
+                        <span className="discord-reply-user mr-1">{message.replyingTo.user}</span>
+                        <span className="discord-reply-content">{message.replyingTo.text}</span>
+                    </div>
+                )}
+
+                {isGroupStart && (
+                    <div className="flex items-baseline space-x-2">
+                        <span className="font-semibold text-[color:var(--header-primary)]">{message.user}</span>
+                        <span className="text-xs text-[color:var(--text-muted)]">{new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' }).format(message.timestamp)}</span>
+                    </div>
+                )}
+                
+                {isEditing ? (
+                    <form onSubmit={handleSaveEdit}>
+                        <textarea value={editedText} onChange={e => setEditedText(e.target.value)} onKeyDown={handleKeyDown} className="discord-chat-textarea bg-slate-700 rounded-md p-2 w-full mt-1" autoFocus />
+                        <div className="text-xs mt-1">presiona <kbd className="font-sans text-xs bg-slate-800 p-0.5 rounded">Escape</kbd> para cancelar • <kbd className="font-sans text-xs bg-slate-800 p-0.5 rounded">Enter</kbd> para guardar</div>
+                    </form>
+                ) : (
+                    <p className="text-[color:var(--text-normal)] whitespace-pre-wrap">{message.text} {message.edited && <span className="text-xs text-[color:var(--text-muted)]">(editado)</span>}</p>
+                )}
+
+                {message.imageUrl && !isEditing && <img src={message.imageUrl} alt="Imagen adjunta" className="mt-2 max-w-xs rounded-lg" />}
+
+                {message.reactions && Object.keys(message.reactions).length > 0 && (
+                    <div className="discord-reactions-bar">
+                        {Object.entries(message.reactions).map(([emoji, users]) => (
+                            <button key={emoji} onClick={() => handleReaction(message.id, emoji)} className={`reaction-pill ${user && users.includes(user.name) ? 'reacted-by-user' : ''}`}>
+                                <span className="emoji">{emoji}</span> <span className="count">{users.length}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            
+            {hovered && user && (
+                <div className="discord-message-toolbar">
+                    <button className="discord-toolbar-button" onClick={() => setReplyingTo(message)} title="Responder">💬</button>
+                    <button className="discord-toolbar-button" title="Reaccionar">😀</button>
+                    {canInteract && <button className="discord-toolbar-button" onClick={() => { setEditingMessage(message); setEditedText(message.text); }} title="Editar">✏️</button>}
+                    {canInteract && <button className="discord-toolbar-button" onClick={() => handleDeleteMessage(message.id)} title="Eliminar">🗑️</button>}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --- Main Component ---
 interface ComunidadPageProps {
   user: User | null;
@@ -146,16 +238,16 @@ interface ComunidadPageProps {
 const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => {
     const [activeChannel, setActiveChannel] = useState('general');
     const [messages, setMessages] = useState<MessagesState>(initialMessages);
+    const [newMessage, setNewMessage] = useState('');
     const [editingMessage, setEditingMessage] = useState<CommunityMessage | null>(null);
     const [replyingTo, setReplyingTo] = useState<CommunityMessage | null>(null);
-    const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
     const [isTyping, setIsTyping] = useState<Record<string, string[]>>({});
     const [unreadChannels, setUnreadChannels] = useState(new Set<string>());
     const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
-    const ADMIN_USERS = ['Felipe Monzón', 'Rolón Sergio Agustín', 'Admin Recicla'];
+    const ADMIN_USERS = ['Felipe Monzón', 'Admin Recicla'];
     const isAdmin = user ? ADMIN_USERS.includes(user.name) : false;
 
     useEffect(() => {
@@ -171,7 +263,7 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
             textarea.style.height = 'auto';
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [textareaRef.current?.value]);
+    }, [newMessage]);
 
     const handleSendMessage = useCallback((text: string, imageUrl?: string) => {
         if ((!text.trim() && !imageUrl) || !user) return;
@@ -198,7 +290,7 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
             const channelMessages = prev[activeChannel] || [];
             const newMessages = channelMessages.map(msg => {
                 if (msg.id === messageId) {
-                    const newReactions = { ...(msg.reactions || {}) };
+                    const newReactions: Reaction = { ...(msg.reactions || {}) };
                     const usersWhoReacted = newReactions[emoji] || [];
                     if (usersWhoReacted.includes(user.name)) {
                         newReactions[emoji] = usersWhoReacted.filter(name => name !== user.name);
@@ -233,47 +325,48 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
         }
     };
     
-    // --- Simulation Logic ---
-    useEffect(() => {
-        const simulationTimer = setInterval(() => {
-            const randomUser = allUserNames[Math.floor(Math.random() * allUserNames.length)];
-            const randomChannel = initialChannels[Math.floor(Math.random() * initialChannels.length)].id;
-            const action = Math.random();
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage(newMessage);
+            setNewMessage('');
+        }
+    };
 
-            if (action < 0.1) { // 10% chance to send a message
-                const newMessage: CommunityMessage = {
-                    id: Date.now(), user: randomUser, text: "¡Qué buena idea!", timestamp: new Date(),
-                    avatarUrl: initialUsers[randomUser]?.avatarUrl, avatarInitials: initialUsers[randomUser]?.initials || '??', avatarColor: initialUsers[randomUser]?.color || getRandomColor()
-                };
-                setMessages(prev => ({ ...prev, [randomChannel]: [...(prev[randomChannel] || []), newMessage] }));
-                if (randomChannel !== activeChannel) {
-                    setUnreadChannels(prev => new Set(prev).add(randomChannel));
-                }
-            } else if (action < 0.2) { // 10% chance to react
-                const channelMessages = messages[randomChannel];
-                if (channelMessages && channelMessages.length > 0) {
-                    const randomMessage = channelMessages[Math.floor(Math.random() * channelMessages.length)];
-                    const randomEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-                    handleReaction(randomMessage.id, randomEmoji);
-                }
-            } else if (action < 0.4) { // 20% chance to start typing
-                 setIsTyping(prev => {
-                    const channelTypers = prev[randomChannel] || [];
-                    if (!channelTypers.includes(randomUser)) {
-                        const newTypers = [...channelTypers, randomUser];
-                        // Stop typing after a delay
-                        setTimeout(() => {
-                            setIsTyping(p => ({...p, [randomChannel]: (p[randomChannel] || []).filter(u => u !== randomUser) }));
-                        }, 3000 + Math.random() * 3000);
-                        return { ...prev, [randomChannel]: newTypers };
-                    }
-                    return prev;
-                 });
+    const renderableChatItems = useMemo(() => {
+        const channelMessages = messages[activeChannel] || [];
+        if (channelMessages.length === 0) return [];
+        
+        const items: RenderableChatItem[] = [];
+        let lastMessage: CommunityMessage | null = null;
+    
+        channelMessages.forEach(message => {
+            const messageDate = new Date(message.timestamp);
+            const lastMessageDate = lastMessage ? new Date(lastMessage.timestamp) : null;
+    
+            if (!lastMessageDate || messageDate.toDateString() !== lastMessageDate.toDateString()) {
+                items.push({ type: 'date_divider', date: messageDate });
             }
-        }, 5000); // Run simulation every 5 seconds
-
-        return () => clearInterval(simulationTimer);
-    }, [activeChannel, messages]);
+    
+            const fiveMinutes = 5 * 60 * 1000;
+            if (
+                lastMessage &&
+                items.length > 0 &&
+                items[items.length - 1].type === 'message_group' &&
+                message.user === lastMessage.user &&
+                messageDate.getTime() - lastMessageDate!.getTime() < fiveMinutes &&
+                !message.replyingTo && !lastMessage.replyingTo
+            ) {
+                (items[items.length - 1] as { type: 'message_group'; group: CommunityMessage[] }).group.push(message);
+            } else {
+                items.push({ type: 'message_group', group: [message] });
+            }
+            
+            lastMessage = message;
+        });
+        
+        return items;
+    }, [messages, activeChannel]);
     
     const activeChannelInfo = initialChannels.find(c => c.id === activeChannel);
     const canWrite = user && (!activeChannelInfo?.adminOnlyWrite || isAdmin);
@@ -315,7 +408,33 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
                  <div className="flex-1 flex min-h-0">
                     <main className="flex-1 flex flex-col min-h-0 bg-[color:var(--bg-primary)]">
                         <div ref={chatContainerRef} className="flex-1 overflow-y-auto discord-chat-messages px-4">
-                            {/* Chat messages rendered here */}
+                            <div className="h-4" />
+                            {renderableChatItems.map((item, index) => {
+                                if (item.type === 'date_divider') {
+                                    return <DateDivider key={`divider-${index}`} date={item.date} />;
+                                }
+                                const group = item.group;
+                                return (
+                                    <div key={group[0].id} className="discord-message-group">
+                                        {group.map((message, msgIndex) => (
+                                            <MessageItem
+                                                key={message.id}
+                                                message={message}
+                                                isGroupStart={msgIndex === 0}
+                                                user={user}
+                                                isAdmin={isAdmin}
+                                                setReplyingTo={setReplyingTo}
+                                                setEditingMessage={setEditingMessage}
+                                                handleDeleteMessage={handleDeleteMessage}
+                                                handleReaction={handleReaction}
+                                                handleEditMessage={handleEditMessage}
+                                                editingMessage={editingMessage}
+                                            />
+                                        ))}
+                                    </div>
+                                );
+                            })}
+                             <div className="h-4" />
                         </div>
                         <footer className="px-4 pb-4 pt-2 flex-shrink-0">
                              <div className="typing-indicator">
@@ -334,7 +453,15 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
                                             <button onClick={() => setReplyingTo(null)} className="text-xl">&times;</button>
                                         </div>
                                     )}
-                                    <textarea ref={textareaRef} placeholder={`Enviar mensaje a #${activeChannelInfo?.name}`} className="discord-chat-textarea pt-2" />
+                                    <textarea 
+                                        ref={textareaRef} 
+                                        placeholder={`Enviar mensaje a #${activeChannelInfo?.name}`} 
+                                        className="discord-chat-textarea pt-2"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        rows={1}
+                                    />
                                 </div>
                             ) : (
                                 <div className="text-center text-sm text-[color:var(--text-muted)] bg-[color:var(--input-bg)] p-3 rounded-lg">{user ? 'Solo los administradores pueden enviar mensajes.' : 'Debes iniciar sesión para enviar mensajes.'}</div>
