@@ -545,12 +545,12 @@ export const initialGames: Game[] = [
         payload: {
             points: 80,
             cards: [
-                { id: 'mat1', content: '🍾', type: 'icon' }, { id: 'mat1', content: '🟡', type: 'icon' },
-                { id: 'mat2', content: '📰', type: 'icon' }, { id: 'mat2', content: '🔵', type: 'icon' },
-                { id: 'mat3', content: '🫙', type: 'icon' }, { id: 'mat3', content: '🟢', type: 'icon' },
-                { id: 'mat4', content: '🥫', type: 'icon' }, { id: 'mat4', content: '🔴', type: 'icon' },
-                { id: 'mat5', content: '🍎', type: 'icon' }, { id: 'mat5', content: '🟤', type: 'icon' },
-                { id: 'mat6', content: '🔋', type: 'icon' }, { id: 'mat6', content: '⚫️', type: 'icon' },
+                { id: 'mat1', content: '🍾', type: 'icon' },
+                { id: 'mat2', content: '📰', type: 'icon' },
+                { id: 'mat3', content: '🫙', type: 'icon' },
+                { id: 'mat4', content: '🥫', type: 'icon' },
+                { id: 'mat5', content: '🍎', type: 'icon' },
+                { id: 'mat6', content: '🔋', type: 'icon' },
             ]
         }
     },

@@ -24,14 +24,18 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onSendMe
       case 'text':
         return <p key={index}>{block.text}</p>;
       case 'image':
-        return (
-          <img
-            key={index}
-            src={`data:${block.mimeType};base64,${block.base64Data}`}
-            alt="Contenido subido por el usuario"
-            className="mt-1 rounded-lg max-w-full h-auto border-2 border-white/50"
-          />
-        );
+        // FIX: Added a check for base64Data since it's now optional.
+        if (block.base64Data) {
+          return (
+            <img
+              key={index}
+              src={`data:${block.mimeType};base64,${block.base64Data}`}
+              alt="Contenido subido por el usuario"
+              className="mt-1 rounded-lg max-w-full h-auto border-2 border-white/50"
+            />
+          );
+        }
+        return null;
       case 'list':
         return (
           <ul key={index} className="space-y-1 list-disc pl-5">

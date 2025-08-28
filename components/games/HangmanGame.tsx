@@ -16,7 +16,7 @@ const SadPlanet: React.FC<{ mistakes: number }> = ({ mistakes }) => {
         // Lata
         <path key="2" d="M75 80 L 85 80 L 85 90 L 75 90 Z M 77 82 H 83" fill="#e2e8f0" stroke="#4a5568" strokeWidth="1" />,
         // Bolsa
-        <path key="3"d="M80 30 C 75 35, 75 45, 80 50 S 90 55, 95 50 S 95 35, 90 30 Z M 83 30 C 83 25, 87 25, 87 30 M 87 30 C 87 25, 91 25, 91 30" fill="#fef08a" stroke="#4a5568" strokeWidth="0.5" />,
+        <path key="3" d="M80 30 C 75 35, 75 45, 80 50 S 90 55, 95 50 S 95 35, 90 30 Z M 83 30 C 83 25, 87 25, 87 30 M 87 30 C 87 25, 91 25, 91 30" fill="#fef08a" stroke="#4a5568" strokeWidth="0.5" />,
         // Cáscara de banana
         <path key="4" d="M10 70 Q 15 60, 25 75 M 12 72 Q 18 65, 25 75" fill="none" stroke="#facc15" strokeWidth="2" />,
         // Tetrabrik

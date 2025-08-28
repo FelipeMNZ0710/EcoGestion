@@ -28,7 +28,9 @@ export interface VideoBlock {
 
 export interface ImageBlock {
     type: 'image';
-    base64Data: string;
+    // FIX: Made base64Data optional to accommodate both user uploads (base64Data) and pre-defined content (imageUrl).
+    base64Data?: string; // For user uploads
+    imageUrl?: string; // For pre-defined content like news
     mimeType: string;
 }
 
@@ -259,4 +261,16 @@ export interface Game {
         repairableItems?: RepairableItem[];
         timePerItem?: number;
     }
+}
+
+// --- News Types ---
+export interface NewsArticle {
+    id: number;
+    image: string;
+    category: string;
+    title: string;
+    date: string;
+    excerpt: string;
+    content: ContentBlock[];
+    featured: boolean;
 }
