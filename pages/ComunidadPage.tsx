@@ -373,10 +373,10 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
     const typingUsers = isTyping[activeChannel] || [];
 
     return (
-        <div className="discord-theme flex h-[calc(100vh-80px)] mt-20">
+        <div className="discord-theme flex h-screen">
             {/* Channels Sidebar */}
             <aside className="w-60 bg-[color:var(--bg-secondary)] flex flex-col flex-shrink-0">
-                <header className="p-4 h-16 flex items-center shadow-md"><h1 className="font-bold text-white text-lg">Canales</h1></header>
+                <header className="p-4 pt-20 flex items-center shadow-md"><h1 className="font-bold text-white text-lg">Canales</h1></header>
                 <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                     {Object.entries(channelCategories).map(([categoryName, channelIds]) => (
                         <div key={categoryName}>
@@ -399,7 +399,7 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
 
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0">
-                <header className="flex items-center justify-between p-4 h-16 border-b border-black/20 shadow-sm flex-shrink-0">
+                <header className="flex items-center justify-between p-4 pt-20 border-b border-black/20 shadow-sm flex-shrink-0">
                     <div>
                         <h1 className="text-xl font-bold flex items-center space-x-2"><span className="text-2xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1>
                         <p className="text-sm text-[color:var(--text-muted)] ml-8">{activeChannelInfo?.description}</p>

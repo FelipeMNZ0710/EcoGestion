@@ -86,7 +86,7 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
     return (
         <>
             <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => setIsAchievementsModalOpen(false)} user={user} />
-            <div className="bg-background min-h-[calc(100vh-80px)] p-4 sm:p-6 lg:p-8">
+            <div className="bg-background pt-20 min-h-[calc(100vh-80px)] p-4 sm:p-6 lg:p-8">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <aside className="lg:col-span-1 animate-fade-in-up">
