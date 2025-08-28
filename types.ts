@@ -274,3 +274,28 @@ export interface NewsArticle {
     content: ContentBlock[];
     featured: boolean;
 }
+
+// --- Community Types ---
+export interface Reaction {
+  [emoji: string]: string[]; // emoji -> array of user names
+}
+
+export interface ReplyInfo {
+  messageId: number;
+  user: string;
+  text: string;
+}
+
+export interface CommunityMessage {
+    id: number;
+    user: string;
+    avatarUrl?: string;
+    avatarInitials: string;
+    avatarColor: string;
+    timestamp: Date;
+    text: string;
+    imageUrl?: string;
+    edited?: boolean;
+    reactions?: Reaction;
+    replyingTo?: ReplyInfo;
+}
