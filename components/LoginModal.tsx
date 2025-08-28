@@ -57,7 +57,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
             email: email,
             points: 1250,
             isAdmin: email.includes('admin'),
-            achievements: allAchievements.map(ach => ({ ...ach, unlocked: false })),
+            achievements: allAchievements.map(ach => ({ ...ach, unlocked: true })),
             stats: { messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 0, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0 },
             lastLogin: new Date().toISOString().split('T')[0],
             bannerUrl: 'https://images.unsplash.com/photo-1549605656-1596705599a4?q=80&w=800&auto=format&fit=crop',
