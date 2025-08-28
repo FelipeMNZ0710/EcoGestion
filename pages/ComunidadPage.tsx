@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { User, GamificationAction } from '../types';
+import { botAvatarUrl } from '../data/botAvatar';
 
 // --- Types ---
 interface Reaction {
@@ -51,8 +52,14 @@ const channelCategories: Record<string, string[]> = {
 
 const allUsersList = ["Silvera Matías", "Cabrera Dylan Ezequiel", "Franco Sian, Leandro Francisco", "Mendoza José Francisco Rafael", "Cristaldo Facundo", "Pereyra Roman, Ramiro Nicolás", "Gonzalez, Agostina", "Martínez, Javier Nicolás", "Vega Ezequiel Tomás Alejandro", "Ayala Santiago Tomás", "Short Lautaro", "Rodríguez Gonzalo Luis", "Galban Rojas Leonel Rolando", "Fariña Eric Andres", "Garcia Diego Gabriel", "González Viviana Elisa Soledad", "Recalde Alejandro Ezequiel", "Escalante, Elvio Facundo", "Rossi Fabiana", "Villlalba Franco Javier", "Bogado Augusto Gonzalo", "Laprida Fernando Agustin", "Benítez Gonzalo", "Colman Máximo Javier Alexis", "Ruiz Díaz Mateo Benjamin", "Zigaran Lucas", "Veron Máximo", "Falcón Santiago", "Zagaña Torancio, Alfonso", "Agüero Princich Matias Nicolás", "Augusto Fabricio Dario Nicolas", "Giuricich Facundo Gaston", "Miño Presentado Santiago Cristian", "Garrido Amín", "JARZINSKI KIARA", "RUIZ DIAZ DARIO EZEQUIEL", "CRUZ DIEGO JOSE", "AYALA LAUTARO", "BENITEZ FRANCO BENITEZ", "CRUZ YERALDO CÁCERES", "RUIZ DIAZ RUBEN ALEJANDRO", "RAMIREZ LUANA ABIGAIL", "BRITEZ SELENA", "BERNARD STELLA", "GAONA AXEL", "ACOSTA MARIA LAURA", "PÉREZ ANAHI JAQUELINE", "ROLÓN SERGIO AGUSTÍN", "VALLEJOS IGNACIO ALEJANDRO", "YBARS GIMÉNEZ ALAN MAURICIO", "FERNÁNDEZ ROBLEDO ZAMORA FELIX", "MONZÓN BRIAN NAHUEL", "DUARTE KEILA SERENA", "BENÍTEZ CRISTIAN RAMÓN", "CABRERA LAUTARO", "PERTILE SANTINO", "PERLO MARCOS EMMANUEL", "BENITEZ GÓMEZ LAUTARO SERGIO", "LEZCANO MAXIMILIANO", "OLMEDO VANESA AYELÉN", "GONZALEZ CANDIA, SEBASTIÁN NAHUEL", "BRITEZ DAMIÁN", "GONZALEZ LEANDRO GABRIEL", "ALVAREZ LUANA", "SANCHEZ GONZALO JOSE", "ACOSTA FERNANDO EXEQUIEL", "ALVARENGA FRANCO", "SANTIAGO GASTÓN ALMIRÓN", "ZALAZAR ABEL", "ARMOA AARON ANGEL", "MARTINEZ ALEXANDER FACUNDO", "VILLALBA LAUTARO DAVID", "IGURI NOELIA SOLEDAD", "MANSINI JOSÉ LIONEL", "ALMIRÓN AIELET ÁMBAR", "AMARILLA JULIO CÉSAR", "Miguel Mateo Badaracco", "Ana Gómez", "Carlos Ruiz"];
 
-const initialUsers: Record<string, { initials: string; color: string }> = {
-    'Admin Recicla': { initials: 'AR', color: 'bg-primary/20 text-primary' },
+interface CommunityUser {
+    initials: string;
+    color: string;
+    avatarUrl?: string;
+}
+
+const initialUsers: Record<string, CommunityUser> = {
+    'Admin Recicla': { initials: 'AR', color: 'bg-primary/20 text-primary', avatarUrl: botAvatarUrl },
     'Felipe': { initials: 'F', color: 'bg-teal-200 text-teal-800' },
 };
 
@@ -387,9 +394,19 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
                                 }
                                 const { group } = item;
                                 const firstMessage = group[0];
+                                const userDetails = initialUsers[firstMessage.user] || { initials: getUserInitials(firstMessage.user), color: getRandomColor() };
+
                                 return (
                                     <div key={firstMessage.id} className="discord-message-group flex space-x-4">
-                                        <div className="flex-shrink-0 w-10 h-10 mt-1"><div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${firstMessage.avatarColor}`}>{firstMessage.avatarInitials}</div></div>
+                                        <div className="flex-shrink-0 w-10 h-10 mt-1">
+                                             {userDetails.avatarUrl ? (
+                                                <img src={userDetails.avatarUrl} alt={firstMessage.user} className="w-10 h-10 rounded-full object-cover" />
+                                            ) : (
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${firstMessage.avatarColor}`}>
+                                                    {firstMessage.avatarInitials}
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-baseline space-x-2"><span className="font-semibold text-white text-base">{firstMessage.user}</span><span className="text-xs text-[color:var(--text-muted)]">{firstMessage.timestamp.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span></div>
                                             {group.map(message => (
@@ -426,12 +443,24 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
                     <aside className="w-60 discord-sidebar-members flex-shrink-0 p-2">
                         <h2 className="p-2 text-[color:var(--header-secondary)] text-xs font-bold uppercase">Miembros — {sortedMembers.length}</h2>
                         <div className="space-y-1 mt-2">
-                            {sortedMembers.map(member => (
-                                <div key={member.name} className="flex items-center space-x-3 p-1 rounded hover:bg-[color:var(--bg-hover)] cursor-pointer">
-                                    <div className="relative"><div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${initialUsers[member.name]?.color}`}>{initialUsers[member.name]?.initials}</div><span className={`absolute -bottom-0.5 -right-0.5 block h-3 w-3 rounded-full border-2 border-[color:var(--bg-secondary)] ${member.online ? 'bg-green-500' : 'bg-gray-500'}`}></span></div>
-                                    <div className="flex-1 min-w-0 flex items-center"><p className="font-medium text-sm truncate text-white">{member.name}</p>{ADMIN_USERS.includes(member.name) && (<span className="discord-admin-tag ml-2">Admin</span>)}</div>
-                                </div>
-                            ))}
+                            {sortedMembers.map(member => {
+                                const memberDetails = initialUsers[member.name];
+                                return (
+                                    <div key={member.name} className="flex items-center space-x-3 p-1 rounded hover:bg-[color:var(--bg-hover)] cursor-pointer">
+                                        <div className="relative">
+                                            {memberDetails?.avatarUrl ? (
+                                                <img src={memberDetails.avatarUrl} alt={member.name} className="w-8 h-8 rounded-full object-cover" />
+                                            ) : (
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${memberDetails?.color}`}>
+                                                    {memberDetails?.initials}
+                                                </div>
+                                            )}
+                                            <span className={`absolute -bottom-0.5 -right-0.5 block h-3 w-3 rounded-full border-2 border-[color:var(--bg-secondary)] ${member.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                        </div>
+                                        <div className="flex-1 min-w-0 flex items-center"><p className="font-medium text-sm truncate text-white">{member.name}</p>{ADMIN_USERS.includes(member.name) && (<span className="discord-admin-tag ml-2">Admin</span>)}</div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </aside>
                 </div>

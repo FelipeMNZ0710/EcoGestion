@@ -53,7 +53,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         // Mock Login/Register Logic
         const defaultUser: User = {
             id: '123',
-            name: isRegistering ? name : 'Rolón Sergio Agustín',
+            name: isRegistering ? name : 'Felipe Monzón',
             email: email,
             points: 1250,
             isAdmin: email.includes('admin'),

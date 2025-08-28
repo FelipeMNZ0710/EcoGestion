@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Page, User } from '../types';
 import { navigationData } from '../data/navigationData';
 import LoginModal from './LoginModal';
@@ -66,6 +66,8 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,9 +77,22 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleNavClick = (page: Page) => {
     setCurrentPage(page);
     setIsMenuOpen(false);
+    setIsProfileMenuOpen(false);
   };
   
   const handleOpenLoginModal = () => {
@@ -88,11 +103,16 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
   const handleLogout = () => {
       setUser(null);
       setIsMenuOpen(false);
-      // Navigate to home on logout if on a user-only page
+      setIsProfileMenuOpen(false);
       if (currentPage === 'perfil') {
           setCurrentPage('home');
       }
   }
+
+  const getUserInitials = (name: string): string => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
 
   return (
     <>
@@ -119,7 +139,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                     </svg>
                 </a>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                     {user?.isAdmin && (
                          <label htmlFor="admin-toggle" className="flex items-center cursor-pointer">
                             <div className="relative">
@@ -127,22 +147,47 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                                 <div className="block bg-surface w-12 h-6 rounded-full"></div>
                                 <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isAdminMode ? 'transform translate-x-6 !bg-primary' : ''}`}></div>
                             </div>
-                            <div className="ml-2 text-xs font-bold uppercase text-primary">Admin</div>
+                            <div className="ml-2 text-xs font-bold uppercase text-primary hidden sm:block">Admin</div>
                         </label>
                     )}
                     {user ? (
-                        <button className="relative w-11 h-[38px] header-icon" title="Cerrar Sesión" onClick={handleLogout}>
-                            <svg viewBox="0 0 60.68 52.87"><path className="background" d="m44.36,50.87h-28.03L2.31,26.43,16.33,2h28.03l14.02,24.43-14.02,24.43Z"></path></svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="absolute w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                        </button>
+                        <div className="relative" ref={profileMenuRef}>
+                            <button 
+                                className="profile-menu-button" 
+                                title="Mi Perfil" 
+                                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                            >
+                                {user.profilePictureUrl ? (
+                                    <img src={user.profilePictureUrl} alt={`Perfil de ${user.name}`} className="w-full h-full object-cover" />
+                                ) : (
+                                    <span>{getUserInitials(user.name)}</span>
+                                )}
+                            </button>
+                            {isProfileMenuOpen && (
+                                <div className="profile-menu-dropdown">
+                                    <div className="px-4 py-3 border-b border-white/10">
+                                        <p className="text-sm text-text-main font-semibold truncate">{user.name}</p>
+                                        <p className="text-xs text-text-secondary truncate">{user.email}</p>
+                                    </div>
+                                    <div className="py-1">
+                                        <a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('perfil'); }} className="profile-menu-item">
+                                            Mi Perfil
+                                        </a>
+                                    </div>
+                                    <div className="py-1 border-t border-white/10">
+                                        <button onClick={handleLogout} className="profile-menu-item text-red-400 w-full text-left">
+                                            Cerrar Sesión
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     ) : (
-                         <button className="relative w-11 h-[38px] header-icon" title="Iniciar Sesión" onClick={handleOpenLoginModal}>
-                            <svg viewBox="0 0 60.68 52.87"><path className="background" d="m44.36,50.87h-28.03L2.31,26.43,16.33,2h28.03l14.02,24.43-14.02,24.43Z"></path></svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="absolute w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 003 3h1a3 3 0 003-3v-1a3 3 0 00-3-3h-1a3 3 0 00-3 3zm-9-4v1a3 3 0 003 3h1a3 3 0 003-3v-1a3 3 0 00-3-3h-1a3 3 0 00-3 3z" />
+                         <button className="header-login-btn" onClick={handleOpenLoginModal}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 hidden sm:inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 003 3h1a3 3 0 003-3v-1a3 3 0 00-3-3h-1a3 3 0 00-3 3z" />
                             </svg>
+                            <span>Iniciar Sesión</span>
                         </button>
                     )}
                 </div>

@@ -184,6 +184,29 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         return games.filter(g => g.category === activeCategory);
     }, [games, activeCategory]);
 
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.1 }
+        );
+
+        const elements = document.querySelectorAll('.fade-in-section');
+        elements.forEach((el) => {
+            // Reset visibility before observing
+            el.classList.remove('is-visible');
+            observer.observe(el);
+        });
+
+        return () => observer.disconnect();
+    }, [filteredGames]);
+
     const handleGameComplete = (points: number) => {
         onUserAction('complete_game', { points });
         setTimeout(() => {

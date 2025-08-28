@@ -92,7 +92,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
             <div className={`grid gap-2 sm:gap-4 justify-center ${gameCards.length > 12 ? 'grid-cols-4 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-4'}`}>
                 {gameCards.map((card, index) => (
                     <div key={card.id} className="w-20 h-20 sm:w-24 sm:h-24 [perspective:1000px]" onClick={() => handleCardClick(index)}>
-                        <div className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] ${card.isFlipped || card.isMatched ? '[transform:rotateY(180deg)]' : ''}`}>
+                        <div className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-d] ${card.isFlipped || card.isMatched ? '[transform:rotateY(180deg)]' : ''}`}>
                             {/* Card Back */}
                             <div className="absolute w-full h-full [backface-visibility:hidden] bg-primary rounded-lg flex items-center justify-center text-white text-4xl cursor-pointer">
                                 ♻️

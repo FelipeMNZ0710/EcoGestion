@@ -2,6 +2,7 @@ import React from 'react';
 import { ChatMessage, MessageRole, ContentBlock } from '../types';
 import QuickQuestions from './QuickQuestions';
 import FAQList from './FAQList';
+import { botAvatarUrl } from '../data/botAvatar';
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -91,9 +92,7 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onSendMe
   return (
     <div className={`${wrapperClasses} ${animationClass}`}>
       {!isUser && (
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5,12A2.5,2.5 0 0,0 19,9.5A2.5,2.5 0 0,0 16.5,7A2.5,2.5 0 0,0 14,9.5A2.5,2.5 0 0,0 16.5,12M9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,13.24 19.62,14.4 19,15.41L15.41,19C14.4,19.62 13.24,20 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
-        </div>
+        <img src={botAvatarUrl} alt="EcoBot Avatar" className="flex-shrink-0 w-10 h-10 rounded-full object-cover" />
       )}
       <div className={`max-w-lg`}>
         <div className={`px-4 py-3 rounded-2xl ${bubbleClasses} ${isUser ? 'rounded-br-none' : 'rounded-bl-none'}`}>

@@ -474,5 +474,102 @@ export const initialGames: Game[] = [
                 { question: 'Para reducir el consumo de energía en casa, es mejor...', options: ['Dejar las luces prendidas para no gastar el interruptor', 'Usar lámparas LED de bajo consumo', 'Usar muchas lámparas de baja potencia'], correctAnswer: 1 },
             ]
         }
-    }
+    },
+     // 25. NEW: Ocean Guardian
+    {
+        id: 25,
+        title: 'Guardián del Océano',
+        category: 'Habilidad Arcade',
+        image: 'https://images.unsplash.com/photo-1509817523-5355934571b7?q=80&w=800',
+        type: 'catcher',
+        learningObjective: 'Enseña el impacto de la basura en la vida marina. ¡Atrapa los reciclables y salva a los animales!',
+        payload: {
+            points: 150,
+            lives: 3,
+            fallingItems: [
+                { id: 'c19', image: '🍾', type: 'recyclable', points: 10 },
+                { id: 'c20', image: '🐢', type: 'trash', points: -15 },
+                { id: 'c21', image: '🥫', type: 'recyclable', points: 10 },
+                { id: 'c22', image: '🐟', type: 'trash', points: -10 },
+                { id: 'c23', image: '🛍️', type: 'recyclable', points: 5 },
+                { id: 'c24', image: '🐬', type: 'trash', points: -15 },
+            ]
+        }
+    },
+    // 26. NEW: Dynamic Duo
+    {
+        id: 26,
+        title: 'Dúo Dinámico',
+        category: 'Lógica Rápida',
+        image: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800',
+        type: 'repair',
+        learningObjective: 'Asocia un residuo con el producto en el que se puede convertir para entender el ciclo del reciclaje.',
+        payload: {
+            points: 120,
+            timePerItem: 8,
+            repairableItems: [
+                { id: 'd1', name: 'Botellas PET', image: '🍾', toolOptions: ['👕', '🧱', '📰'], correctTool: '👕' },
+                { id: 'd2', name: 'Periódicos', image: '📰', toolOptions: ['🥫', '📦', '👕'], correctTool: '📦' },
+                { id: 'd3', name: 'Latas de Aluminio', image: '🥫', toolOptions: ['🚲', '🍌', '🫙'], correctTool: '🚲' },
+                { id: 'd4', name: 'Frascos de Vidrio', image: '🫙', toolOptions: ['👕', '🍷', '📰'], correctTool: '🍷' },
+                { id: 'd5', name: 'Restos Orgánicos', image: '🍎', toolOptions: ['🌱', '🥫', '📦'], correctTool: '🌱' },
+            ]
+        }
+    },
+    // 27. NEW: Spot the Intruder
+    {
+        id: 27,
+        title: 'Identifica el Intruso',
+        category: 'Conocimiento',
+        image: 'https://images.unsplash.com/photo-1604187351543-05ac3e6e7399?q=80&w=800',
+        type: 'trivia',
+        learningObjective: 'Agudiza tu atención para identificar qué residuo NO pertenece a un contenedor específico.',
+        payload: {
+            points: 100,
+            questions: [
+                { question: 'Contenedor AZUL (Papel): ¿Cuál es el intruso?', options: ['Revista vieja', 'Caja de cartón', 'Vaso de café usado'], correctAnswer: 2 },
+                { question: 'Contenedor AMARILLO (Plástico): ¿Cuál es el intruso?', options: ['Botella de agua', 'Cepillo de dientes', 'Pote de yogurt'], correctAnswer: 1 },
+                { question: 'Contenedor VERDE (Vidrio): ¿Cuál es el intruso?', options: ['Frasco de mermelada', 'Espejo roto', 'Botella de vino'], correctAnswer: 1 },
+                { question: 'Contenedor GRIS (Metales): ¿Cuál es el intruso?', options: ['Lata de gaseosa', 'Pilas', 'Lata de conservas'], correctAnswer: 1 },
+            ]
+        }
+    },
+    // 28. NEW: Material Memory
+    {
+        id: 28,
+        title: 'Memoria de Materiales',
+        category: 'Memoria',
+        image: 'https://images.unsplash.com/photo-1591123583272-9a8cb487f137?q=80&w=800',
+        type: 'memory',
+        learningObjective: 'Asocia diferentes objetos con el símbolo de su material correspondiente (color del contenedor).',
+        payload: {
+            points: 80,
+            cards: [
+                { id: 'mat1', content: '🍾', type: 'icon' }, { id: 'mat1', content: '🟡', type: 'icon' },
+                { id: 'mat2', content: '📰', type: 'icon' }, { id: 'mat2', content: '🔵', type: 'icon' },
+                { id: 'mat3', content: '🫙', type: 'icon' }, { id: 'mat3', content: '🟢', type: 'icon' },
+                { id: 'mat4', content: '🥫', type: 'icon' }, { id: 'mat4', content: '🔴', type: 'icon' },
+                { id: 'mat5', content: '🍎', type: 'icon' }, { id: 'mat5', content: '🟤', type: 'icon' },
+                { id: 'mat6', content: '🔋', type: 'icon' }, { id: 'mat6', content: '⚫️', type: 'icon' },
+            ]
+        }
+    },
+    // 29. NEW: Guess the Fact
+    {
+        id: 29,
+        title: 'Adivina el Dato',
+        category: 'Adivina la Palabra',
+        image: 'https://images.unsplash.com/photo-1550291652-6ea9114a4a41?q=80&w=800',
+        type: 'hangman',
+        learningObjective: 'Aprende datos impactantes sobre el reciclaje completando las palabras clave que faltan.',
+        payload: {
+            points: 100,
+            words: [
+                { word: 'ARBOLES', hint: 'Reciclar una tonelada de papel salva 17 de estos.' },
+                { word: 'ENERGIA', hint: 'Reciclar vidrio ahorra suficiente de esto para encender una bombilla por 4 horas.' },
+                { word: 'AGUA', hint: 'Un litro de aceite de cocina usado contamina 1.000 litros de esto.' },
+                { word: 'INFINITAS', hint: 'El vidrio se puede reciclar un número de veces...' },
+            ]
+        }
+    },
 ];

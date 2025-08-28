@@ -127,11 +127,83 @@
       .menu-open #hamburger .label .innerLabel:first-child { transform: translateY(-20px); opacity: 0; }
       .menu-open #hamburger .label .innerLabel:last-child { transform: translateY(0); opacity: 1; }
       
-      .header-icon .background { fill: transparent; stroke: #f5f5f5; stroke-width: 2; transition: fill 0.2s ease, stroke 0.2s ease; }
-      .header-icon:hover .background { fill: #10B981; stroke: #10B981; }
-      .header-icon svg:not(.absolute) { width: 100%; height: 100%; }
-      .header-icon .absolute { transition: color 0.2s ease; }
-      .header-icon:hover .absolute { color: #181818; }
+      /* --- Header Login Button --- */
+      .header-login-btn {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        font-family: 'Oswald', sans-serif;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        border: 1px solid #444;
+        border-radius: 6px;
+        color: #f5f5f5;
+        background-color: transparent;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      .header-login-btn:hover {
+        background-color: #10B981;
+        border-color: #10B981;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      }
+
+      /* --- Header Profile Menu --- */
+      .profile-menu-button {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 2px solid #444;
+        background-color: #444;
+        color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .profile-menu-button:hover, .profile-menu-button:focus {
+        border-color: #10B981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+        outline: none;
+      }
+      .profile-menu-button img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+      }
+
+      .profile-menu-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 200px;
+        background-color: #2b2d31;
+        border: 1px solid #444;
+        border-radius: 8px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        z-index: 60;
+        animation: scaleIn 0.2s ease-out;
+        transform-origin: top right;
+      }
+      .profile-menu-item {
+        display: block;
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+        color: #f5f5f5;
+        transition: background-color 0.2s;
+      }
+      .profile-menu-item:hover {
+        background-color: #10B981;
+        color: #f5f5f5;
+      }
+      .profile-menu-item:hover.text-red-400 {
+        background-color: #ef4444;
+        color: white;
+      }
       
       /* --- Big Menu --- */
       .big-menu {
