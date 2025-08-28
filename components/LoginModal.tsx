@@ -51,18 +51,31 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         }
         
         // Mock Login/Register Logic
+        const adminEmails = ['felipemonzon0710@gmail.com', 'agustinxd364@gmail.com'];
+        const lowerCaseEmail = email.toLowerCase();
+        const isUserAdmin = adminEmails.includes(lowerCaseEmail) || lowerCaseEmail.includes('admin');
+        
+        let userName = 'Usuario Eco'; // Default name
+        if (lowerCaseEmail === 'felipemonzon0710@gmail.com') {
+            userName = 'Felipe Monzón';
+        } else if (lowerCaseEmail === 'agustinxd364@gmail.com') {
+            userName = 'Agustín Rolón';
+        } else if (isRegistering) {
+            userName = name;
+        }
+
         const defaultUser: User = {
             id: '123',
-            name: isRegistering ? name : 'Felipe Monzón',
+            name: userName,
             email: email,
-            points: 1250,
-            isAdmin: email.includes('admin'),
-            achievements: allAchievements.map(ach => ({ ...ach, unlocked: true })),
+            points: isUserAdmin ? 99999 : 1250,
+            isAdmin: isUserAdmin,
+            achievements: allAchievements.map(ach => ({ ...ach, unlocked: isUserAdmin })),
             stats: { messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 0, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0 },
             lastLogin: new Date().toISOString().split('T')[0],
             bannerUrl: 'https://images.unsplash.com/photo-1549605656-1596705599a4?q=80&w=800&auto=format&fit=crop',
             profilePictureUrl: '',
-            title: 'Reciclador Entusiasta',
+            title: isUserAdmin ? 'Administrador' : 'Reciclador Entusiasta',
             bio: 'Apasionado por la ecología y el futuro de nuestro planeta. Siempre buscando formas de reducir mi huella de carbono.',
             socials: { twitter: '#', instagram: '#', linkedin: '#' }
         };

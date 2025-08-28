@@ -1,7 +1,6 @@
 import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
-import ChatAssistantWidget from './ChatAssistantWidget';
 import NotificationToaster from './NotificationToaster';
 import type { Page, User, Notification } from '../types';
 
@@ -12,11 +11,9 @@ interface LayoutProps {
   user: User | null;
   setUser: (user: User | null) => void;
   notifications: Notification[];
-  isAdminMode: boolean;
-  setIsAdminMode: (isActive: boolean) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser, notifications, isAdminMode, setIsAdminMode }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, user, setUser, notifications }) => {
   return (
     <div className="bg-background min-h-screen flex flex-col antialiased text-text-main">
       <Header 
@@ -24,14 +21,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, 
         setCurrentPage={setCurrentPage} 
         user={user} 
         setUser={setUser}
-        isAdminMode={isAdminMode}
-        setIsAdminMode={setIsAdminMode}
       />
       <main className="flex-1 w-full">
         {children}
       </main>
       <Footer />
-      <ChatAssistantWidget user={user} />
       <NotificationToaster notifications={notifications} />
     </div>
   );

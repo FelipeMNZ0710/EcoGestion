@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { User, GamificationAction, CommunityMessage, ReplyInfo, Reaction } from '../types';
-import { botAvatarUrl } from '../data/botAvatar';
+
+// FIX: The file botAvatar.ts is not a module. Replaced import with a local constant.
+const botAvatarUrl = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnpNOCAxMi41YzAtLjgzLjY3LTEuNSAxLjUtMS41czEuNS42NyAxLjUgMS41UzEwLjMzIDE0IDkuNSAxNCA4IDEzLjMzIDggMTIuNXptNi41IDEuNWMtLjgzIDAtMS41LS42Ny0xLjUtMS41cy42Ny0xLjUgMS41LTEuNSAxLjUuNjcgMS41IDEuNS0uNjcgMS41LTEuNSAxLjV6TTEyIDE4Yy0yLjI4IDAtNC4yMi0xLjY2LTUtNGgxMGMtLjc4IDIuMzQtMi43MiA0LTUgNHoiLz48L3N2Zz4=';
 
 // --- Types ---
 interface Channel {
@@ -101,7 +103,7 @@ const processInitialMessages = (): MessagesState => {
             { id: 13, user: 'Felipe Monzón', time: 'Hoy a las 09:32 AM', text: 'Ojo con eso! La mayoría de los tickets son de papel térmico, que tiene químicos y no se puede reciclar. Van a la basura común.' },
         ],
         proyectos: [
-            { id: 14, user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format=fit=crop' },
+            { id: 14, user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format&fit=crop' },
             { id: 15, user: 'Vallejos Ignacio Alejandro', time: 'Ayer a las 06:05 PM', text: '¡Qué genia! Quedó increíble. Me das la idea para hacer uno. ¿Usaste botellas de 2L?', reactions: {'❤️': ['Rossi Fabiana', 'Felipe Monzón']} },
             { id: 16, user: 'Jarzinski Kiara', time: 'Ayer a las 06:07 PM', text: 'Sí! Las de gaseosa de 2.25L son perfectas. Las corté con un cutter y las colgué con alambre.', replyingTo: { messageId: 15, user: 'Vallejos Ignacio Alejandro', text: '¡Qué genia! Quedó increíble...' } },
         ],

@@ -23,7 +23,6 @@ const App: React.FC = () => {
     }
   });
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isAdminMode, setIsAdminMode] = useState(false);
 
   useEffect(() => {
     try {
@@ -60,7 +59,6 @@ const App: React.FC = () => {
   
   const handleLogin = (newUser: User | null) => {
     if (!newUser) {
-      setIsAdminMode(false);
       setUser(null);
       return;
     }
@@ -80,17 +78,18 @@ const App: React.FC = () => {
   };
 
   const renderPage = () => {
+    const isAdmin = user?.isAdmin ?? false;
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
+        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdmin} />;
       case 'como-reciclar':
-        return <ComoReciclarPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
+        return <ComoReciclarPage user={user} onUserAction={handleUserAction} isAdminMode={isAdmin} />;
       case 'puntos-verdes':
-        return <PuntosVerdesPage user={user} setUser={setUser} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
+        return <PuntosVerdesPage user={user} setUser={setUser} onUserAction={handleUserAction} isAdminMode={isAdmin} />;
       case 'juegos':
-        return <JuegosPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
+        return <JuegosPage user={user} onUserAction={handleUserAction} isAdminMode={isAdmin} />;
       case 'noticias':
-        return <NoticiasPage user={user} isAdminMode={isAdminMode} />;
+        return <NoticiasPage user={user} isAdminMode={isAdmin} />;
       case 'comunidad':
         return <ComunidadPage user={user} onUserAction={handleUserAction} />;
       case 'contacto':
@@ -98,7 +97,7 @@ const App: React.FC = () => {
       case 'perfil':
         return <PerfilPage user={user} updateUser={updateUser} />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
+        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdmin} />;
     }
   };
 
@@ -110,8 +109,6 @@ const App: React.FC = () => {
           user={user}
           setUser={handleLogin}
           notifications={notifications}
-          isAdminMode={isAdminMode}
-          setIsAdminMode={setIsAdminMode}
         >
           {renderPage()}
         </Layout>

@@ -1,9 +1,14 @@
-export enum MessageRole {
-  USER = 'user',
-  BOT = 'bot',
-}
+export type Page =
+  | 'home'
+  | 'como-reciclar'
+  | 'puntos-verdes'
+  | 'juegos'
+  | 'noticias'
+  | 'comunidad'
+  | 'contacto'
+  | 'perfil';
 
-// New Structured Content Types
+// Structured Content Types for news articles
 export interface TextBlock {
   type: 'text';
   text: string;
@@ -28,9 +33,8 @@ export interface VideoBlock {
 
 export interface ImageBlock {
     type: 'image';
-    // FIX: Made base64Data optional to accommodate both user uploads (base64Data) and pre-defined content (imageUrl).
-    base64Data?: string; // For user uploads
-    imageUrl?: string; // For pre-defined content like news
+    base64Data?: string; 
+    imageUrl?: string; 
     mimeType: string;
 }
 
@@ -40,24 +44,6 @@ export interface FAQBlock {
 }
 
 export type ContentBlock = TextBlock | ListBlock | LinkBlock | VideoBlock | ImageBlock | FAQBlock;
-
-export interface ChatMessage {
-  role: MessageRole;
-  content: ContentBlock[];
-  quickQuestions?: string[];
-  isFallback?: boolean;
-  fromCache?: boolean;
-}
-
-export type Page =
-  | 'home'
-  | 'como-reciclar'
-  | 'puntos-verdes'
-  | 'juegos'
-  | 'noticias'
-  | 'comunidad'
-  | 'contacto'
-  | 'perfil';
 
 export interface Achievement {
   id: string;

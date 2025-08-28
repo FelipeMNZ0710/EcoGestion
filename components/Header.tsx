@@ -8,8 +8,6 @@ interface HeaderProps {
   setCurrentPage: (page: Page) => void;
   user: User | null;
   setUser: (user: User | null) => void;
-  isAdminMode: boolean;
-  setIsAdminMode: (isActive: boolean) => void;
 }
 
 const BigMenu: React.FC<{
@@ -62,7 +60,7 @@ const BigMenu: React.FC<{
 };
 
 
-const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setUser, isAdminMode, setIsAdminMode }) => {
+const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setUser }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
@@ -140,16 +138,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, user, setU
                 </a>
 
                 <div className="flex items-center gap-4">
-                    {user?.isAdmin && (
-                         <label htmlFor="admin-toggle" className="flex items-center cursor-pointer">
-                            <div className="relative">
-                                <input type="checkbox" id="admin-toggle" className="sr-only" checked={isAdminMode} onChange={() => setIsAdminMode(!isAdminMode)} />
-                                <div className="block bg-surface w-12 h-6 rounded-full"></div>
-                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isAdminMode ? 'transform translate-x-6 !bg-primary' : ''}`}></div>
-                            </div>
-                            <div className="ml-2 text-xs font-bold uppercase text-primary hidden sm:block">Admin</div>
-                        </label>
-                    )}
                     {user ? (
                         <div className="relative" ref={profileMenuRef}>
                             <button 
