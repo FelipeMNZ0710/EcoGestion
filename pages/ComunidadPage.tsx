@@ -101,7 +101,7 @@ const processInitialMessages = (): MessagesState => {
             { id: 13, user: 'Felipe Monzón', time: 'Hoy a las 09:32 AM', text: 'Ojo con eso! La mayoría de los tickets son de papel térmico, que tiene químicos y no se puede reciclar. Van a la basura común.' },
         ],
         proyectos: [
-            { id: 14, user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format&fit=crop' },
+            { id: 14, user: 'Jarzinski Kiara', time: 'Ayer a las 06:00 PM', text: 'Miren el huerto vertical que armé en el balcón con botellas de plástico PET. ¡Súper fácil y ahora tengo perejil fresco! 🌿', imageUrl: 'https://images.unsplash.com/photo-1596706042369-12a1ba3390d4?q=80&w=400&auto=format=fit=crop' },
             { id: 15, user: 'Vallejos Ignacio Alejandro', time: 'Ayer a las 06:05 PM', text: '¡Qué genia! Quedó increíble. Me das la idea para hacer uno. ¿Usaste botellas de 2L?', reactions: {'❤️': ['Rossi Fabiana', 'Felipe Monzón']} },
             { id: 16, user: 'Jarzinski Kiara', time: 'Ayer a las 06:07 PM', text: 'Sí! Las de gaseosa de 2.25L son perfectas. Las corté con un cutter y las colgué con alambre.', replyingTo: { messageId: 15, user: 'Vallejos Ignacio Alejandro', text: '¡Qué genia! Quedó increíble...' } },
         ],
@@ -376,7 +376,7 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
         <div className="discord-theme flex h-screen">
             {/* Channels Sidebar */}
             <aside className="w-60 bg-[color:var(--bg-secondary)] flex flex-col flex-shrink-0">
-                <header className="p-4 pt-20 flex items-center shadow-md"><h1 className="font-bold text-white text-lg">Canales</h1></header>
+                <header className="p-4 h-32 flex items-end shadow-md"><h1 className="font-bold text-white text-lg">Canales</h1></header>
                 <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                     {Object.entries(channelCategories).map(([categoryName, channelIds]) => (
                         <div key={categoryName}>
@@ -398,15 +398,15 @@ const ComunidadPage: React.FC<ComunidadPageProps> = ({ user, onUserAction }) => 
             </aside>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0">
-                <header className="flex items-center justify-between p-4 pt-20 border-b border-black/20 shadow-sm flex-shrink-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-[color:var(--bg-primary)]">
+                <header className="flex items-end justify-between p-4 h-32 border-b border-black/20 shadow-sm flex-shrink-0">
                     <div>
-                        <h1 className="text-xl font-bold flex items-center space-x-2"><span className="text-2xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1>
-                        <p className="text-sm text-[color:var(--text-muted)] ml-8">{activeChannelInfo?.description}</p>
+                        <h1 className="text-xl font-bold flex items-center space-x-2 text-[color:var(--header-primary)]"><span className="text-2xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1>
+                        <p className="text-sm text-[color:var(--header-secondary)] ml-8">{activeChannelInfo?.description}</p>
                     </div>
                 </header>
                  <div className="flex-1 flex min-h-0">
-                    <main className="flex-1 flex flex-col min-h-0 bg-[color:var(--bg-primary)]">
+                    <main className="flex-1 flex flex-col min-h-0">
                         <div ref={chatContainerRef} className="flex-1 overflow-y-auto discord-chat-messages px-4">
                             <div className="h-4" />
                             {renderableChatItems.map((item, index) => {
