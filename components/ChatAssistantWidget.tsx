@@ -12,38 +12,52 @@ interface ChatAssistantWidgetProps {
 }
 
 const getShuffledQuestions = () => {
-    // Shuffle array and take the first 4 questions
     return allQuickQuestions.sort(() => 0.5 - Math.random()).slice(0, 4);
 };
 
 const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurrentPage }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>(() => {
+        try {
+            const saved = localStorage.getItem('ecoChatHistory');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error("Could not load chat history:", error);
+            return [];
+        }
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [shuffledQuestions, setShuffledQuestions] = useState<string[]>([]);
 
     useEffect(() => {
-        if (isOpen && messages.length === 0) {
-            // Shuffle questions for the new session
-            setShuffledQuestions(getShuffledQuestions());
-            
-            let welcomeText: string;
+        try {
+            localStorage.setItem('ecoChatHistory', JSON.stringify(messages));
+        } catch (error) {
+            console.error("Could not save chat history:", error);
+        }
+    }, [messages]);
 
-            if (user) {
-                // Personalized greeting for logged-in users
-                const firstName = user.name.split(' ')[0];
-                welcomeText = `¡Hola, ${firstName}! Soy Ecobot, tu asistente virtual de EcoGestión. 🤖\n\n¿Cómo puedo ayudarte a reciclar hoy?`;
-            } else {
-                // General greeting for guests
-                welcomeText = `¡Hola! Soy Ecobot, tu asistente virtual de EcoGestión. 🤖\n\n¿Cómo puedo ayudarte a reciclar hoy?`;
-            }
-            
-            const welcomeMessage = {
-                id: Date.now(),
-                text: welcomeText,
-                sender: 'bot' as const
-            };
-            setMessages([welcomeMessage]);
+    useEffect(() => {
+        if (isOpen && messages.length === 0) {
+            const typingMessageId = Date.now();
+            const typingMessage: ChatMessage = { id: typingMessageId, text: '', sender: 'bot' };
+            setMessages([typingMessage]);
+
+            setTimeout(() => {
+                setShuffledQuestions(getShuffledQuestions());
+                
+                let welcomeText: string;
+                if (user) {
+                    const firstName = user.name.split(' ')[0];
+                    welcomeText = `¡Hola, ${firstName}! Soy Ecobot, tu asistente virtual de EcoGestión. 🤖\n\n¿Cómo puedo ayudarte a reciclar hoy?`;
+                } else {
+                    welcomeText = `¡Hola! Soy Ecobot, tu asistente virtual de EcoGestión. 🤖\n\n¿Cómo puedo ayudarte a reciclar hoy?`;
+                }
+                
+                setMessages(prev => prev.map(m => 
+                    m.id === typingMessageId ? { ...m, text: welcomeText } : m
+                ));
+            }, 800);
         }
     }, [isOpen, user, messages.length]);
 
@@ -51,7 +65,6 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
         const newUserMessage: ChatMessage = { id: Date.now(), text, sender: 'user' };
         setMessages(prev => [...prev, newUserMessage]);
 
-        // Check cache first for an instant response
         const cachedResponse = getFromCache(text);
         if (cachedResponse) {
             const cachedBotMessage: ChatMessage = { id: Date.now() + 1, text: cachedResponse, sender: 'bot' };
@@ -91,18 +104,24 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
         }
     };
 
-    const handleClose = () => {
-        setIsOpen(false);
-        // Reset messages to ensure the welcome message and random questions are fresh on the next open.
-        // This fixes the bug where the user's name wouldn't update after logging in.
-        setMessages([]);
-    };
-
     const handleNavigate = (page: Page) => {
         setCurrentPage(page);
-        handleClose();
+        setIsOpen(false);
     };
 
+    const handleFeedback = (messageId: number, feedback: 'like' | 'dislike') => {
+        setMessages(prevMessages =>
+            prevMessages.map(msg =>
+                msg.id === messageId
+                    ? { ...msg, feedback: msg.feedback === feedback ? null : feedback }
+                    : msg
+            )
+        );
+    };
+    
+    const handleNewConversation = () => {
+        setMessages([]);
+    };
 
     return (
         <>
@@ -118,17 +137,21 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
 
             <div className={`fixed bottom-5 right-5 z-[1000] w-[calc(100%-2.5rem)] max-w-sm h-[70vh] max-h-[600px] bg-background rounded-2xl shadow-2xl flex flex-col transform transition-all duration-300 ease-out origin-bottom-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
                 <header className="p-4 bg-surface rounded-t-2xl flex items-center justify-between border-b border-white/10">
-                    <h3 className="font-bold text-lg text-text-main">Ecobot Asistente</h3>
-                    <button onClick={handleClose} className="text-3xl leading-none px-2 text-text-secondary hover:text-text-main rounded-full">&times;</button>
+                    <div className="flex items-center gap-4">
+                        <h3 className="font-bold text-lg text-text-main">Ecobot Asistente</h3>
+                        <button onClick={handleNewConversation} className="text-xs text-text-secondary hover:underline">Nueva Conversación</button>
+                    </div>
+                    <button onClick={() => setIsOpen(false)} className="text-3xl leading-none px-2 text-text-secondary hover:text-text-main rounded-full">&times;</button>
                 </header>
                 
                 <ChatHistory 
                     messages={messages} 
                     isLoading={isLoading} 
-                    showQuickQuestions={messages.length === 1}
+                    showQuickQuestions={messages.length === 1 && !!messages[0].text}
                     quickQuestions={shuffledQuestions}
                     onQuickQuestionClick={handleSend}
                     onNavigate={handleNavigate}
+                    onFeedback={handleFeedback}
                 />
                                 
                 <ChatInput onSend={handleSend} isLoading={isLoading} />

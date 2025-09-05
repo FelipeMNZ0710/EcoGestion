@@ -10,9 +10,10 @@ interface ChatHistoryProps {
     quickQuestions: string[];
     onQuickQuestionClick: (question: string) => void;
     onNavigate: (page: Page) => void;
+    onFeedback: (messageId: number, feedback: 'like' | 'dislike') => void;
 }
 
-const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, isLoading, showQuickQuestions, quickQuestions, onQuickQuestionClick, onNavigate }) => {
+const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, isLoading, showQuickQuestions, quickQuestions, onQuickQuestionClick, onNavigate, onFeedback }) => {
     const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -22,7 +23,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, isLoading, showQuic
     return (
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
             {messages.map(msg => (
-                <ChatMessageBubble key={msg.id} message={msg} onNavigate={onNavigate} />
+                <ChatMessageBubble key={msg.id} message={msg} onNavigate={onNavigate} onFeedback={onFeedback} />
             ))}
             
             {showQuickQuestions && (
