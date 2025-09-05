@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { User, Material, MaterialContent, QuizQuestion, GamificationAction, MaterialContentItem, ProcessStep, ImpactStat } from '../types';
-// FIX: Imported `Type` for responseSchema and removed unused imports.
 import { GoogleGenAI, Type } from "@google/genai";
 import { sabiasQueData } from '../data/sabiasQueData';
 import TriviaGame from '../components/games/TriviaGame';
@@ -279,7 +278,6 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
                 ]},
                 config: {
                     responseMimeType: 'application/json',
-// FIX: Used `Type` enum for responseSchema properties for correctness and type safety.
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {

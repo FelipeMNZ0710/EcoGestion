@@ -141,7 +141,6 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
                 const matchesSearch = searchTerm === '' || article.title.toLowerCase().includes(searchTerm.toLowerCase()) || article.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
                 return matchesCategory && matchesSearch;
             })
-            // FIX: Replaced date parsing with a robust function to ensure correct sorting across all environments.
             .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
     }, [news, activeCategory, searchTerm]);
     

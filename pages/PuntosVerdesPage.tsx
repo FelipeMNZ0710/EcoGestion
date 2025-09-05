@@ -283,7 +283,7 @@ const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave
         if (editedLocation) onSave(editedLocation);
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setEditedLocation(prev => prev ? { ...prev, [name]: value } : null);
     };
@@ -292,11 +292,22 @@ const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4 modal-form">
-                    <h2 className="text-xl font-bold text-text-main">Editar Punto Verde</h2>
-{/* // FIX: Completed the truncated LocationEditModal component to make the file syntactically valid. */}
+                    <h2 className="text-xl font-bold text-text-main mb-4">Editar Punto Verde</h2>
+                    <div><label htmlFor="name">Nombre</label><input type="text" name="name" id="name" value={editedLocation.name} onChange={handleInputChange} /></div>
+                    <div><label htmlFor="address">Dirección</label><input type="text" name="address" id="address" value={editedLocation.address} onChange={handleInputChange} /></div>
+                    <div><label htmlFor="description">Descripción</label><textarea name="description" id="description" value={editedLocation.description} onChange={handleInputChange} rows={3}></textarea></div>
+                    <div><label htmlFor="status">Estado</label>
+                        <select name="status" id="status" value={editedLocation.status} onChange={handleInputChange}>
+                            <option value="ok">Operativo</option>
+                            <option value="reported">Reportado</option>
+                            <option value="maintenance">En Mantenimiento</option>
+                            <option value="serviced">Servicio Reciente</option>
+                        </select>
+                    </div>
+                    {/* Add more fields for materials, schedule, etc. as needed */}
                     <div className="flex justify-end space-x-3 pt-6">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar</button>
+                        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar Cambios</button>
                     </div>
                 </form>
             </div>
@@ -304,23 +315,124 @@ const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave
     );
 };
 
-{/* // FIX: Added the missing PuntosVerdesPage component definition and default export to resolve the import error in App.tsx. */}
 const PuntosVerdesPage: React.FC<{
     user: User | null;
     setUser: (user: User | null) => void;
     onUserAction: (action: GamificationAction, payload?: any) => void;
     isAdminMode: boolean;
 }> = ({ user, setUser, onUserAction, isAdminMode }) => {
+    const [puntosVerdes, setPuntosVerdes] = useState<Location[]>(initialPuntosVerdes);
+    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+    const [hoveredLocationId, setHoveredLocationId] = useState<string | null>(null);
+    const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+    
+    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+    const filteredLocations = useMemo(() => {
+        if (activeFilter === 'Todos') return puntosVerdes;
+        if (activeFilter === 'Favoritos') {
+            return puntosVerdes.filter(p => user?.favoriteLocations?.includes(p.id));
+        }
+        return puntosVerdes.filter(p => p.materials.includes(activeFilter));
+    }, [puntosVerdes, activeFilter, user]);
+    
+    const openDetailModal = (location: Location) => {
+        setSelectedLocation(location);
+        setIsDetailModalOpen(true);
+    };
+
+    const handleCheckIn = () => {
+        if (selectedLocation) {
+            onUserAction('check_in');
+            setPuntosVerdes(puntosVerdes.map(p => p.id === selectedLocation.id ? {...p, checkIns: p.checkIns + 1} : p));
+            setIsDetailModalOpen(false);
+        }
+    };
+    
+    const handleReportSubmit = (reportData: Omit<Report, 'userId' | 'userName' | 'timestamp'>) => {
+        if (selectedLocation && user) {
+            const newReport: Report = {
+                ...reportData,
+                userId: user.id,
+                userName: user.name,
+                timestamp: new Date().toISOString(),
+            };
+            const updatedLocation = {
+                ...selectedLocation,
+                reports: [...selectedLocation.reports, newReport],
+                status: 'reported' as LocationStatus,
+            };
+            setPuntosVerdes(puntosVerdes.map(p => p.id === selectedLocation.id ? updatedLocation : p));
+            onUserAction('report_punto_verde');
+            setIsReportModalOpen(false);
+            // also update the location in the detail modal if it's open
+            setSelectedLocation(updatedLocation);
+        }
+    };
+
     return (
-        <div className="pt-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Puntos Verdes</h1>
-                    <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Encuentra el punto de reciclaje más cercano.</p>
+        <>
+            <LocationDetailModal location={selectedLocation} user={user} onClose={() => setIsDetailModalOpen(false)} onCheckIn={handleCheckIn} onReport={() => setIsReportModalOpen(true)} />
+            <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onSubmit={handleReportSubmit} />
+            <LocationEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={() => {}} location={editingLocation} />
+
+            <div className="pt-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Mapa Interactivo de Puntos Verdes</h1>
+                        <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Encuentra tu punto de reciclaje más cercano, filtra por material y colabora con la comunidad reportando el estado de los contenedores.</p>
+                    </div>
+
+                    <div className="mb-8">
+                        <FilterMenu activeFilter={activeFilter} setActiveFilter={setActiveFilter} user={user} />
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1 h-[60vh] lg:h-auto order-2 lg:order-1">
+                            <div className="overflow-y-auto max-h-[60vh] lg:max-h-[calc(100vh-15rem)] pr-2 space-y-4">
+                                {filteredLocations.map(location => (
+                                    <LocationCard 
+                                        key={location.id}
+                                        // FIX: Ref callback functions should not return a value. Using a block body ensures an implicit 'undefined' return.
+                                        ref={el => { cardRefs.current[location.id] = el; }}
+                                        location={location}
+                                        isSelected={selectedLocation?.id === location.id}
+                                        isHovered={hoveredLocationId === location.id}
+                                        isFavorite={user?.favoriteLocations?.includes(location.id) ?? false}
+                                        user={user}
+                                        isAdminMode={isAdminMode}
+                                        onMouseEnter={() => setHoveredLocationId(location.id)}
+                                        onMouseLeave={() => setHoveredLocationId(null)}
+                                        onClick={() => openDetailModal(location)}
+                                        onToggleFavorite={() => {}}
+                                        onEdit={() => { setEditingLocation(location); setIsEditModalOpen(true); }}
+                                        onDelete={() => {}}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="lg:col-span-2 h-[60vh] lg:h-auto order-1 lg:order-2">
+                             <InteractiveMap
+                                locations={filteredLocations.map(l => ({ ...l.mapData, status: l.status }))}
+                                // FIX: The 'selectedLocation' prop expects a 'LocationData' object, which includes a 'status' property. The original code only passed 'mapData', which was missing 'status'.
+                                selectedLocation={selectedLocation ? { ...selectedLocation.mapData, status: selectedLocation.status } : null}
+                                hoveredLocationId={hoveredLocationId}
+                                onPinClick={(mapData) => {
+                                    const loc = puntosVerdes.find(p => p.id === mapData.id);
+                                    if(loc) openDetailModal(loc);
+                                }}
+                                onPinMouseEnter={setHoveredLocationId}
+                                onPinMouseLeave={() => setHoveredLocationId(null)}
+                            />
+                        </div>
+                    </div>
                 </div>
-                {/* A full implementation would render the map and location cards here */}
             </div>
-        </div>
+        </>
     );
 };
 

@@ -534,17 +534,51 @@
         background-color: #10B981;
         transform: scale(1.1);
       }
+
+      /* Custom Chatbot Animations & Styles */
+      .typing-indicator .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #a0a0a0; /* text-secondary */
+        border-radius: 50%;
+        animation: typing-dot-bounce 1.4s infinite ease-in-out both;
+      }
+      .typing-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
+      .typing-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
+      @keyframes typing-dot-bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1.0); }
+      }
+      .chat-action-button {
+        display: inline-block;
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: #2b2d31;
+        border: 1px solid #10B981;
+        color: #10B981;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .chat-action-button:hover {
+          background-color: #10B981;
+          color: white;
+      }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@^19.1.1",
-        "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-        "react/": "https://esm.sh/react@^19.1.1/",
-        "@google/genai": "https://esm.sh/@google/genai@^1.15.0"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.15.0",
+    "marked": "https://aistudiocdn.com/marked@^16.2.1"
+  }
+}
+</script>
 </head>
   <body>
     <div id="root"></div>

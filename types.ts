@@ -285,3 +285,10 @@ export interface CommunityMessage {
     reactions?: Reaction;
     replyingTo?: ReplyInfo;
 }
+
+// --- Chatbot Types ---
+export interface ChatMessage {
+  id: number;
+  text: string;
+  sender: 'user' | 'bot';
+}

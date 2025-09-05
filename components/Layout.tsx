@@ -2,6 +2,7 @@ import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import NotificationToaster from './NotificationToaster';
+import ChatAssistantWidget from './ChatAssistantWidget';
 import type { Page, User, Notification } from '../types';
 
 interface LayoutProps {
@@ -27,6 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, 
       </main>
       <Footer />
       <NotificationToaster notifications={notifications} />
+      <ChatAssistantWidget user={user} setCurrentPage={setCurrentPage} />
     </div>
   );
 };
