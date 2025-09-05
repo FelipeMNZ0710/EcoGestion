@@ -3,7 +3,7 @@ import type { User, ChatMessage, Page } from '../types';
 import ChatHistory from './ChatHistory';
 import ChatInput from './ChatInput';
 import { getBotResponseStream } from '../services/intelligentBotService';
-import { quickQuestions as allQuickQuestions } from '../data/quickQuestionsData';
+import { allQuickQuestions } from '../data/quickQuestionsData';
 import { getFromCache, setInCache } from '../services/cacheService';
 
 interface ChatAssistantWidgetProps {
