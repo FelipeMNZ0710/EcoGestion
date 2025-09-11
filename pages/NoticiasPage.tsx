@@ -1,29 +1,24 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, NewsArticle } from '../types';
-import { initialNews } from '../data/newsData';
 import NewsDetailModal from '../components/NewsDetailModal';
-
-const ARTICLES_PER_PAGE = 5; // The number of articles to show initially and load more
 
 const NewsCard: React.FC<{ 
     article: NewsArticle; 
-    user: User | null;
     isAdminMode: boolean;
     onClick: () => void;
     onEdit: () => void;
     onDelete: () => void;
-}> = ({ article, user, isAdminMode, onClick, onEdit, onDelete }) => {
+}> = ({ article, isAdminMode, onClick, onEdit, onDelete }) => {
     const { image, category, title, date, excerpt } = article;
 
     const formattedDate = useMemo(() => {
-        // Adding T00:00:00 ensures the date is parsed in the local timezone, preventing off-by-one day errors.
         const dateObj = new Date(`${date}T00:00:00`);
         return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(dateObj);
     }, [date]);
 
     return (
         <div className="modern-card overflow-hidden group fade-in-section relative flex flex-col h-full" onClick={onClick}>
-            {user?.isAdmin && isAdminMode && (
+            {isAdminMode && (
                 <div className="card-admin-controls">
                     <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
                     <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
@@ -116,22 +111,33 @@ const NewsModal: React.FC<{
     );
 };
 
-// Robust date parsing function to avoid timezone issues
-const parseDate = (dateStr: string): Date => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    // The month is 0-indexed in JavaScript's Date constructor
-    return new Date(year, month - 1, day);
-};
-
 const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user, isAdminMode}) => {
-    const [news, setNews] = useState<NewsArticle[]>(initialNews);
+    const [news, setNews] = useState<NewsArticle[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
     const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todas');
-    const [visibleCount, setVisibleCount] = useState(ARTICLES_PER_PAGE);
-    
+
+    const fetchNews = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('http://localhost:3001/api/news', { cache: 'no-store' });
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data: NewsArticle[] = await response.json();
+            setNews(data);
+        } catch (error) {
+            console.error("Failed to fetch news:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchNews();
+    }, [fetchNews]);
+
     const categories = useMemo(() => ['Todas', ...Array.from(new Set(news.map(n => n.category)))], [news]);
 
     const filteredArticles = useMemo(() => {
@@ -140,15 +146,8 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
                 const matchesCategory = activeCategory === 'Todas' || article.category === activeCategory;
                 const matchesSearch = searchTerm === '' || article.title.toLowerCase().includes(searchTerm.toLowerCase()) || article.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
                 return matchesCategory && matchesSearch;
-            })
-            .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
+            });
     }, [news, activeCategory, searchTerm]);
-    
-    const paginatedArticles = useMemo(() => filteredArticles.slice(1, visibleCount + 1), [filteredArticles, visibleCount]);
-    
-    useEffect(() => {
-        setVisibleCount(ARTICLES_PER_PAGE);
-    }, [activeCategory, searchTerm]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -170,97 +169,126 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         });
 
         return () => observer.disconnect();
-    }, [paginatedArticles]);
-
+    }, [filteredArticles]);
+    
+    const heroArticle = useMemo(() => filteredArticles.find(a => a.featured) || filteredArticles[0], [filteredArticles]);
+    const regularArticles = useMemo(() => filteredArticles.filter(a => a.id !== heroArticle?.id), [filteredArticles, heroArticle]);
+    
     const handleOpenEditModal = (article: NewsArticle | null = null) => {
         setEditingArticle(article);
         setIsEditModalOpen(true);
     };
 
-    const handleSaveArticle = (article: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
-        const date = new Date().toISOString().split('T')[0];
-
-        if (article.id) {
-            setNews(news.map(n => n.id === article.id ? { ...n, ...article, date } as NewsArticle : n));
-        } else {
-            const newArticle: NewsArticle = { ...article, id: Date.now(), date } as NewsArticle;
-            setNews([newArticle, ...news]);
+    const handleSaveArticle = async (articleData: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
+        if (!user) {
+            alert("Necesitas iniciar sesión como administrador.");
+            return;
         }
-        setIsEditModalOpen(false);
+        const method = articleData.id ? 'PUT' : 'POST';
+        const url = articleData.id ? `http://localhost:3001/api/news/${articleData.id}` : 'http://localhost:3001/api/news';
+        
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...articleData, adminUserId: user.id })
+            });
+            if (!response.ok) throw new Error('Falló al guardar la noticia');
+            
+            setIsEditModalOpen(false);
+            await fetchNews(); 
+        } catch (error) {
+            console.error('Error guardando noticia:', error);
+            alert("Error al guardar la noticia. Revisa la consola.");
+        }
     };
 
-    const handleDeleteArticle = (articleId: number) => {
+    const handleDeleteArticle = async (articleId: number) => {
+        if (!user) {
+            alert("Necesitas iniciar sesión como administrador.");
+            return;
+        }
         if (window.confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
-            setNews(news.filter(n => n.id !== articleId));
+            try {
+                const response = await fetch(`http://localhost:3001/api/news/${articleId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUserId: user.id })
+                });
+                if (!response.ok) throw new Error('Falló al eliminar la noticia');
+                await fetchNews();
+            } catch (error) {
+                console.error('Error eliminando noticia:', error);
+                alert("Error al eliminar la noticia. Revisa la consola.");
+            }
         }
     };
     
-    const heroArticle = filteredArticles[0];
-
     return (
         <div className="bg-background pt-20">
             <NewsModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveArticle} article={editingArticle} />
             {selectedArticle && <NewsDetailModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />}
             
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Hero Section */}
-                {heroArticle && (
-                    <section className="mb-12 relative rounded-xl overflow-hidden modern-card cursor-pointer" onClick={() => setSelectedArticle(heroArticle)}>
-                        <img src={heroArticle.image} alt={heroArticle.title} className="w-full h-[50vh] object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 p-8 text-white">
-                            <span className="text-sm font-semibold bg-primary px-3 py-1 rounded-full">{heroArticle.category}</span>
-                            <h1 className="text-3xl lg:text-5xl font-bold font-display mt-4 leading-tight">{heroArticle.title}</h1>
-                            <p className="mt-2 text-slate-300 max-w-2xl">{heroArticle.excerpt}</p>
-                        </div>
-                    </section>
+                {isLoading && (
+                    <div className="text-center py-20">
+                        <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Cargando noticias...
+                    </div>
                 )}
 
-                <div className="grid lg:grid-cols-3 gap-8">
-                    {/* Main Content */}
-                    <div className="lg:col-span-2">
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {paginatedArticles.map(article => 
-                                <NewsCard key={article.id} article={article} user={user} isAdminMode={isAdminMode} 
-                                    onClick={() => setSelectedArticle(article)}
-                                    onEdit={() => handleOpenEditModal(article)} 
-                                    onDelete={() => handleDeleteArticle(article.id)} />
-                            )}
-                        </div>
-                         {visibleCount < filteredArticles.length -1 && (
-                            <div className="text-center mt-12">
-                                <button onClick={() => setVisibleCount(c => c + ARTICLES_PER_PAGE)} className="cta-button">
-                                    Cargar Más Noticias
-                                </button>
-                            </div>
+                {!isLoading && (
+                    <>
+                        {heroArticle && (
+                            <section className="mb-12 relative rounded-xl overflow-hidden modern-card cursor-pointer" onClick={() => setSelectedArticle(heroArticle)}>
+                                <img src={heroArticle.image} alt={heroArticle.title} className="w-full h-[50vh] object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                                <div className="absolute bottom-0 left-0 p-8 text-white">
+                                    <span className="text-sm font-semibold bg-primary px-3 py-1 rounded-full">{heroArticle.category}</span>
+                                    <h1 className="text-3xl lg:text-5xl font-bold font-display mt-4 leading-tight">{heroArticle.title}</h1>
+                                    <p className="mt-2 text-slate-300 max-w-2xl">{heroArticle.excerpt}</p>
+                                </div>
+                            </section>
                         )}
-                    </div>
 
-                    {/* Sidebar */}
-                    <aside className="space-y-6">
-                        {user?.isAdmin && isAdminMode && (
-                             <button onClick={() => handleOpenEditModal()} className="w-full cta-button">
-                                + Crear Nueva Noticia
-                            </button>
-                        )}
-                        <SidebarWidget title="Buscar">
-                            <input type="search" placeholder="Buscar noticias..." className="form-input w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                        </SidebarWidget>
-                        <SidebarWidget title="Categorías">
-                           <ul className="space-y-2 text-text-secondary">
-                                {categories.map(category => (
-                                    <li key={category}>
-                                        <a href="#" 
-                                           onClick={(e) => { e.preventDefault(); setActiveCategory(category); }} 
-                                           className={`hover:text-primary transition-colors news-category-link ${activeCategory === category ? 'active' : ''}`}>
-                                           {category}
-                                        </a>
-                                    </li>
-                                ))}
-                           </ul>
-                        </SidebarWidget>
-                    </aside>
-                </div>
+                        <div className="grid lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2">
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {regularArticles.map(article => 
+                                        <NewsCard key={article.id} article={article} isAdminMode={isAdminMode} 
+                                            onClick={() => setSelectedArticle(article)}
+                                            onEdit={() => handleOpenEditModal(article)} 
+                                            onDelete={() => handleDeleteArticle(article.id)} />
+                                    )}
+                                </div>
+                            </div>
+
+                            <aside className="space-y-6">
+                                {isAdminMode && (
+                                    <button onClick={() => handleOpenEditModal()} className="w-full cta-button">
+                                        + Crear Nueva Noticia
+                                    </button>
+                                )}
+                                <SidebarWidget title="Buscar">
+                                    <input type="search" placeholder="Buscar noticias..." className="form-input w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                </SidebarWidget>
+                                <SidebarWidget title="Categorías">
+                                <ul className="space-y-2 text-text-secondary">
+                                        {categories.map(category => (
+                                            <li key={category}>
+                                                <a href="#" 
+                                                onClick={(e) => { e.preventDefault(); setActiveCategory(category); }} 
+                                                className={`hover:text-primary transition-colors news-category-link ${activeCategory === category ? 'active' : ''}`}>
+                                                {category}
+                                                </a>
+                                            </li>
+                                        ))}
+                                </ul>
+                                </SidebarWidget>
+                            </aside>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -10,7 +10,8 @@ const actionPoints: Record<Exclude<GamificationAction, 'complete_game'>, number>
 };
 
 export const processAction = (user: User, action: GamificationAction, payload?: any): { updatedUser: User; notifications: Omit<Notification, 'id'>[] } => {
-    if (user.isAdmin) {
+    // FIX: Property 'isAdmin' does not exist on type 'User'. Check against user.role instead.
+    if (user.role === 'dueño' || user.role === 'moderador') {
         // Admins don't participate in the gamification system
         return { updatedUser: user, notifications: [] };
     }

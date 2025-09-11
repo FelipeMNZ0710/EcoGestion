@@ -6,7 +6,8 @@ export type Page =
   | 'noticias'
   | 'comunidad'
   | 'contacto'
-  | 'perfil';
+  | 'perfil'
+  | 'admin';
 
 // Structured Content Types for news articles
 export interface TextBlock {
@@ -109,13 +110,16 @@ export interface UserStats {
     gamesPlayed: number;
 }
 
+export type UserRole = 'usuario' | 'moderador' | 'dueño';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   points: number;
+  kgRecycled: number;
+  role: UserRole;
   achievements: Achievement[];
-  isAdmin: boolean;
   stats: UserStats;
   lastLogin: string; // ISO date string 'YYYY-MM-DD'
   favoriteLocations?: string[];
@@ -150,16 +154,6 @@ export interface Schedule {
   close: string; // "HH:MM"
 }
 
-export interface Report {
-  userId: string;
-  userName: string;
-  reason: 'full' | 'dirty' | 'damaged' | 'other';
-  comment: string;
-  imageUrl?: string;
-  timestamp: string;
-}
-
-
 export interface Location {
   id: string;
   name: string;
@@ -179,9 +173,23 @@ export interface Location {
   description: string;
   lastServiced: string; // ISO date string
   checkIns: number;
-  reports: Report[];
   imageUrls: string[];
 }
+
+export type ReportReason = 'full' | 'dirty' | 'damaged' | 'other';
+export type ReportStatus = 'pending' | 'resolved' | 'dismissed';
+
+export interface Report {
+  id: number;
+  locationName: string;
+  userName: string;
+  reason: ReportReason;
+  comment: string | null;
+  imageUrl: string | null;
+  status: ReportStatus;
+  reported_at: string;
+}
+
 
 // --- Game Types ---
 export type GameType = 'trivia' | 'memory' | 'sorting' | 'hangman' | 'chain' | 'catcher' | 'repair';
@@ -292,4 +300,15 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'bot';
   feedback?: 'like' | 'dislike' | null;
+}
+
+// --- Contact Message Type ---
+export interface ContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'unread' | 'read' | 'archived';
+  submitted_at: string;
 }

@@ -8,6 +8,7 @@ import NoticiasPage from './pages/NoticiasPage';
 import ComunidadPage from './pages/ComunidadPage';
 import ContactoPage from './pages/ContactoPage';
 import PerfilPage from './pages/PerfilPage';
+import AdminPage from './pages/AdminPage';
 import type { Page, User, Notification, GamificationAction } from './types';
 import { processAction } from './services/gamificationService';
 
@@ -45,7 +46,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleUserAction = useCallback((action: GamificationAction, payload?: any) => {
-    if (!user) return;
+    if (!user || user.role === 'dueño') return;
     
     if(action === 'daily_login') {
         const today = new Date().toISOString().split('T')[0];
@@ -65,7 +66,7 @@ const App: React.FC = () => {
     
     const today = new Date().toISOString().split('T')[0];
     let userToSet = newUser;
-    if (newUser.lastLogin !== today) {
+    if (newUser.lastLogin !== today && newUser.role !== 'dueño') {
         const { updatedUser, notifications } = processAction(newUser, 'daily_login');
         userToSet = updatedUser;
         notifications.forEach(addNotification);
@@ -73,31 +74,33 @@ const App: React.FC = () => {
     setUser(userToSet);
   };
 
-  const updateUser = (updatedUser: User) => {
+  const updateUser = useCallback((updatedUser: User) => {
     setUser(updatedUser);
-  };
+  }, []);
 
   const renderPage = () => {
-    const isAdmin = user?.isAdmin ?? false;
+    const isAdminMode = user?.role === 'dueño' || user?.role === 'moderador';
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdmin} />;
+        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
       case 'como-reciclar':
-        return <ComoReciclarPage user={user} onUserAction={handleUserAction} isAdminMode={isAdmin} />;
+        return <ComoReciclarPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'puntos-verdes':
-        return <PuntosVerdesPage user={user} setUser={setUser} onUserAction={handleUserAction} isAdminMode={isAdmin} />;
+        return <PuntosVerdesPage user={user} updateUser={updateUser} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'juegos':
-        return <JuegosPage user={user} onUserAction={handleUserAction} isAdminMode={isAdmin} />;
+        return <JuegosPage user={user} onUserAction={handleUserAction} isAdminMode={isAdminMode} />;
       case 'noticias':
-        return <NoticiasPage user={user} isAdminMode={isAdmin} />;
+        return <NoticiasPage user={user} isAdminMode={isAdminMode} />;
       case 'comunidad':
         return <ComunidadPage user={user} onUserAction={handleUserAction} />;
       case 'contacto':
         return <ContactoPage />;
       case 'perfil':
-        return <PerfilPage user={user} updateUser={updateUser} />;
+        return <PerfilPage user={user} updateUser={updateUser} setCurrentPage={setCurrentPage} />;
+      case 'admin':
+        return isAdminMode ? <AdminPage user={user} /> : <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdmin} />;
+        return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
     }
   };
 

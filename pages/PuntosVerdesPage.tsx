@@ -1,72 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, forwardRef } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
-import type { User, GamificationAction, Location, Schedule, LocationStatus, Report } from '../types';
+import type { User, GamificationAction, Location, Schedule, LocationStatus, ReportReason } from '../types';
 import FilterMenu, { Category as FilterCategory } from '../components/FilterMenu';
-
-
-// --- Data ---
-const initialPuntosVerdes: Location[] = [
-    {
-        id: "guemes",
-        name: "Centro Comunitario Güemes",
-        address: "Av. Gendarmería Nacional 1234, B° Güemes",
-        hours: "Lunes a Viernes de 08:00 a 16:00",
-        schedule: [{ days: [1, 2, 3, 4, 5], open: "08:00", close: "16:00" }],
-        materials: ['Plásticos', 'Papel/Cartón', 'Vidrio'],
-        mapData: { name: "Güemes", id: 'guemes', lat: -26.1980, lng: -58.1995, x: 250, y: 450 },
-        status: 'ok',
-        description: "Un punto de recolección clave en el barrio, ideal para dejar tus reciclables después de hacer las compras en la zona. Suele tener buen mantenimiento.",
-        lastServiced: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        checkIns: 183,
-        reports: [],
-        imageUrls: ['https://images.unsplash.com/photo-1582029132869-755a953a7a2f?q=80&w=800&auto=format=fit=crop', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800&auto=format=fit=crop'],
-    },
-    {
-        id: "san-martin",
-        name: "Plaza San Martín",
-        address: "Av. 25 de Mayo y Moreno, Centro",
-        hours: "24 horas",
-        schedule: [{ days: [0, 1, 2, 3, 4, 5, 6], open: "00:00", close: "23:59" }],
-        materials: ['Plásticos', 'Vidrio'],
-        mapData: { name: "Plaza S. Martín", id: 'san-martin', lat: -26.1775, lng: -58.1744, x: 400, y: 300 },
-        status: 'reported',
-        description: "Punto de reciclaje principal ubicado en la plaza central. Contenedores para múltiples materiales disponibles 24/7. Muy concurrido, a veces puede estar lleno.",
-        lastServiced: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        checkIns: 412,
-        reports: [{ userId: 'user2', userName: 'Ana Gómez', reason: 'full', comment: 'El contenedor de plásticos está rebalsando.', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }],
-        imageUrls: ['https://images.unsplash.com/photo-1517009336183-50f2886216ec?q=80&w=800&auto=format=fit=crop'],
-    },
-    {
-        id: "economico",
-        name: "Supermercado El Económico",
-        address: "Av. Italia 1550, B° San Miguel",
-        hours: "Lunes a Sábado de 09:00 a 20:00",
-        schedule: [{ days: [1, 2, 3, 4, 5, 6], open: "09:00", close: "20:00" }],
-        materials: ['Pilas'],
-        mapData: { name: "Super El Económico", id: 'economico', lat: -26.1701, lng: -58.1923, x: 350, y: 180 },
-        status: 'ok',
-        description: "Contenedor especial para pilas y baterías ubicado en la entrada del supermercado. Es importante depositar aquí estos residuos peligrosos de forma segura.",
-        lastServiced: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        checkIns: 98,
-        reports: [],
-        imageUrls: ['https://images.unsplash.com/photo-1629815024225-b8734e5a9526?q=80&w=800&auto=format=fit=crop'],
-    },
-    {
-        id: "la-paz",
-        name: "Delegación Municipal B° La Paz",
-        address: "Av. Néstor Kirchner 5595, B° La Paz",
-        hours: "Lunes a Viernes de 07:00 a 13:00",
-        schedule: [{ days: [1, 2, 3, 4, 5], open: "07:00", close: "13:00" }],
-        materials: ['Plásticos', 'Papel/Cartón'],
-        mapData: { name: "Delegación La Paz", id: 'la-paz', lat: -26.1600, lng: -58.2150, x: 180, y: 350 },
-        status: 'maintenance',
-        description: "Punto de recolección gestionado por la municipalidad. Actualmente en mantenimiento, se espera que vuelva a estar operativo pronto.",
-        lastServiced: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-        checkIns: 55,
-        reports: [],
-        imageUrls: ['https://images.unsplash.com/photo-1599827552899-62506655c64e?q=80&w=800&auto=format=fit=crop'],
-    }
-];
 
 const allMaterials: FilterCategory[] = ['Plásticos', 'Vidrio', 'Papel/Cartón', 'Pilas'];
 const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -97,7 +32,7 @@ const checkOpen = (schedule: Schedule[]): boolean => {
 const LocationCard = forwardRef<HTMLDivElement, {
     location: Location; isSelected: boolean; isHovered: boolean; isFavorite: boolean;
     user: User | null; isAdminMode: boolean; onMouseEnter: () => void;
-    onMouseLeave: () => void; onClick: () => void; onToggleFavorite: () => void;
+    onMouseLeave: () => void; onClick: () => void; onToggleFavorite: (locationId: string) => void;
     onEdit: () => void; onDelete: () => void;
 }>(({ location, isSelected, isHovered, isFavorite, user, isAdminMode, onMouseEnter, onMouseLeave, onClick, onToggleFavorite, onEdit, onDelete }, ref) => {
     const currentStatus = statusInfo[location.status];
@@ -112,7 +47,7 @@ const LocationCard = forwardRef<HTMLDivElement, {
                     </div>
                 )}
                  {user && (
-                    <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className={`absolute top-2 left-2 z-10 p-1.5 rounded-full transition-colors ${isFavorite ? 'text-yellow-400 bg-yellow-400/20' : 'text-slate-400 bg-surface/50 hover:text-yellow-400'}`} title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}>
+                    <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(location.id); }} className={`absolute top-2 left-2 z-10 p-1.5 rounded-full transition-colors ${isFavorite ? 'text-yellow-400 bg-yellow-400/20' : 'text-slate-400 bg-surface/50 hover:text-yellow-400'}`} title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     </button>
                 )}
@@ -149,7 +84,10 @@ const LocationDetailModal: React.FC<{location: Location | null; user: User | nul
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal-content !max-w-xl" onClick={e => e.stopPropagation()}>
+            <div className="modal-content !max-w-xl relative" onClick={e => e.stopPropagation()}>
+                 <button onClick={onClose} className="absolute top-3 right-3 text-white bg-black/50 rounded-full p-1.5 hover:bg-black/75 transition-colors z-10" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
                 <div className="detail-gallery p-4">
                     <img src={mainImage} alt={location.name} className="detail-gallery-main" />
                     <div className="detail-gallery-thumbs">
@@ -177,7 +115,7 @@ const LocationDetailModal: React.FC<{location: Location | null; user: User | nul
 
                     <div className="mt-4 border-t border-white/10 pt-4 activity-stats-grid">
                         <div className="activity-stat-item"><div className="value">{lastServicedDate}</div><div className="label">Último Servicio</div></div>
-                        <div className="activity-stat-item"><div className="value">{location.reports.length}</div><div className="label">Reportes</div></div>
+                        <div className="activity-stat-item"><div className="value">{/* Placeholder */}</div><div className="label">Reportes</div></div>
                         <div className="activity-stat-item"><div className="value">{location.checkIns}</div><div className="label">Check-ins</div></div>
                     </div>
 
@@ -198,8 +136,8 @@ const LocationDetailModal: React.FC<{location: Location | null; user: User | nul
     );
 };
 
-const ReportModal: React.FC<{ isOpen: boolean; onClose: () => void; onSubmit: (reportData: Omit<Report, 'userId' | 'userName' | 'timestamp'>) => void; }> = ({ isOpen, onClose, onSubmit }) => {
-    const [reason, setReason] = useState<'full' | 'dirty' | 'damaged' | 'other'>('full');
+const ReportModal: React.FC<{ isOpen: boolean; onClose: () => void; onSubmit: (reportData: { reason: ReportReason, comment: string, imageUrl?: string }) => void; }> = ({ isOpen, onClose, onSubmit }) => {
+    const [reason, setReason] = useState<ReportReason>('full');
     const [comment, setComment] = useState('');
     const [photo, setPhoto] = useState<{ file: File; preview: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -317,20 +255,40 @@ const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave
 
 const PuntosVerdesPage: React.FC<{
     user: User | null;
-    setUser: (user: User | null) => void;
+    updateUser: (user: User) => void;
     onUserAction: (action: GamificationAction, payload?: any) => void;
     isAdminMode: boolean;
-}> = ({ user, setUser, onUserAction, isAdminMode }) => {
-    const [puntosVerdes, setPuntosVerdes] = useState<Location[]>(initialPuntosVerdes);
+}> = ({ user, updateUser, onUserAction, isAdminMode }) => {
+    const [puntosVerdes, setPuntosVerdes] = useState<Location[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
     const [hoveredLocationId, setHoveredLocationId] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
     
     const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    
+    useEffect(() => {
+        const fetchLocations = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('http://localhost:3001/api/locations');
+                if (!response.ok) {
+                    throw new Error('La respuesta de la red no fue exitosa');
+                }
+                const data: Location[] = await response.json();
+                setPuntosVerdes(data);
+            } catch (error) {
+                console.error("Falló la obtención de las ubicaciones:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchLocations();
+    }, []);
 
     const filteredLocations = useMemo(() => {
         if (activeFilter === 'Todos') return puntosVerdes;
@@ -342,41 +300,77 @@ const PuntosVerdesPage: React.FC<{
     
     const openDetailModal = (location: Location) => {
         setSelectedLocation(location);
-        setIsDetailModalOpen(true);
+    };
+
+    const closeDetailModal = () => {
+        setSelectedLocation(null);
+    };
+
+    const handleToggleFavorite = async (locationId: string) => {
+        if (!user) {
+            alert("Debes iniciar sesión para guardar favoritos.");
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:3001/api/users/favorites`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, locationId: locationId })
+            });
+            if (!response.ok) throw new Error('Falló la actualización de favoritos');
+            const updatedUserFromServer = await response.json();
+            updateUser(updatedUserFromServer);
+        } catch (error) {
+            console.error("Error al cambiar favorito:", error);
+            alert("No se pudo actualizar tus favoritos. Intenta de nuevo.");
+        }
     };
 
     const handleCheckIn = () => {
         if (selectedLocation) {
             onUserAction('check_in');
             setPuntosVerdes(puntosVerdes.map(p => p.id === selectedLocation.id ? {...p, checkIns: p.checkIns + 1} : p));
-            setIsDetailModalOpen(false);
+            closeDetailModal();
         }
     };
     
-    const handleReportSubmit = (reportData: Omit<Report, 'userId' | 'userName' | 'timestamp'>) => {
-        if (selectedLocation && user) {
-            const newReport: Report = {
-                ...reportData,
-                userId: user.id,
-                userName: user.name,
-                timestamp: new Date().toISOString(),
-            };
-            const updatedLocation = {
-                ...selectedLocation,
-                reports: [...selectedLocation.reports, newReport],
-                status: 'reported' as LocationStatus,
-            };
-            setPuntosVerdes(puntosVerdes.map(p => p.id === selectedLocation.id ? updatedLocation : p));
+    const handleReportSubmit = async (reportData: { reason: ReportReason, comment: string, imageUrl?: string }) => {
+        if (!selectedLocation || !user) {
+            alert("Se requiere un usuario y una ubicación para enviar un reporte.");
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:3001/api/locations/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    locationId: selectedLocation.id,
+                    userId: user.id,
+                    ...reportData
+                })
+            });
+
+            if (!response.ok) throw new Error('Falló el envío del reporte');
+            
+            const updatedLocation = await response.json();
+
+            setPuntosVerdes(puntosVerdes.map(p => p.id === updatedLocation.id ? { ...p, status: updatedLocation.status } : p));
             onUserAction('report_punto_verde');
             setIsReportModalOpen(false);
-            // also update the location in the detail modal if it's open
-            setSelectedLocation(updatedLocation);
+            if(selectedLocation.id === updatedLocation.id) {
+                setSelectedLocation(prev => prev ? { ...prev, status: updatedLocation.status } : null);
+            }
+        } catch (error) {
+            console.error("Error al enviar el reporte:", error);
+            alert("No se pudo enviar el reporte. Por favor, inténtalo de nuevo.");
         }
     };
 
+
     return (
         <>
-            <LocationDetailModal location={selectedLocation} user={user} onClose={() => setIsDetailModalOpen(false)} onCheckIn={handleCheckIn} onReport={() => setIsReportModalOpen(true)} />
+            <LocationDetailModal location={selectedLocation} user={user} onClose={closeDetailModal} onCheckIn={handleCheckIn} onReport={() => setIsReportModalOpen(true)} />
             <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onSubmit={handleReportSubmit} />
             <LocationEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={() => {}} location={editingLocation} />
 
@@ -394,31 +388,39 @@ const PuntosVerdesPage: React.FC<{
                     <div className="grid lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-1 h-[60vh] lg:h-auto order-2 lg:order-1">
                             <div className="overflow-y-auto max-h-[60vh] lg:max-h-[calc(100vh-15rem)] pr-2 space-y-4">
-                                {filteredLocations.map(location => (
-                                    <LocationCard 
-                                        key={location.id}
-                                        // FIX: Ref callback functions should not return a value. Using a block body ensures an implicit 'undefined' return.
-                                        ref={el => { cardRefs.current[location.id] = el; }}
-                                        location={location}
-                                        isSelected={selectedLocation?.id === location.id}
-                                        isHovered={hoveredLocationId === location.id}
-                                        isFavorite={user?.favoriteLocations?.includes(location.id) ?? false}
-                                        user={user}
-                                        isAdminMode={isAdminMode}
-                                        onMouseEnter={() => setHoveredLocationId(location.id)}
-                                        onMouseLeave={() => setHoveredLocationId(null)}
-                                        onClick={() => openDetailModal(location)}
-                                        onToggleFavorite={() => {}}
-                                        onEdit={() => { setEditingLocation(location); setIsEditModalOpen(true); }}
-                                        onDelete={() => {}}
-                                    />
-                                ))}
+                                {isLoading ? (
+                                    <div className="text-center text-text-secondary p-8">
+                                        <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Cargando Puntos Verdes...
+                                    </div>
+                                ) : (
+                                    filteredLocations.map(location => (
+                                        <LocationCard 
+                                            key={location.id}
+                                            ref={el => { cardRefs.current[location.id] = el; }}
+                                            location={location}
+                                            isSelected={selectedLocation?.id === location.id}
+                                            isHovered={hoveredLocationId === location.id}
+                                            isFavorite={user?.favoriteLocations?.includes(location.id) ?? false}
+                                            user={user}
+                                            isAdminMode={isAdminMode}
+                                            onMouseEnter={() => setHoveredLocationId(location.id)}
+                                            onMouseLeave={() => setHoveredLocationId(null)}
+                                            onClick={() => openDetailModal(location)}
+                                            onToggleFavorite={handleToggleFavorite}
+                                            onEdit={() => { setEditingLocation(location); setIsEditModalOpen(true); }}
+                                            onDelete={() => {}}
+                                        />
+                                    ))
+                                )}
                             </div>
                         </div>
                         <div className="lg:col-span-2 h-[60vh] lg:h-auto order-1 lg:order-2">
                              <InteractiveMap
                                 locations={filteredLocations.map(l => ({ ...l.mapData, status: l.status }))}
-                                // FIX: The 'selectedLocation' prop expects a 'LocationData' object, which includes a 'status' property. The original code only passed 'mapData', which was missing 'status'.
                                 selectedLocation={selectedLocation ? { ...selectedLocation.mapData, status: selectedLocation.status } : null}
                                 hoveredLocationId={hoveredLocationId}
                                 onPinClick={(mapData) => {

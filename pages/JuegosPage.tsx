@@ -19,7 +19,7 @@ const GameCard: React.FC<{
     onDelete: (gameId: number) => void;
 }> = ({ game, user, isAdminMode, onPlay, onEdit, onDelete }) => (
     <div className="modern-card p-0 overflow-hidden fade-in-section relative flex flex-col">
-        {user?.isAdmin && isAdminMode && (
+        {isAdminMode && (
             <div className="card-admin-controls">
                 <button onClick={(e) => { e.stopPropagation(); onEdit(game); }} className="admin-action-button" title="Editar juego">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
@@ -60,7 +60,7 @@ const GamePlayer: React.FC<{
         switch(game.type) {
             case 'trivia':
                 if (!payload.questions) return <div>Error: Faltan datos para el juego de trivia.</div>;
-                return <TriviaGame questions={payload.questions} onComplete={handleCompletion} />;
+                return <TriviaGame questions={payload.questions} onComplete={handleCompletion} onClose={onClose} />;
             case 'memory':
                 if (!payload.cards) return <div>Error: Faltan datos para el juego de memoria.</div>;
                 return <MemoryGame cards={payload.cards} onComplete={handleCompletion} />;
@@ -243,7 +243,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
                     <div className="text-center mb-12 animate-fade-in-up">
                         <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Sala de Juegos Educativos</h1>
                         <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">¡Aprende sobre reciclaje de la forma más divertida y gana EcoPuntos!</p>
-                        {user?.isAdmin && isAdminMode && (
+                        {isAdminMode && (
                              <div className="mt-6">
                                 <button onClick={() => handleOpenEditModal(null)} className="cta-button">
                                     + Crear Nuevo Juego

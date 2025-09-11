@@ -1,9 +1,77 @@
-import React, { useState, useRef, useEffect } from 'react';
-import type { User } from '../types';
+import React, { useState, useEffect } from 'react';
+import type { User, Achievement, Page } from '../types';
 import ProfileAvatar from '../components/ProfileAvatar';
 import AchievementsModal from '../components/AchievementsModal';
 
-// --- Helper Functions & Data ---
+// --- Helper Components & Data ---
+
+const ProfileEditModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    user: User;
+    onSave: (updatedFields: Partial<User>) => void;
+}> = ({ isOpen, onClose, user, onSave }) => {
+    const [editedUser, setEditedUser] = useState(user);
+
+    useEffect(() => {
+        setEditedUser(user);
+    }, [user, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setEditedUser(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleStatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setEditedUser(prev => ({ ...prev, [name]: Number(value) }));
+    };
+    
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const updatedFields: Partial<User> = {};
+        // Compare and find what changed to send only the delta
+        (Object.keys(editedUser) as Array<keyof User>).forEach(key => {
+            if (editedUser[key] !== user[key]) {
+                 (updatedFields as any)[key] = editedUser[key];
+            }
+        });
+        onSave(updatedFields);
+    };
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit} className="p-6">
+                    <h2 className="text-xl font-bold font-display text-text-main mb-4">Editar Perfil</h2>
+                    <div className="space-y-4 modal-form">
+                        <div><label>Nombre Completo</label><input type="text" name="name" value={editedUser.name} onChange={handleInputChange} /></div>
+                        <div><label>Título (ej. Campeón del Reciclaje)</label><input type="text" name="title" value={editedUser.title || ''} onChange={handleInputChange} /></div>
+                        <div><label>Biografía</label><textarea name="bio" value={editedUser.bio || ''} onChange={handleInputChange} rows={3}></textarea></div>
+                        
+                        {user.role === 'dueño' && (
+                            <div className="pt-4 border-t border-white/20">
+                                <h3 className="font-bold text-primary">Controles de Administrador</h3>
+                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                    <div><label>EcoPuntos</label><input type="number" name="points" value={editedUser.points} onChange={handleStatChange} /></div>
+                                    <div><label>Kilos Reciclados</label><input type="number" name="kgRecycled" value={editedUser.kgRecycled} onChange={handleStatChange} /></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-6">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>
+                        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+
 const userLevels = [
     { points: 0, name: 'Novato del Reciclaje', icon: '🌱' },
     { points: 250, name: 'Aprendiz Verde', icon: '🌿' },
@@ -31,53 +99,12 @@ const getNextLevelInfo = (points: number) => {
     return { nextLevel, progress, pointsToNext };
 };
 
-const PieChart: React.FC<{ data: { label: string, value: number, color: string }[] }> = ({ data }) => {
-    const total = data.reduce((acc, d) => acc + d.value, 0);
-    let cumulative = 0;
-
-    const getCoordinatesForPercent = (percent: number) => {
-        const x = Math.cos(2 * Math.PI * percent);
-        const y = Math.sin(2 * Math.PI * percent);
-        return [x, y];
-    };
-
-    return (
-        <svg viewBox="-1 -1 2 2" className="activity-pie-chart-svg">
-            {data.map(d => {
-                const percent = d.value / total;
-                const [startX, startY] = getCoordinatesForPercent(cumulative);
-                cumulative += percent;
-                const [endX, endY] = getCoordinatesForPercent(cumulative);
-                const largeArcFlag = percent > 0.5 ? 1 : 0;
-                
-                const pathData = [
-                    `M ${startX} ${startY}`, // Move
-                    `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`, // Arc
-                    `L 0 0`, // Line to center
-                ].join(' ');
-
-                return <path key={d.label} d={pathData} fill={d.color} className="pie-chart-slice" />;
-            })}
-        </svg>
-    );
-};
-
-
 // --- Main Component ---
-const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void }> = ({ user, updateUser }) => {
+const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void, setCurrentPage: (page: Page) => void }> = ({ user, updateUser, setCurrentPage }) => {
     const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedUser, setEditedUser] = useState<User | null>(user);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    const bannerInputRef = useRef<HTMLInputElement>(null);
-    const avatarInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        setEditedUser(user);
-        if (!user) setIsEditing(false);
-    }, [user]);
-
-    if (!user || !editedUser) {
+    if (!user) {
         return (
             <div className="flex items-center justify-center pt-20 h-screen text-center">
                 <div>
@@ -88,45 +115,47 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
         );
     }
     
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'profilePictureUrl' | 'bannerUrl') => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setEditedUser(prev => prev ? { ...prev, [field]: reader.result as string } : null);
-            };
-            reader.readAsDataURL(file);
+    const handleUpdateUser = async (updatedFields: Partial<User>) => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/users/profile/${user.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedFields)
+            });
+            if (!response.ok) throw new Error('Falló la actualización del perfil');
+            const updatedUserFromServer = await response.json();
+            
+            updateUser(updatedUserFromServer);
+            setIsEditModalOpen(false);
+
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            alert("No se pudo guardar el perfil. Intenta de nuevo.");
         }
     };
     
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setEditedUser(prev => prev ? { ...prev, [name]: value } : null);
-    };
-
-    const handleSave = () => {
-        if (editedUser) updateUser(editedUser);
-        setIsEditing(false);
-    };
-
-    const handleCancel = () => {
-        setEditedUser(user);
-        setIsEditing(false);
+    const handleToggleAchievement = async (achievementId: string, unlocked: boolean) => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/users/${user.id}/achievements`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id }) // Send adminUserId for verification
+            });
+            if (!response.ok) throw new Error('Falló la actualización de logros');
+            const updatedUserFromServer = await response.json();
+            updateUser(updatedUserFromServer);
+        } catch (error) {
+            console.error("Error toggling achievement:", error);
+            alert("No se pudo actualizar el logro.");
+        }
     };
     
+    const isAdminMode = user.role === 'dueño' || user.role === 'moderador';
     const { name: levelName, icon: levelIcon } = getUserLevel(user.points);
     const { nextLevel, progress, pointsToNext } = getNextLevelInfo(user.points);
-    const kgRecycled = Math.floor(user.points / 10);
     const unlockedAchievementsCount = user.achievements.filter(a => a.unlocked).length;
     const latestUnlocked = user.achievements.filter(a => a.unlocked).slice(-4).reverse();
     
-    // Mock Data for Pie Chart and Activity
-    const pointsBreakdown = [
-        { label: 'Puntos Verdes', value: user.stats.pointsVisited * 25 + user.stats.reportsMade * 15, color: '#34D399' },
-        { label: 'Juegos', value: user.stats.gamesPlayed * 110, color: '#60A5FA' }, // Average points
-        { label: 'Comunidad', value: user.stats.messagesSent * 5, color: '#F87171' },
-        { label: 'Guías', value: user.stats.quizzesCompleted * 50, color: '#FBBF24' },
-    ];
     const activityData = [
         { icon: '🎮', text: `Completaste "Súper Trivia"`, points: 100, time: 'hace 2 horas' },
         { icon: '📍', text: 'Check-in en "Plaza San Martín"', points: 25, time: 'ayer' },
@@ -137,48 +166,53 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
 
     return (
         <>
-            <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => setIsAchievementsModalOpen(false)} user={user} />
+            <AchievementsModal 
+                isOpen={isAchievementsModalOpen} 
+                onClose={() => setIsAchievementsModalOpen(false)} 
+                user={user} 
+                isAdminMode={user.role === 'dueño'}
+                onToggleAchievement={handleToggleAchievement}
+            />
+            <ProfileEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} user={user} onSave={handleUpdateUser} />
+            
             <div className="bg-background pt-20 min-h-screen">
                 <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
                     
-                    {/* --- Profile Header --- */}
                     <div className="profile-header-card animate-fade-in-up">
-                        <input type="file" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'bannerUrl')} accept="image/*" className="hidden" />
-                        <div className="profile-banner" style={{backgroundImage: `url(${editedUser.bannerUrl || 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=800&auto=format&fit=crop'})`}}>
-                            {isEditing && <label onClick={() => bannerInputRef.current?.click()} className="edit-overlay rounded-t-lg"><span>Cambiar Banner</span></label>}
-                        </div>
-                         <div className="profile-banner-overlay"></div>
-                        
+                        <div className="profile-banner" style={{backgroundImage: `url(${user.bannerUrl || 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=800&auto=format&fit=crop'})`}}></div>
+                        <div className="profile-banner-overlay"></div>
                         <div className="relative p-6 flex flex-col sm:flex-row items-center sm:items-end gap-6">
                             <div className="profile-avatar-wrapper flex-shrink-0">
-                                <input type="file" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'profilePictureUrl')} accept="image/*" className="hidden" />
-                                {editedUser.profilePictureUrl ? <img src={editedUser.profilePictureUrl} alt="Foto de perfil" className="profile-avatar" /> : <div className="profile-avatar bg-surface"><ProfileAvatar /></div>}
+                                {user.profilePictureUrl ? <img src={user.profilePictureUrl} alt="Foto de perfil" className="profile-avatar" /> : <div className="profile-avatar bg-surface"><ProfileAvatar /></div>}
                                 <div className="profile-level-badge" title={levelName}>{levelIcon}</div>
-                                {isEditing && <label onClick={() => avatarInputRef.current?.click()} className="edit-overlay rounded-full"><span>Cambiar Foto</span></label>}
                             </div>
                             <div className="flex-grow text-center sm:text-left">
                                 <h1 className="text-3xl font-bold font-display text-text-main">{user.name}</h1>
-                                <p className="text-primary font-semibold">{levelName}</p>
+                                <p className="text-primary font-semibold">{user.title || levelName}</p>
                             </div>
-                            {!isEditing && <button onClick={() => setIsEditing(true)} className="cta-button !py-2 !px-4">Editar Perfil</button>}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                {isAdminMode && (
+                                    <button onClick={() => setCurrentPage('admin')} className="cta-button !py-2 !px-4 !bg-surface hover:!bg-slate-700">
+                                        Panel Admin
+                                    </button>
+                                )}
+                                <button onClick={() => setIsEditModalOpen(true)} className="cta-button !py-2 !px-4">Editar Perfil</button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* --- Stats Bar --- */}
                     <div className="stats-bar animate-fade-in-up" style={{animationDelay: '100ms'}}>
                         <div className="stat-card"><div className="stat-icon bg-primary/20 text-primary">✨</div><div><div className="stat-value">{user.points.toLocaleString('es-AR')}</div><div className="stat-label">EcoPuntos</div></div></div>
-                        <div className="stat-card"><div className="stat-icon bg-blue-500/20 text-blue-400">♻️</div><div><div className="stat-value">{kgRecycled.toLocaleString('es-AR')}</div><div className="stat-label">Kilos Reciclados</div></div></div>
+                        <div className="stat-card"><div className="stat-icon bg-blue-500/20 text-blue-400">♻️</div><div><div className="stat-value">{user.kgRecycled.toLocaleString('es-AR')}</div><div className="stat-label">Kilos Reciclados</div></div></div>
                         <div className="stat-card"><div className="stat-icon bg-amber-500/20 text-amber-400">🏆</div><div><div className="stat-value">{unlockedAchievementsCount}</div><div className="stat-label">Logros</div></div></div>
                     </div>
 
                     <div className="grid lg:grid-cols-2 gap-8">
-                        {/* --- Progress & Achievements --- */}
                         <div className="space-y-8">
                             <div className="modern-card p-6 animate-fade-in-up" style={{animationDelay: '200ms'}}>
                                 <h3 className="text-xl font-bold text-text-main mb-3">Progreso al Siguiente Nivel</h3>
                                 {nextLevel ? (<><div className="w-full bg-surface rounded-full h-3 mb-2"><div className="bg-primary h-3 rounded-full" style={{ width: `${progress}%` }}></div></div><p className="text-sm text-text-secondary">Faltan <span className="font-bold text-primary">{pointsToNext.toLocaleString('es-AR')}</span> puntos para ser <span className="font-bold text-primary">{nextLevel.name}</span></p></>) : <p className="text-sm text-primary font-semibold">¡Llegaste al máximo nivel! ¡Felicitaciones!</p>}
                             </div>
-
                              <div className="modern-card p-6 animate-fade-in-up" style={{animationDelay: '300ms'}}>
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xl font-bold text-text-main">Escaparate de Logros</h3>
@@ -191,20 +225,7 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
                                 ) : <p className="text-text-secondary text-sm">¡Sigue participando para desbloquear tu primer logro!</p>}
                             </div>
                         </div>
-
-                        {/* --- Activity Breakdown & Feed --- */}
                         <div className="space-y-8">
-                             <div className="modern-card p-6 animate-fade-in-up" style={{animationDelay: '400ms'}}>
-                                <h3 className="text-xl font-bold text-text-main mb-4">Análisis de Puntos</h3>
-                                <div className="activity-pie-chart-container">
-                                    <PieChart data={pointsBreakdown} />
-                                    <div className="pie-chart-legend flex-grow">
-                                        <ul>
-                                            {pointsBreakdown.map(d => <li key={d.label}><span className="legend-dot" style={{backgroundColor: d.color}}></span>{d.label} ({d.value} pts)</li>)}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
                              <div className="modern-card p-6 animate-fade-in-up" style={{animationDelay: '500ms'}}>
                                 <h3 className="text-xl font-bold text-text-main mb-2">Actividad Reciente</h3>
                                 <div>

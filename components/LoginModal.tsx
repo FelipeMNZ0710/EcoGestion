@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import type { User } from '../types';
-import { allAchievements } from '../data/achievementsData';
 
 // SVGs as components for cleanliness
 const EmailIcon = () => <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg" className="text-text-secondary"><path d="m31.71 7.29-14-5a1 1 0 0 0-.58 0l-14 5A1 1 0 0 0 3 8v16a1 1 0 0 0 .71.95l14 5a1 1 0 0 0 .58 0l14-5A1 1 0 0 0 31 24V8a1 1 0 0 0-.29-.71ZM17 19.83V29l12-4.28V10.54Zm-2-10.12L27.64 5l-12.28 4.38-12.64-4.51L15 9.71ZM5 10.54v14.17L15 29V19.83L3.36 5Z" data-name="Layer 47" id="Layer_47"></path></svg>;
@@ -39,50 +38,48 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         }, 300);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        if (isRegistering) {
-            if (!name.trim()) {
-                setError('Por favor, ingresa tu nombre.');
-                return;
+        if (isRegistering && !name.trim()) {
+            setError('Por favor, ingresa tu nombre.');
+            return;
+        }
+        if (!email.trim() || !password.trim()) {
+            setError('Por favor, completa todos los campos.');
+            return;
+        }
+
+        const endpoint = isRegistering ? '/api/register' : '/api/login';
+        const body = isRegistering ? { name, email, password } : { email, password };
+
+        try {
+            const response = await fetch(`http://localhost:3001${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Ocurrió un error.');
             }
-        }
-        
-        // Mock Login/Register Logic
-        const adminEmails = ['felipemonzon0710@gmail.com', 'agustinxd364@gmail.com'];
-        const lowerCaseEmail = email.toLowerCase();
-        const isUserAdmin = adminEmails.includes(lowerCaseEmail) || lowerCaseEmail.includes('admin');
-        
-        let userName = 'Usuario Eco'; // Default name
-        if (lowerCaseEmail === 'felipemonzon0710@gmail.com') {
-            userName = 'Felipe Monzón';
-        } else if (lowerCaseEmail === 'agustinxd364@gmail.com') {
-            userName = 'Agustín Rolón';
-        } else if (isRegistering) {
-            userName = name;
-        }
+            
+            // The server now sends a perfectly formatted User object.
+            // We trust it and pass it directly to the app state.
+            const userFromServer: User = data;
+            onLogin(userFromServer);
+            handleClose();
 
-        const defaultUser: User = {
-            id: '123',
-            name: userName,
-            email: email,
-            points: isUserAdmin ? 99999 : 1250,
-            isAdmin: isUserAdmin,
-            achievements: allAchievements.map(ach => ({ ...ach, unlocked: isUserAdmin })),
-            stats: { messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 0, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0 },
-            lastLogin: new Date().toISOString().split('T')[0],
-            bannerUrl: 'https://images.unsplash.com/photo-1549605656-1596705599a4?q=80&w=800&auto=format&fit=crop',
-            profilePictureUrl: '',
-            title: isUserAdmin ? 'Administrador' : 'Reciclador Entusiasta',
-            bio: 'Apasionado por la ecología y el futuro de nuestro planeta. Siempre buscando formas de reducir mi huella de carbono.',
-            socials: { twitter: '#', instagram: '#', linkedin: '#' }
-        };
-
-        onLogin(defaultUser);
-        handleClose();
+        } catch (err: any) {
+            setError(err.message);
+        }
     };
+
 
     if (!isOpen && !isExiting) return null;
 
@@ -104,11 +101,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
                     )}
                     <div className="inputForm">
                         <EmailIcon />
-                        <input type="email" className="input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <input type="email" className="input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
                     </div>
                     <div className="inputForm">
                         <PasswordIcon />
-                        <input type="password" className="input" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} />
+                        <input type="password" className="input" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
                     </div>
                     {!isRegistering && (
                         <div className="flex-row">

@@ -9,23 +9,32 @@ const ContactoPage: React.FC = () => {
         setFormState(prevState => ({ ...prevState, [name]: value }));
     };
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!formState.name || !formState.email || !formState.subject || !formState.message) {
             setStatus('error');
             return;
         }
         setStatus('sending');
-        // Simulate API call
-        setTimeout(() => {
-            // Simulate success/error randomly
-            if (Math.random() > 0.1) {
-                setStatus('success');
-                setFormState({ name: '', email: '', subject: '', message: '' });
-            } else {
-                setStatus('error');
+        try {
+            const response = await fetch('http://localhost:3001/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formState)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al enviar el mensaje');
             }
-        }, 1500);
+
+            setStatus('success');
+            setFormState({ name: '', email: '', subject: '', message: '' });
+
+        } catch (error) {
+            console.error("Contact form error:", error);
+            setStatus('error');
+        }
     };
 
     return (

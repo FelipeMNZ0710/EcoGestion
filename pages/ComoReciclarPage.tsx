@@ -12,165 +12,6 @@ const materialNames: Record<Material, string> = {
     metales: 'Metales'
 };
 
-const initialContent: Record<Material, MaterialContent> = {
-    papel: {
-        yes: [
-            { text: 'Diarios, revistas y folletos', icon: '📰' },
-            { text: 'Cajas de cartón (desarmadas)', icon: '📦' },
-            { text: 'Papel de oficina, cuadernos, sobres', icon: '📝' },
-            { text: 'Envases de cartón para alimentos (huevos, etc.)', icon: '🥚' },
-            { text: 'Bolsas de papel', icon: '🛍️' },
-        ],
-        no: [
-            { text: 'Papel de cocina o servilletas usadas', icon: '🧻' },
-            { text: 'Papel higiénico y pañuelos', icon: '🚽' },
-            { text: 'Cajas de pizza con grasa o restos de comida', icon: '🍕' },
-            { text: 'Papel fotográfico y de stickers', icon: '📸' },
-            { text: 'Vasos de papel encerados o plastificados', icon: '🥤' },
-            { text: 'Tickets y recibos (papel térmico)', icon: '🧾' },
-        ],
-        tip: 'Aplastá las cajas de cartón para que ocupen menos espacio tanto en tu casa como en el contenedor.',
-        commonMistakes: [
-            'Intentar reciclar papel o cartón manchado con grasa o comida.',
-            'No desarmar las cajas, ocupando espacio valioso en los contenedores.',
-            'Tirar tickets o recibos (papel térmico) que no son reciclables.'
-        ],
-        recyclingProcess: [
-            { step: 1, title: 'Recolección y Clasificación', description: 'Se recolecta en los Puntos Verdes y se clasifica por tipo y calidad en la planta.', icon: '🔍' },
-            { step: 2, title: 'Despulpado y Limpieza', description: 'Se mezcla con agua para crear una pasta (pulpa) y se aplican procesos para eliminar tintas e impurezas.', icon: '💧' },
-            { step: 3, title: 'Creación de Nuevo Papel', description: 'La pulpa limpia se seca, se prensa y se enrolla en grandes bobinas para convertirse en nuevos productos de papel y cartón.', icon: '🔄' },
-        ],
-        impactStats: [
-            { stat: 'Árboles Salvados', value: '17', icon: '🌳' },
-            { stat: 'Agua Ahorrada', value: '70%', icon: '💧' },
-            { stat: 'Energía Ahorrada', value: '60%', icon: '⚡' },
-        ],
-        quiz: {
-            points: 50,
-            questions: [
-                { question: '¿Se puede reciclar una caja de pizza manchada de grasa?', options: ['Sí, entera', 'Solo las partes limpias', 'No, nunca'], correctAnswer: 1 },
-                { question: '¿Qué se debe hacer con las cajas de cartón grandes?', options: ['Dejarlas armadas', 'Quemarlas', 'Desarmarlas y aplastarlas'], correctAnswer: 2 },
-            ]
-        }
-    },
-    plastico: {
-        yes: [
-            { text: 'Botellas de bebida y aceite (PET)', icon: '🍾' },
-            { text: 'Envases de limpieza y shampoo (HDPE)', icon: '🧼' },
-            { text: 'Tapas de plástico', icon: '🧴' },
-            { text: 'Potes de yogurt, queso y postres', icon: '🍦' },
-            { text: 'Bolsas de plástico y film (limpios)', icon: '🛍️' },
-        ],
-        no: [
-            { text: 'Envases con restos de comida o líquidos', icon: '🍔' },
-            { text: 'Cubiertos, vasos y platos descartables', icon: '🍴' },
-            { text: 'Juguetes de plástico', icon: '🧸' },
-            { text: 'Paquetes de snacks metalizados', icon: '🥨' },
-            { text: 'Cepillos de dientes y biromes', icon: '🪥' },
-        ],
-        tip: '¡Enjuagá siempre los envases y aplastá las botellas! Así no contaminan otros materiales y ocupan menos espacio.',
-        commonMistakes: [
-            'No enjuagar potes de yogurt o crema.',
-            'Dejar las tapas en las botellas (se reciclan por separado, ¡juntalas en otra botella!).',
-            'Intentar reciclar plásticos de un solo uso como cubiertos.'
-        ],
-        recyclingProcess: [
-            { step: 1, title: 'Separación por Tipo', description: 'Los plásticos se clasifican por su número (PET, HDPE, etc.) ya que cada tipo tiene un proceso diferente.', icon: '🔢' },
-            { step: 2, title: 'Triturado y Lavado', description: 'Se muelen en pequeñas escamas (pellets), se lavan para eliminar residuos y se secan.', icon: '🧼' },
-            { step: 3, title: 'Fundición y Moldeado', description: 'Los pellets limpios se funden y se moldean para crear nuevos productos como textiles, tuberías o más envases.', icon: '🔥' },
-        ],
-        impactStats: [
-            { stat: 'Años en Descomponerse', value: '450+', icon: '⏳' },
-            { stat: 'Energía Ahorrada', value: '88%', icon: '⚡' },
-            { stat: 'Productos Nuevos', value: 'Fibra Textil', icon: '👕' },
-        ],
-        quiz: {
-            points: 50,
-            questions: [
-                { question: '¿Es necesario enjuagar una botella de gaseosa antes de reciclarla?', options: ['No, no importa', 'Sí, siempre', 'Solo si está muy sucia'], correctAnswer: 1 },
-                { question: '¿Qué se hace con las tapitas de plástico?', options: ['Se tiran a la basura', 'Se dejan en la botella', 'Se reciclan por separado'], correctAnswer: 2 },
-            ]
-        }
-    },
-    vidrio: {
-        yes: [
-            { text: 'Botellas de bebidas (vino, cerveza, gaseosa)', icon: '🍷' },
-            { text: 'Frascos de conservas, mermeladas, etc.', icon: '🫙' },
-            { text: 'Botellas de perfume y cosmética', icon: '🌸' },
-            { text: 'Frascos de café soluble', icon: '☕' },
-        ],
-        no: [
-            { text: 'Vidrios de ventanas o espejos rotos', icon: '🖼️' },
-            { text: 'Bombillas de luz y tubos fluorescentes', icon: '💡' },
-            { text: 'Vasos, platos o fuentes de vidrio/cristal', icon: '🍽️' },
-            { text: 'Frascos de medicamentos y ampollas', icon: '💊' },
-            { text: 'Cerámica y porcelana', icon: '🏺' },
-        ],
-        tip: 'Quitá las tapas de metal o plástico de los frascos y botellas. No es necesario quitar las etiquetas.',
-        commonMistakes: [
-            'Tirar espejos o vidrios de ventanas en el contenedor de vidrio.',
-            'Depositar objetos de cerámica o porcelana.',
-            'No vaciar completamente el contenido de los frascos.'
-        ],
-        recyclingProcess: [
-            { step: 1, title: 'Limpieza y Triturado', description: 'El vidrio se limpia para quitar impurezas y se tritura hasta convertirlo en pequeños trozos llamados "calcín".', icon: '💥' },
-            { step: 2, title: 'Separación Magnética y Óptica', description: 'Se usan imanes y sensores para remover cualquier resto de metal o material no deseado del calcín.', icon: '✨' },
-            { step: 3, title: 'Fundición y Soplado', description: 'El calcín se funde en un horno a altas temperaturas y luego se moldea y sopla para crear nuevas botellas y frascos.', icon: '🔥' },
-        ],
-        impactStats: [
-            { stat: '100% Reciclable', value: 'Infinitas veces', icon: '🔄' },
-            { stat: 'Energía Ahorrada', value: '30%', icon: '💡' },
-            { stat: 'Contaminación del Aire', value: '-20%', icon: '💨' },
-        ],
-        quiz: {
-            points: 50,
-            questions: [
-                { question: '¿Se puede tirar un espejo roto en el contenedor de vidrio?', options: ['Sí, es vidrio', 'No, tiene otros componentes', 'Solo si es pequeño'], correctAnswer: 1 },
-                { question: '¿Las bombillas de luz se reciclan con el vidrio?', options: ['Sí', 'No', 'Solo las LED'], correctAnswer: 1 },
-            ]
-        }
-    },
-    metales: {
-        yes: [
-            { text: 'Latas de gaseosa o cerveza (aluminio)', icon: '🥤' },
-            { text: 'Latas de conserva (acero)', icon: '🥫' },
-            { text: 'Tapas de frascos y botellas', icon: '뚜껑' },
-            { text: 'Aerosoles vacíos (desodorantes, etc.)', icon: '🌬️' },
-            { text: 'Papel de aluminio limpio y compactado', icon: '✨' },
-        ],
-        no: [
-            { text: 'Pilas y baterías', icon: '🔋' },
-            { text: 'Envases de pintura o productos tóxicos', icon: '🎨' },
-            { text: 'Aparatos electrónicos pequeños', icon: '💻' },
-            { text: 'Cápsulas de café (sin vaciar y limpiar)', icon: ' cápsula ' },
-            { text: 'Alambres y chatarra grande', icon: '🔗' },
-        ],
-        tip: 'Enjuagá las latas de conserva y si es posible, aplastalas para que ocupen menos espacio.',
-        commonMistakes: [
-            'Tirar pilas en el contenedor de metales (son residuos peligrosos).',
-            'No vaciar completamente los aerosoles.',
-            'Dejar papel de aluminio sucio con restos de comida.'
-        ],
-        recyclingProcess: [
-            { step: 1, title: 'Separación Magnética', description: 'En la planta, grandes imanes separan fácilmente los metales ferrosos (acero) de los no ferrosos (aluminio).', icon: '🧲' },
-            { step: 2, title: 'Prensado y Triturado', description: 'Los metales se prensan en grandes bloques para facilitar su transporte y luego se trituran en piezas más pequeñas.', icon: ' compacted ' },
-            { step: 3, title: 'Fundición y Purificación', description: 'Se funden en hornos a altas temperaturas para eliminar impurezas y luego se vierten en moldes para crear lingotes de metal listo para usar.', icon: '🔥' },
-        ],
-        impactStats: [
-            { stat: 'Energía Ahorrada (Aluminio)', value: '95%', icon: '⚡' },
-            { stat: 'Energía Ahorrada (Acero)', value: '75%', icon: '⚡' },
-            { stat: 'Emisiones Reducidas', value: '86%', icon: '☁️' },
-        ],
-        quiz: {
-            points: 50,
-            questions: [
-                { question: '¿Dónde se deben desechar las pilas?', options: ['Contenedor de metales', 'Basura común', 'Puntos de recolección especiales'], correctAnswer: 2 },
-                { question: 'Un desodorante en aerosol, ¿se puede reciclar?', options: ['Sí, si está vacío', 'No, es peligroso', 'Solo la tapa de plástico'], correctAnswer: 0 },
-            ]
-        }
-    }
-};
-
 const MaterialInfoList: React.FC<{ title: string; items: MaterialContentItem[]; colorClass: string }> = ({ title, items, colorClass }) => (
     <div className="material-content-card flex-1">
         <h3 className={`text-xl font-bold mb-4 ${colorClass}`}>{title}</h3>
@@ -217,6 +58,8 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
     const [activeTab, setActiveTab] = useState<Material>('papel');
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+    const [guidesContent, setGuidesContent] = useState<Record<Material, MaterialContent> | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [isIdentifierActive, setIsIdentifierActive] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -225,6 +68,23 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
     const streamRef = useRef<MediaStream | null>(null);
 
     const ai = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY || '' }), []);
+
+    useEffect(() => {
+        const fetchGuides = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('http://localhost:3001/api/recycling-guides');
+                if (!response.ok) throw new Error('Failed to fetch recycling guides');
+                const data = await response.json();
+                setGuidesContent(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchGuides();
+    }, []);
 
     const startCamera = useCallback(async () => {
         try {
@@ -255,19 +115,24 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
     }, [isIdentifierActive, startCamera, stopCamera]);
 
     const handleIdentify = async () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || !videoRef.current.srcObject) return;
         setIsAnalyzing(true);
+        setAnalysisResult(null);
 
         const canvas = document.createElement('canvas');
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        if (!ctx) {
+            setIsAnalyzing(false);
+            return;
+        }
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg');
         const base64Data = dataUrl.split(',')[1];
         
         const model = 'gemini-2.5-flash';
-        const prompt = "Analiza la imagen. Identifica el objeto principal y determina si es reciclable y cómo debe ser reciclado. Responde en JSON con las claves 'name', 'isRecyclable' (boolean), y 'instructions' (string).";
+        const prompt = "Analiza la imagen. Identifica el objeto principal y determina si es reciclable en Formosa, Argentina y cómo debe ser reciclado. Sé breve y directo. Responde en JSON con las claves 'name' (string), 'isRecyclable' (boolean), y 'instructions' (string, max 150 caracteres).";
         
         try {
             const response = await ai.models.generateContent({
@@ -289,32 +154,45 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
                     }
                 }
             });
-            const result = JSON.parse(response.text);
+            const resultText = response.text;
+            const result = JSON.parse(resultText);
             setAnalysisResult(result);
         } catch (error) {
             console.error("Gemini API error:", error);
-            setAnalysisResult({ name: 'Error', isRecyclable: false, instructions: 'No se pudo analizar la imagen. Por favor, intenta de nuevo.' });
+            setAnalysisResult({ name: 'Error', isRecyclable: false, instructions: 'No se pudo analizar la imagen. Asegúrate de que el objeto esté bien iluminado y vuelve a intentarlo.' });
         } finally {
             setIsAnalyzing(false);
         }
     };
     
     const handleQuizComplete = () => {
-        onUserAction('complete_quiz', { material: activeTab, points: initialContent[activeTab].quiz.points });
+        if (!guidesContent) return;
+        onUserAction('complete_quiz', { material: activeTab, points: guidesContent[activeTab].quiz.points });
         setIsQuizModalOpen(false);
     };
 
     const startQuiz = () => {
-        if (user) {
-            setQuizQuestions(initialContent[activeTab].quiz.questions);
+        if (user && guidesContent) {
+            setQuizQuestions(guidesContent[activeTab].quiz.questions);
             setIsQuizModalOpen(true);
         } else {
             alert("Debes iniciar sesión para realizar el cuestionario.");
         }
     };
     
-    const content = initialContent[activeTab];
+    const content = guidesContent ? guidesContent[activeTab] : null;
     const facts = sabiasQueData[activeTab];
+
+    if (isLoading || !content) {
+        return (
+            <div className="pt-20 h-screen flex items-center justify-center">
+                <div className="text-center text-text-secondary p-8">
+                    <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Cargando Guía de Reciclaje...
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-background pt-20">
@@ -395,8 +273,12 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
             
             {isQuizModalOpen && (
                  <div className="modal-backdrop">
-                    <div className="modal-content !max-w-2xl !max-h-[600px] !bg-slate-100 !text-slate-800">
-                       <TriviaGame questions={quizQuestions} onComplete={handleQuizComplete} />
+                    <div className="modal-content !max-w-2xl !max-h-[600px] !bg-surface !text-text-main">
+                       <TriviaGame 
+                            questions={quizQuestions} 
+                            onComplete={handleQuizComplete} 
+                            onClose={() => setIsQuizModalOpen(false)}
+                       />
                     </div>
                 </div>
             )}
