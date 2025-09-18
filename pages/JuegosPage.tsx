@@ -1,6 +1,6 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, Game, GamificationAction, GameType } from '../types';
-import { initialGames } from '../data/gamesData';
 import TriviaGame from '../components/games/TriviaGame';
 import MemoryGame from '../components/games/MemoryGame';
 import SortingGame from '../components/games/SortingGame';
@@ -100,7 +100,7 @@ const GamePlayer: React.FC<{
 const GameEditModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (game: Omit<Game, 'id' | 'learningObjective'> & { id?: number, learningObjective: string }) => void;
+    onSave: (game: Omit<Game, 'id'> & { id?: number }) => void;
     game: Game | null;
 }> = ({ isOpen, onClose, onSave, game }) => {
     const [title, setTitle] = useState('');
@@ -169,12 +169,31 @@ const GameEditModal: React.FC<{
 
 
 const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: GamificationAction, payload?: any) => void; isAdminMode: boolean; }> = ({ user, onUserAction, isAdminMode }) => {
-    const [games, setGames] = useState(initialGames);
+    const [games, setGames] = useState<Game[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeGame, setActiveGame] = useState<Game | null>(null);
     const [editingGame, setEditingGame] = useState<Game | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Todos');
     
+    const fetchGames = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('http://localhost:3001/api/games', { cache: 'no-store' });
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            setGames(data);
+        } catch (error) {
+            console.error("Failed to fetch games:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchGames();
+    }, [fetchGames]);
+
     const gameCategories = useMemo(() => ['Todos', ...Array.from(new Set(games.map(g => g.category)))], [games]);
 
     const filteredGames = useMemo(() => {
@@ -199,7 +218,6 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
 
         const elements = document.querySelectorAll('.fade-in-section');
         elements.forEach((el) => {
-            // Reset visibility before observing
             el.classList.remove('is-visible');
             observer.observe(el);
         });
@@ -219,19 +237,34 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         setIsEditModalOpen(true);
     };
 
-    const handleSaveGame = (gameToSave: Omit<Game, 'id'> & { id?: number }) => {
-        if (gameToSave.id) {
-            setGames(prev => prev.map(g => g.id === gameToSave.id ? { ...g, ...gameToSave } as Game : g));
-        } else {
-            const newGame = { ...gameToSave, id: Date.now() };
-            setGames(prev => [newGame as Game, ...prev]);
+    const handleSaveGame = async (gameToSave: Omit<Game, 'id' | 'learningObjective'> & { id?: number, learningObjective: string }) => {
+        const method = gameToSave.id ? 'PUT' : 'POST';
+        const url = gameToSave.id ? `http://localhost:3001/api/games/${gameToSave.id}` : 'http://localhost:3001/api/games';
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gameToSave)
+            });
+            if (!response.ok) throw new Error('Failed to save game');
+            setIsEditModalOpen(false);
+            await fetchGames();
+        } catch (error) {
+            console.error('Error saving game:', error);
+            alert("Error al guardar el juego.");
         }
-        setIsEditModalOpen(false);
     };
     
-    const handleDeleteGame = (gameId: number) => {
+    const handleDeleteGame = async (gameId: number) => {
         if (window.confirm("¿Seguro que quieres eliminar este juego?")) {
-            setGames(prev => prev.filter(g => g.id !== gameId));
+            try {
+                const response = await fetch(`http://localhost:3001/api/games/${gameId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete game');
+                await fetchGames();
+            } catch (error) {
+                console.error('Error deleting game:', error);
+                alert("Error al eliminar el juego.");
+            }
         }
     };
 
@@ -266,19 +299,23 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
                         ))}
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {filteredGames.map(game => (
-                            <GameCard 
-                                key={game.id} 
-                                game={game}
-                                user={user}
-                                isAdminMode={isAdminMode}
-                                onPlay={setActiveGame}
-                                onEdit={handleOpenEditModal}
-                                onDelete={handleDeleteGame}
-                            />
-                        ))}
-                    </div>
+                    {isLoading ? (
+                        <div className="text-center py-20 text-text-secondary">Cargando juegos...</div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {filteredGames.map(game => (
+                                <GameCard 
+                                    key={game.id} 
+                                    game={game}
+                                    user={user}
+                                    isAdminMode={isAdminMode}
+                                    onPlay={setActiveGame}
+                                    onEdit={handleOpenEditModal}
+                                    onDelete={handleDeleteGame}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
             {activeGame && (

@@ -108,6 +108,7 @@ export interface UserStats {
     completedQuizzes: Material[];
     quizzesCompleted: number;
     gamesPlayed: number;
+    objectsIdentified: number;
 }
 
 export type UserRole = 'usuario' | 'moderador' | 'dueño';
@@ -135,7 +136,7 @@ export interface User {
   };
 }
 
-export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz' | 'complete_game';
+export type GamificationAction = 'send_message' | 'check_in' | 'report_punto_verde' | 'daily_login' | 'complete_quiz' | 'complete_game' | 'identify_object';
 
 export interface Notification {
     id: number;
@@ -174,6 +175,7 @@ export interface Location {
   lastServiced: string; // ISO date string
   checkIns: number;
   imageUrls: string[];
+  reportCount?: number;
 }
 
 export type ReportReason = 'full' | 'dirty' | 'damaged' | 'other';
@@ -282,6 +284,7 @@ export interface ReplyInfo {
 
 export interface CommunityMessage {
     id: number;
+    user_id: string;
     user: string;
     avatarUrl?: string;
     avatarInitials: string;

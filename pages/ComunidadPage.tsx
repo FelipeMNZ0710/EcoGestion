@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { User, GamificationAction, CommunityMessage, ReplyInfo } from '../types';
+import type { User, GamificationAction, CommunityMessage } from '../types';
 
 // --- Types ---
 interface Channel {
@@ -41,9 +41,12 @@ const DateDivider: React.FC<{ date: Date }> = ({ date }) => (
 const MessageItem: React.FC<{
     message: CommunityMessage; isGroupStart: boolean; user: User | null; isAdmin: boolean;
     setReplyingTo: (msg: CommunityMessage | null) => void;
-}> = ({ message, isGroupStart, user, isAdmin, setReplyingTo }) => {
+    setEditingMessage: (msg: CommunityMessage | null) => void;
+    onDelete: (messageId: number) => void;
+    onToggleReaction: (messageId: number, emoji: string) => void;
+}> = ({ message, isGroupStart, user, isAdmin, setReplyingTo, setEditingMessage, onDelete, onToggleReaction }) => {
     const [hovered, setHovered] = useState(false);
-    const canInteract = user?.id === message.id.toString() || isAdmin; // Corrected comparison
+    const canInteract = user?.id === message.user_id || isAdmin;
     
     return (
         <div className={`discord-message-item ${isGroupStart ? 'mt-4' : ''}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
@@ -70,18 +73,29 @@ const MessageItem: React.FC<{
                     </div>
                 )}
                 
-                <p className="text-[color:var(--text-normal)] whitespace-pre-wrap">{message.text} {message.edited && <span className="text-xs text-[color:var(--text-muted)]">(editado)</span>}</p>
+                <p className="text-[color:var(--text-normal)] whitespace-pre-wrap">{message.text}{!!message.edited && <span className="text-xs text-[color:var(--text-muted)] ml-1">(editado)</span>}</p>
 
                 {message.imageUrl && <img src={message.imageUrl} alt="Imagen adjunta" className="mt-2 max-w-xs rounded-lg" />}
-
+                
+                {message.reactions && Object.keys(message.reactions).length > 0 && (
+                     <div className="discord-reactions-bar">
+                        {Object.entries(message.reactions).map(([emoji, users]) => (
+                            <button key={emoji} onClick={() => onToggleReaction(message.id, emoji)}
+                                className={`reaction-pill ${users.includes(user?.name ?? '') ? 'reacted-by-user' : ''}`}>
+                                <span className="emoji">{emoji}</span>
+                                <span className="count">{users.length}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
             
             {hovered && user && (
                 <div className="discord-message-toolbar">
+                    <button className="discord-toolbar-button" onClick={() => onToggleReaction(message.id, '👍')} title="Reaccionar">👍</button>
                     <button className="discord-toolbar-button" onClick={() => setReplyingTo(message)} title="Responder">💬</button>
-                    <button className="discord-toolbar-button" title="Reaccionar">😀</button>
-                    {canInteract && <button className="discord-toolbar-button" title="Editar">✏️</button>}
-                    {canInteract && <button className="discord-toolbar-button" title="Eliminar">🗑️</button>}
+                    {user?.id === message.user_id && <button onClick={() => setEditingMessage(message)} className="discord-toolbar-button" title="Editar">✏️</button>}
+                    {canInteract && <button onClick={() => onDelete(message.id)} className="discord-toolbar-button" title="Eliminar">🗑️</button>}
                 </div>
             )}
         </div>
@@ -96,15 +110,36 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const [messages, setMessages] = useState<MessagesState>({});
     const [newMessage, setNewMessage] = useState('');
     const [replyingTo, setReplyingTo] = useState<CommunityMessage | null>(null);
+    const [editingMessage, setEditingMessage] = useState<CommunityMessage | null>(null);
+    const [editedText, setEditedText] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
-    // FIX: Property 'isAdmin' does not exist on type 'User'. Check against user.role instead.
     const isAdmin = user?.role === 'dueño' || user?.role === 'moderador';
 
-    // Fetch initial data (channels and members)
+    const fetchMessages = useCallback(async (channelId: number) => {
+        setIsLoading(true);
+        try {
+            const res = await fetch(`http://localhost:3001/api/community/messages/${channelId}`);
+            const data = await res.json();
+            const processedMessages: CommunityMessage[] = data.map((msg: any) => ({
+                ...msg,
+                id: msg.id,
+                user_id: msg.user_id.toString(),
+                avatarInitials: getUserInitials(msg.user),
+                avatarColor: getConsistentColor(msg.user),
+                timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(prev => ({ ...prev, [channelId]: processedMessages }));
+        } catch (error) {
+            console.error(`Error fetching messages for channel ${channelId}:`, error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -116,9 +151,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
                 const membersData = await membersRes.json();
                 setChannels(channelsData);
                 setMembers(membersData);
-                if (channelsData.length > 0) {
-                    setActiveChannelId(channelsData[0].id);
-                }
+                if (channelsData.length > 0) setActiveChannelId(channelsData[0].id);
             } catch (error) {
                 console.error("Error fetching initial community data:", error);
             }
@@ -126,41 +159,13 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
         fetchInitialData();
     }, []);
     
-    // Fetch messages when active channel changes
-    const fetchMessages = useCallback(async (channelId: number) => {
-        setIsLoading(true);
-        try {
-            const res = await fetch(`http://localhost:3001/api/community/messages/${channelId}`);
-            const data = await res.json();
-            const processedMessages: CommunityMessage[] = data.map((msg: any) => ({
-                id: msg.id,
-                user: msg.user,
-                avatarUrl: msg.avatarUrl,
-                avatarInitials: getUserInitials(msg.user),
-                avatarColor: getConsistentColor(msg.user),
-                timestamp: new Date(msg.timestamp),
-                text: msg.text,
-                edited: msg.edited,
-            }));
-            setMessages(prev => ({ ...prev, [channelId]: processedMessages }));
-        } catch (error) {
-            console.error(`Error fetching messages for channel ${channelId}:`, error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        if (activeChannelId !== null) {
-            fetchMessages(activeChannelId);
-        }
+        if (activeChannelId !== null) fetchMessages(activeChannelId);
     }, [activeChannelId, fetchMessages]);
 
     useEffect(() => {
         const chatContainer = chatContainerRef.current;
-        if (chatContainer) {
-            setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight }, 100);
-        }
+        if (chatContainer) setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight }, 100);
     }, [messages, activeChannelId, isLoading]);
 
     useEffect(() => {
@@ -169,7 +174,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
             textarea.style.height = 'auto';
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [newMessage]);
+    }, [newMessage, editedText]);
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !user || activeChannelId === null) return;
@@ -179,56 +184,74 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    channelId: activeChannelId,
-                    userId: user.id,
-                    content: newMessage.trim(),
+                    channelId: activeChannelId, userId: user.id, content: newMessage.trim(),
+                    replyingToId: replyingTo?.id
                 }),
             });
             if (response.ok) {
-                setNewMessage('');
-                setReplyingTo(null);
-                onUserAction('send_message');
-                await fetchMessages(activeChannelId); // Refetch messages
-            } else {
-                console.error("Failed to send message");
-                alert('Error al enviar el mensaje. Inténtalo de nuevo.');
-            }
-        } catch (error) {
-            console.error("Error sending message:", error);
-            alert('Error de conexión. No se pudo enviar el mensaje.');
-        }
+                setNewMessage(''); setReplyingTo(null); onUserAction('send_message');
+                await fetchMessages(activeChannelId);
+            } else throw new Error('Failed to send message');
+        } catch (error) { console.error("Error sending message:", error); }
+    };
+    
+    const handleEditMessage = async () => {
+        if (!editedText.trim() || !editingMessage || !user) return;
+        try {
+            const response = await fetch(`http://localhost:3001/api/community/messages/${editingMessage.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editedText, userId: user.id, userRole: user.role })
+            });
+            if (response.ok) {
+                setEditingMessage(null); setEditedText('');
+                await fetchMessages(activeChannelId!);
+            } else throw new Error('Failed to edit message');
+        } catch (error) { console.error("Error editing message:", error); }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-        }
+    const handleDeleteMessage = async (messageId: number) => {
+        if (!user || !window.confirm("¿Seguro que quieres eliminar este mensaje?")) return;
+        try {
+            const response = await fetch(`http://localhost:3001/api/community/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, userRole: user.role })
+            });
+            if (response.ok) await fetchMessages(activeChannelId!); else throw new Error('Failed to delete message');
+        } catch (error) { console.error("Error deleting message:", error); }
     };
+
+    const handleToggleReaction = async (messageId: number, emoji: string) => {
+        if (!user) return;
+        try {
+            const response = await fetch(`http://localhost:3001/api/community/messages/${messageId}/react`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, userName: user.name, emoji })
+            });
+            if (response.ok) await fetchMessages(activeChannelId!); else throw new Error('Failed to react');
+        } catch (error) { console.error("Error reacting to message:", error); }
+    };
+
+    useEffect(() => { if (editingMessage) setEditedText(editingMessage.text); }, [editingMessage]);
 
     const renderableChatItems = useMemo(() => {
         const channelMessages = activeChannelId ? messages[activeChannelId] || [] : [];
         if (channelMessages.length === 0) return [];
-        
         const items: RenderableChatItem[] = [];
         let lastMessage: CommunityMessage | null = null;
-    
         channelMessages.forEach(message => {
             const messageDate = new Date(message.timestamp);
             const lastMessageDate = lastMessage ? new Date(lastMessage.timestamp) : null;
-    
             if (!lastMessageDate || messageDate.toDateString() !== lastMessageDate.toDateString()) {
                 items.push({ type: 'date_divider', date: messageDate });
             }
-    
-            const fiveMinutes = 5 * 60 * 1000;
-            if (
-                lastMessage && items.length > 0 && items[items.length - 1].type === 'message_group' &&
-                message.user === lastMessage.user &&
-                messageDate.getTime() - lastMessageDate!.getTime() < fiveMinutes &&
-                !message.replyingTo && !lastMessage.replyingTo
+            if (lastMessage && items.length > 0 && items[items.length - 1].type === 'message_group' &&
+                message.user === lastMessage.user && !message.replyingTo && !lastMessage.replyingTo &&
+                messageDate.getTime() - lastMessageDate!.getTime() < 5 * 60 * 1000
             ) {
-                (items[items.length - 1] as { type: 'message_group'; group: CommunityMessage[] }).group.push(message);
+                (items[items.length - 1] as any).group.push(message);
             } else {
                 items.push({ type: 'message_group', group: [message] });
             }
@@ -255,16 +278,12 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
 
             <div className="flex-1 flex flex-col min-w-0 bg-[color:var(--bg-primary)]">
                 <header className="flex items-center justify-between p-4 h-12 border-b border-black/20 shadow-sm flex-shrink-0">
-                    <div>
-                        <h1 className="text-xl font-bold flex items-center space-x-2 text-[color:var(--header-primary)]"><span className="text-2xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1>
-                    </div>
+                    <div><h1 className="text-xl font-bold flex items-center space-x-2 text-[color:var(--header-primary)]"><span className="text-2xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1></div>
                 </header>
                  <div className="flex-1 flex min-h-0">
                     <main className="flex-1 flex flex-col min-h-0">
                         <div ref={chatContainerRef} className="flex-1 overflow-y-auto discord-chat-messages px-4">
-                            {isLoading ? (
-                                 <div className="flex justify-center items-center h-full text-text-muted">Cargando mensajes...</div>
-                            ) : (
+                            {isLoading ? <div className="flex justify-center items-center h-full text-text-muted">Cargando mensajes...</div> :
                                 <>
                                     <div className="h-4" />
                                     {renderableChatItems.map((item, index) => {
@@ -272,22 +291,25 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
                                         const group = item.group;
                                         return (
                                             <div key={group[0].id} className="discord-message-group">
-                                                {group.map((message, msgIndex) => (
-                                                    <MessageItem
-                                                        key={message.id}
-                                                        message={message}
-                                                        isGroupStart={msgIndex === 0}
-                                                        user={user}
-                                                        isAdmin={isAdmin}
-                                                        setReplyingTo={setReplyingTo}
-                                                    />
-                                                ))}
+                                                {group.map((message, msgIndex) => {
+                                                    if (editingMessage?.id === message.id) {
+                                                        return (
+                                                            <div key={message.id} className="px-16 py-2">
+                                                                <textarea value={editedText} onChange={(e) => setEditedText(e.target.value)} className="discord-chat-textarea w-full bg-[color:var(--input-bg)] rounded-md p-2" rows={3}/>
+                                                                <div className="text-xs mt-1">presiona <strong className="text-primary">Enter</strong> para guardar, <strong className="text-primary">Esc</strong> para cancelar</div>
+                                                                <button onClick={handleEditMessage} className="text-xs px-2 py-1 bg-primary rounded mt-1">Guardar</button>
+                                                                <button onClick={() => setEditingMessage(null)} className="text-xs px-2 py-1 ml-2">Cancelar</button>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return (<MessageItem key={message.id} message={message} isGroupStart={msgIndex === 0} user={user} isAdmin={isAdmin} setReplyingTo={setReplyingTo} setEditingMessage={setEditingMessage} onDelete={handleDeleteMessage} onToggleReaction={handleToggleReaction} />);
+                                                })}
                                             </div>
                                         );
                                     })}
                                     <div className="h-4" />
                                 </>
-                            )}
+                            }
                         </div>
                         <footer className="px-4 pb-4 pt-2 flex-shrink-0">
                              {canWrite ? (
@@ -298,14 +320,9 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
                                             <button onClick={() => setReplyingTo(null)} className="text-xl">&times;</button>
                                         </div>
                                     )}
-                                    <textarea 
-                                        ref={textareaRef} 
-                                        placeholder={`Enviar mensaje a #${activeChannelInfo?.name}`} 
-                                        className="discord-chat-textarea pt-2"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                        rows={1}
+                                    <textarea ref={textareaRef} placeholder={`Enviar mensaje a #${activeChannelInfo?.name}`} className="discord-chat-textarea pt-2"
+                                        value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} rows={1}
                                     />
                                 </div>
                             ) : (

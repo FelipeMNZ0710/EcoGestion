@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef, useMemo, forwardRef } from 'react';
+
+import React, { useEffect, useState, useRef, useMemo, forwardRef, useCallback } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import type { User, GamificationAction, Location, Schedule, LocationStatus, ReportReason } from '../types';
 import FilterMenu, { Category as FilterCategory } from '../components/FilterMenu';
 
-const allMaterials: FilterCategory[] = ['Plásticos', 'Vidrio', 'Papel/Cartón', 'Pilas'];
+const allMaterials: string[] = ['Plásticos', 'Vidrio', 'Papel/Cartón', 'Pilas'];
 const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 const statusInfo: Record<LocationStatus, { text: string; color: string }> = {
@@ -15,6 +16,7 @@ const statusInfo: Record<LocationStatus, { text: string; color: string }> = {
 
 // --- Helper Functions ---
 const checkOpen = (schedule: Schedule[]): boolean => {
+    if (!schedule || schedule.length === 0) return true; // Assume 24/7 if no schedule
     const now = new Date();
     const currentDay = now.getDay();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -115,7 +117,7 @@ const LocationDetailModal: React.FC<{location: Location | null; user: User | nul
 
                     <div className="mt-4 border-t border-white/10 pt-4 activity-stats-grid">
                         <div className="activity-stat-item"><div className="value">{lastServicedDate}</div><div className="label">Último Servicio</div></div>
-                        <div className="activity-stat-item"><div className="value">{/* Placeholder */}</div><div className="label">Reportes</div></div>
+                        <div className="activity-stat-item"><div className="value">{location.reportCount ?? 0}</div><div className="label">Reportes Pend.</div></div>
                         <div className="activity-stat-item"><div className="value">{location.checkIns}</div><div className="label">Check-ins</div></div>
                     </div>
 
@@ -207,42 +209,68 @@ const ReportModal: React.FC<{ isOpen: boolean; onClose: () => void; onSubmit: (r
     );
 };
 
-const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (location: Location) => void; location: Location | null; }> = ({ isOpen, onClose, onSave, location }) => {
-    const [editedLocation, setEditedLocation] = useState<Location | null>(location);
+const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (location: Omit<Location, 'schedule' | 'mapData' | 'lastServiced' | 'checkIns'>) => void; location: Location | null; }> = ({ isOpen, onClose, onSave, location }) => {
+    const [formState, setFormState] = useState<Omit<Location, 'schedule' | 'mapData' | 'lastServiced' | 'checkIns'>>({
+        id: '', name: '', address: '', hours: '', materials: [], status: 'ok', description: '', imageUrls: []
+    });
 
     useEffect(() => {
-        setEditedLocation(location);
-    }, [location]);
+        if (location) {
+            setFormState({ ...location, imageUrls: location.imageUrls || [] });
+        } else {
+            // Default state for creating a new one
+            setFormState({ id: `p${Date.now()}`, name: '', address: '', hours: '24hs', materials: [], status: 'ok', description: '', imageUrls: [''] });
+        }
+    }, [location, isOpen]);
 
-    if (!isOpen || !editedLocation) return null;
+    if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (editedLocation) onSave(editedLocation);
+        onSave({ ...formState, imageUrls: formState.imageUrls.filter(url => url.trim() !== '') });
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setEditedLocation(prev => prev ? { ...prev, [name]: value } : null);
+        setFormState(prev => ({ ...prev, [name]: value }));
     };
-    
+
+    const handleMaterialChange = (material: string) => {
+        setFormState(prev => {
+            const newMaterials = prev.materials.includes(material)
+                ? prev.materials.filter(m => m !== material)
+                : [...prev.materials, material];
+            return { ...prev, materials: newMaterials };
+        });
+    };
+
     return (
         <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-content !max-w-2xl" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4 modal-form">
-                    <h2 className="text-xl font-bold text-text-main mb-4">Editar Punto Verde</h2>
-                    <div><label htmlFor="name">Nombre</label><input type="text" name="name" id="name" value={editedLocation.name} onChange={handleInputChange} /></div>
-                    <div><label htmlFor="address">Dirección</label><input type="text" name="address" id="address" value={editedLocation.address} onChange={handleInputChange} /></div>
-                    <div><label htmlFor="description">Descripción</label><textarea name="description" id="description" value={editedLocation.description} onChange={handleInputChange} rows={3}></textarea></div>
-                    <div><label htmlFor="status">Estado</label>
-                        <select name="status" id="status" value={editedLocation.status} onChange={handleInputChange}>
-                            <option value="ok">Operativo</option>
-                            <option value="reported">Reportado</option>
-                            <option value="maintenance">En Mantenimiento</option>
-                            <option value="serviced">Servicio Reciente</option>
-                        </select>
+                    <h2 className="text-xl font-bold text-text-main mb-4">{location ? 'Editar Punto Verde' : 'Crear Nuevo Punto Verde'}</h2>
+                    {!location && <div><label htmlFor="id">ID Único</label><input type="text" name="id" id="id" value={formState.id} onChange={handleInputChange} required /></div>}
+                    <div><label htmlFor="name">Nombre</label><input type="text" name="name" id="name" value={formState.name} onChange={handleInputChange} required /></div>
+                    <div><label htmlFor="address">Dirección</label><input type="text" name="address" id="address" value={formState.address} onChange={handleInputChange} required/></div>
+                    <div><label htmlFor="description">Descripción</label><textarea name="description" id="description" value={formState.description} onChange={handleInputChange} rows={3}></textarea></div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label htmlFor="hours">Horario (texto)</label><input type="text" name="hours" id="hours" value={formState.hours} onChange={handleInputChange} /></div>
+                        <div><label htmlFor="status">Estado</label>
+                            <select name="status" id="status" value={formState.status} onChange={handleInputChange}>
+                                <option value="ok">Operativo</option><option value="reported">Reportado</option>
+                                <option value="maintenance">En Mantenimiento</option><option value="serviced">Servicio Reciente</option>
+                            </select>
+                        </div>
                     </div>
-                    {/* Add more fields for materials, schedule, etc. as needed */}
+                    <div>
+                        <label>Materiales Aceptados</label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                            {allMaterials.map(mat => (
+                                <label key={mat} className="flex items-center"><input type="checkbox" checked={formState.materials.includes(mat)} onChange={() => handleMaterialChange(mat)} className="mr-2" /> {mat}</label>
+                            ))}
+                        </div>
+                    </div>
+                    <div><label htmlFor="imageUrls">URLs de Imágenes (una por línea)</label><textarea name="imageUrls" id="imageUrls" value={formState.imageUrls.join('\n')} onChange={e => setFormState(prev => ({...prev, imageUrls: e.target.value.split('\n')}))} rows={3}></textarea></div>
                     <div className="flex justify-end space-x-3 pt-6">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>
                         <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Guardar Cambios</button>
@@ -252,6 +280,7 @@ const LocationEditModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave
         </div>
     );
 };
+
 
 const PuntosVerdesPage: React.FC<{
     user: User | null;
@@ -270,25 +299,23 @@ const PuntosVerdesPage: React.FC<{
     
     const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
     
-    useEffect(() => {
-        const fetchLocations = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch('http://localhost:3001/api/locations');
-                if (!response.ok) {
-                    throw new Error('La respuesta de la red no fue exitosa');
-                }
-                const data: Location[] = await response.json();
-                setPuntosVerdes(data);
-            } catch (error) {
-                console.error("Falló la obtención de las ubicaciones:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchLocations();
+    const fetchLocations = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('http://localhost:3001/api/locations');
+            if (!response.ok) throw new Error('La respuesta de la red no fue exitosa');
+            const data: Location[] = await response.json();
+            setPuntosVerdes(data);
+        } catch (error) {
+            console.error("Falló la obtención de las ubicaciones:", error);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchLocations();
+    }, [fetchLocations]);
 
     const filteredLocations = useMemo(() => {
         if (activeFilter === 'Todos') return puntosVerdes;
@@ -328,7 +355,7 @@ const PuntosVerdesPage: React.FC<{
 
     const handleCheckIn = () => {
         if (selectedLocation) {
-            onUserAction('check_in');
+            onUserAction('check_in', { locationId: selectedLocation.id });
             setPuntosVerdes(puntosVerdes.map(p => p.id === selectedLocation.id ? {...p, checkIns: p.checkIns + 1} : p));
             closeDetailModal();
         }
@@ -367,18 +394,72 @@ const PuntosVerdesPage: React.FC<{
         }
     };
 
+    const handleOpenEditModal = (location: Location | null) => {
+        setEditingLocation(location);
+        setIsEditModalOpen(true);
+    };
+    
+    const handleSaveLocation = async (locationData: Omit<Location, 'schedule' | 'mapData' | 'lastServiced' | 'checkIns'>) => {
+        const isCreating = !editingLocation;
+        const method = isCreating ? 'POST' : 'PUT';
+        const url = isCreating ? 'http://localhost:3001/api/locations' : `http://localhost:3001/api/locations/${locationData.id}`;
+        
+        // Simplistic mapData generation for new locations, assuming address is enough
+        const fullLocationData = {
+            ...locationData,
+            schedule: [],
+            mapData: isCreating ? { id: locationData.id, name: locationData.name, lat: -26.17, lng: -58.17, x: 400, y: 300 } : editingLocation.mapData,
+            lastServiced: new Date().toISOString(),
+            checkIns: isCreating ? 0 : editingLocation.checkIns
+        };
+        
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fullLocationData),
+            });
+            if (!response.ok) throw new Error('Falló al guardar la ubicación.');
+            setIsEditModalOpen(false);
+            setEditingLocation(null);
+            await fetchLocations();
+        } catch(error) {
+            console.error("Error guardando ubicación:", error);
+            alert('No se pudo guardar la ubicación.');
+        }
+    };
+    
+    const handleDeleteLocation = async (locationId: string) => {
+        if (!window.confirm("¿Estás seguro de que quieres eliminar este Punto Verde? Esta acción no se puede deshacer.")) return;
+        
+        try {
+            const response = await fetch(`http://localhost:3001/api/locations/${locationId}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Falló al eliminar la ubicación.');
+            await fetchLocations();
+        } catch(error) {
+            console.error("Error eliminando ubicación:", error);
+            alert('No se pudo eliminar la ubicación.');
+        }
+    };
 
     return (
         <>
             <LocationDetailModal location={selectedLocation} user={user} onClose={closeDetailModal} onCheckIn={handleCheckIn} onReport={() => setIsReportModalOpen(true)} />
             <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onSubmit={handleReportSubmit} />
-            <LocationEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={() => {}} location={editingLocation} />
+            <LocationEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveLocation} location={editingLocation} />
 
             <div className="pt-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Mapa Interactivo de Puntos Verdes</h1>
                         <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Encuentra tu punto de reciclaje más cercano, filtra por material y colabora con la comunidad reportando el estado de los contenedores.</p>
+                         {isAdminMode && (
+                            <div className="mt-6">
+                                <button onClick={() => handleOpenEditModal(null)} className="cta-button">
+                                    + Crear Nuevo Punto Verde
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mb-8">
@@ -411,8 +492,8 @@ const PuntosVerdesPage: React.FC<{
                                             onMouseLeave={() => setHoveredLocationId(null)}
                                             onClick={() => openDetailModal(location)}
                                             onToggleFavorite={handleToggleFavorite}
-                                            onEdit={() => { setEditingLocation(location); setIsEditModalOpen(true); }}
-                                            onDelete={() => {}}
+                                            onEdit={() => handleOpenEditModal(location)}
+                                            onDelete={() => handleDeleteLocation(location.id)}
                                         />
                                     ))
                                 )}

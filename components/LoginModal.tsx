@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { User } from '../types';
 
@@ -69,8 +70,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
                 throw new Error(data.message || 'Ocurrió un error.');
             }
             
-            // The server now sends a perfectly formatted User object.
-            // We trust it and pass it directly to the app state.
             const userFromServer: User = data;
             onLogin(userFromServer);
             handleClose();

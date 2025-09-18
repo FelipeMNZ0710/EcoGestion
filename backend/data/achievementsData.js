@@ -1,6 +1,6 @@
-import type { Achievement } from '../types';
 
-export const allAchievements: Omit<Achievement, 'unlocked'>[] = [
+
+const allAchievements = [
     // --- ECOPUNTOS ---
     { id: '1', name: 'Eco-Aprendiz', description: 'Gana tus primeros 100 EcoPuntos.', icon: '🎓', unlockCondition: { type: 'points', value: 100 } },
     { id: '2', name: 'Guardián del Plástico', description: 'Alcanza 500 EcoPuntos.', icon: '🧴', unlockCondition: { type: 'points', value: 500 } },
@@ -137,3 +137,5 @@ export const allAchievements: Omit<Achievement, 'unlocked'>[] = [
     { id: '99', name: 'Maestro III', description: 'Alcanza 50000 puntos.', icon: '🏆', unlockCondition: { type: 'points', value: 50000 } },
     { id: '100', name: 'Aspirante a Leyenda', description: 'Alcanza 75000 puntos.', icon: '✨', unlockCondition: { type: 'points', value: 75000 } }
 ];
+
+module.exports = { allAchievements };

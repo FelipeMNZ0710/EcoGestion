@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const db = require('./db');
+const comoReciclarData = require('./data/comoReciclarData');
+const { processAction } = require('./services/gamificationService');
 require('dotenv').config();
 
 const app = express();
@@ -20,36 +22,21 @@ const testDatabaseConnection = async () => {
         connection.release();
     } catch (error) {
         console.error('❌ ERROR CRÍTICO: No se pudo conectar a la base de datos.');
-        console.error('DETALLES DEL ERROR:', error);
+        console.error('DETALLES DEL ERROR:', error.message);
         process.exit(1);
     }
 };
 
 // --- Helper to format user for frontend ---
-const formatUserForFrontend = async (dbUser) => {
+const formatUserForFrontend = (dbUser) => {
     if (!dbUser) return null;
-
-    // Fetch all possible achievements
-    const [allAchievements] = await db.query('SELECT id, name, description, icon, unlock_type as unlockType, stat_name as statName, stat_value as statValue FROM achievements');
+    const { allAchievements } = require('./data/achievementsData');
     
-    // Fetch user's unlocked achievements
-    const [unlockedAchievements] = await db.query('SELECT achievement_id FROM user_achievements WHERE user_id = ?', [dbUser.id]);
-    const unlockedIds = new Set(unlockedAchievements.map(a => a.achievement_id));
-
-    // Fetch user's favorite locations
-    const [favorites] = await db.query('SELECT location_id FROM user_favorite_locations WHERE user_id = ?', [dbUser.id]);
-
-    const formattedAchievements = allAchievements.map(ach => ({
-        id: ach.id,
-        name: ach.name,
-        description: ach.description,
-        icon: ach.icon,
-        unlocked: unlockedIds.has(ach.id),
-        unlockCondition: {
-            type: ach.unlockType,
-            stat: ach.statName,
-            value: ach.statValue
-        }
+    const unlockedIds = new Set(dbUser.unlocked_achievements ? JSON.parse(dbUser.unlocked_achievements) : []);
+    
+    const userAchievements = allAchievements.map(ach => ({
+        ...ach,
+        unlocked: unlockedIds.has(ach.id)
     }));
 
     return {
@@ -57,18 +44,18 @@ const formatUserForFrontend = async (dbUser) => {
         name: dbUser.name,
         email: dbUser.email,
         points: dbUser.points,
-        kgRecycled: dbUser.kg_recycled,
+        kgRecycled: parseFloat(dbUser.kg_recycled),
         role: dbUser.role,
-        achievements: formattedAchievements,
-        favoriteLocations: favorites.map(f => f.location_id.toString()),
-        lastLogin: dbUser.last_login,
+        achievements: userAchievements,
+        favoriteLocations: dbUser.favorite_locations ? JSON.parse(dbUser.favorite_locations) : [],
+        lastLogin: dbUser.last_login ? new Date(dbUser.last_login).toISOString().split('T')[0] : null,
         bannerUrl: dbUser.banner_url,
         profilePictureUrl: dbUser.profile_picture_url,
         title: dbUser.title,
         bio: dbUser.bio,
-        socials: dbUser.socials ? (typeof dbUser.socials === 'string' ? JSON.parse(dbUser.socials) : dbUser.socials) : {},
-        stats: { // These are still managed client-side for now, can be moved to DB later
-            messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 0, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0
+        socials: dbUser.socials ? JSON.parse(dbUser.socials) : {},
+        stats: dbUser.stats ? JSON.parse(dbUser.stats) : {
+            messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 0, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0, objectsIdentified: 0
         },
     };
 };
@@ -90,15 +77,16 @@ app.post('/api/register', async (req, res) => {
         }
 
         const password_hash = await bcrypt.hash(password, saltRounds);
-        const last_login = new Date().toISOString().split('T')[0];
+        const last_login = new Date();
+        const defaultStats = JSON.stringify({ messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 1, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0, objectsIdentified: 0 });
 
         const [result] = await db.query(
-            'INSERT INTO users (name, email, password_hash, last_login, role, points, kg_recycled) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [name, email, password_hash, last_login, 'usuario', 0, 0]
+            'INSERT INTO users (name, email, password_hash, last_login, role, points, kg_recycled, stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, email, password_hash, last_login, 'usuario', 0, 0, defaultStats]
         );
 
         const [newUserRows] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
-        res.status(201).json(await formatUserForFrontend(newUserRows[0]));
+        res.status(201).json(formatUserForFrontend(newUserRows[0]));
 
     } catch (error) {
         console.error('[REGISTER] ERROR:', error);
@@ -118,59 +106,89 @@ app.post('/api/login', async (req, res) => {
         const match = await bcrypt.compare(password, dbUser.password_hash);
         if (!match) return res.status(401).json({ message: 'Email o contraseña incorrectos.' });
         
-        res.status(200).json(await formatUserForFrontend(dbUser));
+        await db.query('UPDATE users SET last_login = ? WHERE id = ?', [new Date(), dbUser.id]);
+        
+        const [refetchedUser] = await db.query('SELECT * FROM users WHERE id = ?', [dbUser.id]);
+
+        res.status(200).json(formatUserForFrontend(refetchedUser[0]));
     } catch (error) {
         console.error('[LOGIN] ERROR:', error);
         res.status(500).json({ message: 'Error en el servidor al iniciar sesión.' });
     }
 });
 
-// --- User Profile & Favorites ---
+// --- User Profile, Favorites & Actions ---
+app.post('/api/user-action', async (req, res) => {
+    try {
+        const { userId, action, payload } = req.body;
+        
+        if (action === 'check_in' && payload?.locationId) {
+            await db.query('UPDATE locations SET check_ins = check_ins + 1 WHERE id = ?', [payload.locationId]);
+        }
+        
+        const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+        if (userRows.length === 0) return res.status(404).json({ message: 'Usuario no encontrado.' });
+        
+        const dbUser = userRows[0];
+        // Parse JSON fields for the service
+        dbUser.stats = dbUser.stats ? JSON.parse(dbUser.stats) : {};
+        dbUser.unlocked_achievements = dbUser.unlocked_achievements ? JSON.parse(dbUser.unlocked_achievements) : [];
+
+        const { updatedUser, notifications } = processAction(dbUser, action, payload);
+
+        // Persist changes to DB
+        await db.query(
+            'UPDATE users SET points = ?, last_login = ?, stats = ?, unlocked_achievements = ? WHERE id = ?',
+            [
+                updatedUser.points,
+                updatedUser.last_login,
+                JSON.stringify(updatedUser.stats),
+                JSON.stringify(updatedUser.unlocked_achievements),
+                userId
+            ]
+        );
+        
+        const [refetchedUser] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+
+        res.status(200).json({
+            updatedUser: formatUserForFrontend(refetchedUser[0]),
+            notifications
+        });
+
+    } catch (error) {
+        console.error('[USER ACTION] ERROR:', error);
+        res.status(500).json({ message: 'Error en el servidor al procesar la acción.' });
+    }
+});
+
 app.put('/api/users/profile/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const fieldsToUpdate = req.body;
 
-        if (Object.keys(fieldsToUpdate).length === 0) {
-            return res.status(400).json({ message: 'No se proporcionaron campos para actualizar.' });
-        }
-
+        if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ message: 'No se proporcionaron campos para actualizar.' });
+        
         const columnMapping = {
-            name: 'name',
-            points: 'points',
-            kgRecycled: 'kg_recycled',
-            title: 'title',
-            bio: 'bio',
-            bannerUrl: 'banner_url',
-            profilePictureUrl: 'profile_picture_url',
+            name: 'name', points: 'points', kgRecycled: 'kg_recycled', title: 'title', bio: 'bio', bannerUrl: 'banner_url', profilePictureUrl: 'profile_picture_url',
         };
 
-        const setClauses = [];
-        const values = [];
-
+        const setClauses = [], values = [];
         for (const key in fieldsToUpdate) {
             if (columnMapping[key]) {
                 setClauses.push(`${columnMapping[key]} = ?`);
                 values.push(fieldsToUpdate[key]);
             }
         }
-
-        if (setClauses.length === 0) {
-            return res.status(400).json({ message: 'Ninguno de los campos proporcionados es válido.' });
-        }
+        if (setClauses.length === 0) return res.status(400).json({ message: 'Ninguno de los campos proporcionados es válido.' });
         
         values.push(id);
-
         const sql = `UPDATE users SET ${setClauses.join(', ')} WHERE id = ?`;
         await db.query(sql, values);
 
         const [updatedUserRows] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
-        if (updatedUserRows.length === 0) {
-            return res.status(404).json({ message: 'Usuario no encontrado después de la actualización.' });
-        }
+        if (updatedUserRows.length === 0) return res.status(404).json({ message: 'Usuario no encontrado después de la actualización.' });
         
-        res.status(200).json(await formatUserForFrontend(updatedUserRows[0]));
-
+        res.status(200).json(formatUserForFrontend(updatedUserRows[0]));
     } catch (error) {
         console.error('[UPDATE PROFILE] ERROR:', error);
         res.status(500).json({ message: 'Error en el servidor al actualizar el perfil.' });
@@ -180,238 +198,246 @@ app.put('/api/users/profile/:id', async (req, res) => {
 app.put('/api/users/favorites', async (req, res) => {
     try {
         const { userId, locationId } = req.body;
-        if (!userId || !locationId) return res.status(400).json({ message: "Faltan datos." });
+        
+        const [users] = await db.query('SELECT favorite_locations FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) return res.status(404).json({ message: 'Usuario no encontrado.' });
+        
+        let favorites = users[0].favorite_locations ? JSON.parse(users[0].favorite_locations) : [];
+        const index = favorites.indexOf(locationId);
+        if (index > -1) favorites.splice(index, 1); else favorites.push(locationId);
+        
+        await db.query('UPDATE users SET favorite_locations = ? WHERE id = ?', [JSON.stringify(favorites), userId]);
 
-        const [existing] = await db.query('SELECT * FROM user_favorite_locations WHERE user_id = ? AND location_id = ?', [userId, locationId]);
-
-        if (existing.length > 0) {
-            await db.query('DELETE FROM user_favorite_locations WHERE user_id = ? AND location_id = ?', [userId, locationId]);
-        } else {
-            await db.query('INSERT INTO user_favorite_locations (user_id, location_id) VALUES (?, ?)', [userId, locationId]);
-        }
-
-        const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
-        res.status(200).json(await formatUserForFrontend(userRows[0]));
-
+        const [updatedUserRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+        res.status(200).json(formatUserForFrontend(updatedUserRows[0]));
     } catch (error) {
         console.error('[UPDATE FAVORITES] ERROR:', error);
-        res.status(500).json({ message: 'Error al actualizar favoritos.' });
+        res.status(500).json({ message: 'Error en el servidor al actualizar favoritos.' });
     }
 });
-
-// --- Achievements Management (Admin only) ---
-app.put('/api/users/:userId/achievements', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { achievementId, unlocked, adminUserId } = req.body;
-
-        const [adminUsers] = await db.query('SELECT role FROM users WHERE id = ?', [adminUserId]);
-        if (adminUsers.length === 0 || adminUsers[0].role !== 'dueño') {
-            return res.status(403).json({ message: 'Acción no autorizada.' });
-        }
-
-        if (unlocked) {
-            await db.query('INSERT IGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, achievementId]);
-        } else {
-            await db.query('DELETE FROM user_achievements WHERE user_id = ? AND achievement_id = ?', [userId, achievementId]);
-        }
-        
-        const [updatedUserRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
-        res.status(200).json(await formatUserForFrontend(updatedUserRows[0]));
-
-    } catch (error) {
-        console.error('[UPDATE ACHIEVEMENTS] ERROR:', error);
-        res.status(500).json({ message: 'Error en el servidor al actualizar logros.' });
-    }
-});
-
 
 // --- Puntos Verdes & Reports ---
-
-// Map SVG dimensions and Formosa's approximate bounding box for stable pin positioning
-const MAP_WIDTH = 800;
-const MAP_HEIGHT = 600;
-const MAP_PADDING = 50; // To avoid pins on the edges
-const LAT_MIN = -26.22;
-const LAT_MAX = -26.16;
-const LNG_MIN = -58.24;
-const LNG_MAX = -58.15;
-
-const mapCoords = (lat, lng) => {
-    const percentX = (lng - LNG_MIN) / (LNG_MAX - LNG_MIN);
-    const percentY = (lat - LAT_MIN) / (LAT_MAX - LAT_MIN);
-
-    const x = MAP_PADDING + percentX * (MAP_WIDTH - MAP_PADDING * 2);
-    // Invert Y-axis for screen coordinates (0,0 is top-left)
-    const y = MAP_PADDING + (1 - percentY) * (MAP_HEIGHT - MAP_PADDING * 2);
-    
-    // Clamp values to stay within map bounds
-    return {
-        x: Math.max(MAP_PADDING, Math.min(x, MAP_WIDTH - MAP_PADDING)),
-        y: Math.max(MAP_PADDING, Math.min(y, MAP_HEIGHT - MAP_PADDING))
-    };
-};
-
 app.get('/api/locations', async (req, res) => {
     try {
-        const query = `
-            SELECT l.*, GROUP_CONCAT(m.name) AS materials
-            FROM locations l
-            LEFT JOIN location_materials lm ON l.id = lm.location_id
-            LEFT JOIN materials m ON lm.material_id = m.id
-            GROUP BY l.id;
-        `;
-        const [locations] = await db.query(query);
-        const formattedLocations = locations.map(loc => {
-            const { x, y } = mapCoords(parseFloat(loc.latitude), parseFloat(loc.longitude));
-            let imageUrls = ['https://images.unsplash.com/photo-1582029132869-755a953a7a2f?q=80&w=800&auto=format&fit=crop']; // Default image
-
-            try {
-                if(loc.image_urls) {
-                    const parsed = JSON.parse(loc.image_urls);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        imageUrls = parsed;
-                    }
-                }
-            } catch (e) {
-                console.warn(`Could not parse image_urls for location ${loc.id}:`, loc.image_urls);
-            }
-
-            return {
-                id: loc.id.toString(), name: loc.name, address: loc.address,
-                hours: "Lunes a Viernes de 08:00 a 16:00",
-                schedule: [{ days: [1, 2, 3, 4, 5], open: "08:00", close: "16:00" }],
-                materials: loc.materials ? loc.materials.split(',') : [],
-                mapData: { name: loc.name, id: loc.id.toString(), lat: parseFloat(loc.latitude), lng: parseFloat(loc.longitude), x, y },
-                status: loc.status, description: loc.description, lastServiced: loc.last_serviced,
-                checkIns: loc.check_ins,
-                imageUrls: imageUrls
-            };
-        });
+        const [locations] = await db.query(`
+            SELECT l.*, COUNT(r.id) as reportCount 
+            FROM locations l 
+            LEFT JOIN reports r ON l.id = r.location_id AND r.status = 'pending' 
+            GROUP BY l.id
+        `);
+        const formattedLocations = locations.map(loc => ({
+            ...loc,
+            schedule: JSON.parse(loc.schedule || '[]'),
+            materials: JSON.parse(loc.materials || '[]'),
+            mapData: JSON.parse(loc.map_data || '{}'),
+            imageUrls: JSON.parse(loc.image_urls || '[]'),
+            lastServiced: loc.last_serviced ? new Date(loc.last_serviced).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            reportCount: loc.reportCount || 0
+        }));
         res.json(formattedLocations);
-    } catch (error) {
-        console.error('Error fetching locations:', error);
-        res.status(500).json({ message: 'Error al obtener los puntos verdes.' });
+    } catch(error) {
+        console.error("[GET LOCATIONS] ERROR:", error);
+        res.status(500).json({ message: "Error al obtener los puntos verdes." });
+    }
+});
+
+app.post('/api/locations', async (req, res) => {
+    try {
+        const newLocation = req.body;
+        // Basic validation
+        if (!newLocation.id || !newLocation.name || !newLocation.address) {
+            return res.status(400).json({ message: 'ID, Nombre y Dirección son requeridos.' });
+        }
+        const [result] = await db.query(
+            'INSERT INTO locations (id, name, address, description, hours, schedule, materials, map_data, status, last_serviced, check_ins, image_urls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [newLocation.id, newLocation.name, newLocation.address, newLocation.description, newLocation.hours, JSON.stringify(newLocation.schedule || []), JSON.stringify(newLocation.materials || []), JSON.stringify(newLocation.mapData || {}), newLocation.status || 'ok', newLocation.lastServiced || new Date(), 0, JSON.stringify(newLocation.imageUrls || [])]
+        );
+        const [insertedRow] = await db.query('SELECT * FROM locations WHERE id = ?', [newLocation.id]);
+        res.status(201).json(insertedRow[0]);
+    } catch(error) {
+        console.error("[CREATE LOCATION] ERROR:", error);
+        res.status(500).json({ message: "Error al crear la ubicación." });
+    }
+});
+
+app.put('/api/locations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedLocation = req.body;
+        // ... validation ...
+        await db.query(
+            'UPDATE locations SET name = ?, address = ?, description = ?, hours = ?, schedule = ?, materials = ?, map_data = ?, status = ?, last_serviced = ?, image_urls = ? WHERE id = ?',
+            [updatedLocation.name, updatedLocation.address, updatedLocation.description, updatedLocation.hours, JSON.stringify(updatedLocation.schedule), JSON.stringify(updatedLocation.materials), JSON.stringify(updatedLocation.mapData), updatedLocation.status, updatedLocation.lastServiced, JSON.stringify(updatedLocation.imageUrls), id]
+        );
+        const [updatedRow] = await db.query('SELECT * FROM locations WHERE id = ?', [id]);
+        res.status(200).json(updatedRow[0]);
+    } catch(error) {
+        console.error("[UPDATE LOCATION] ERROR:", error);
+        res.status(500).json({ message: "Error al actualizar la ubicación." });
+    }
+});
+
+app.delete('/api/locations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.query('DELETE FROM reports WHERE location_id = ?', [id]);
+        await db.query('DELETE FROM locations WHERE id = ?', [id]);
+        res.status(200).json({ message: 'Ubicación eliminada.' });
+    } catch(error) {
+        console.error("[DELETE LOCATION] ERROR:", error);
+        res.status(500).json({ message: "Error al eliminar la ubicación." });
     }
 });
 
 app.post('/api/locations/report', async (req, res) => {
     try {
         const { locationId, userId, reason, comment, imageUrl } = req.body;
-        if (!locationId || !userId || !reason) {
-            return res.status(400).json({ message: 'Faltan datos para crear el reporte.' });
-        }
-
         await db.query(
-            'INSERT INTO location_reports (location_id, user_id, reason, comment, image_url) VALUES (?, ?, ?, ?, ?)',
-            [locationId, userId, reason, comment || null, imageUrl || null]
+            'INSERT INTO reports (user_id, location_id, reason, comment, image_url) VALUES (?, ?, ?, ?, ?)',
+            [userId, locationId, reason, comment, imageUrl]
         );
-
         await db.query("UPDATE locations SET status = 'reported' WHERE id = ?", [locationId]);
-
-        res.status(201).json({ id: locationId, status: 'reported' });
+        
+        const [updatedLocations] = await db.query('SELECT * FROM locations WHERE id = ?', [locationId]);
+        res.status(201).json(updatedLocations[0]);
     } catch (error) {
-        console.error('[CREATE REPORT] ERROR:', error);
-        res.status(500).json({ message: 'Error al guardar el reporte.' });
+        console.error("[REPORT LOCATION] ERROR:", error);
+        res.status(500).json({ message: "Error al enviar el reporte." });
     }
 });
 
-
-// --- News Management (Protected) ---
-const checkAdminRole = async (req, res, next) => {
-    const { adminUserId } = req.body;
-    if (!adminUserId) return res.status(401).json({ message: 'Autenticación requerida.' });
-    
-    try {
-        const [users] = await db.query('SELECT role FROM users WHERE id = ?', [adminUserId]);
-        if (users.length === 0 || (users[0].role !== 'dueño' && users[0].role !== 'moderador')) {
-            return res.status(403).json({ message: 'Acción no autorizada.' });
-        }
-        next();
-    } catch (error) {
-        res.status(500).json({ message: 'Error de servidor.' });
-    }
-};
-
+// --- News Management ---
 app.get('/api/news', async (req, res) => {
     try {
         const [articles] = await db.query('SELECT * FROM news_articles ORDER BY published_at DESC, id DESC');
-        const formattedArticles = articles.map(article => ({
-            id: article.id,
-            image: article.image_url,
-            category: article.category,
-            title: article.title,
-            date: article.published_at.toISOString().split('T')[0],
-            excerpt: article.excerpt,
-            content: typeof article.content === 'string' ? JSON.parse(article.content) : article.content,
-            featured: !!article.is_featured,
+        const formattedNews = articles.map(art => ({
+            ...art,
+            date: new Date(art.published_at).toISOString().split('T')[0],
+            content: JSON.parse(art.content || '[]')
         }));
-        res.json(formattedArticles);
+        res.json(formattedNews);
     } catch (error) {
-        console.error('Error fetching news:', error);
-        res.status(500).json({ message: 'Error al obtener las noticias.' });
+        console.error("[GET NEWS] ERROR:", error);
+        res.status(500).json({ message: "Error al obtener las noticias." });
     }
 });
 
-app.post('/api/news', checkAdminRole, async (req, res) => {
+app.post('/api/news', async (req, res) => {
     try {
-        const { title, category, image, excerpt, content, featured } = req.body;
-        const date = new Date().toISOString().split('T')[0];
+        const { title, category, image, excerpt, content, featured, adminUserId } = req.body;
         const [result] = await db.query(
-            'INSERT INTO news_articles (title, category, image_url, excerpt, content, is_featured, published_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [title, category, image, excerpt, JSON.stringify(content), featured, date]
+            `INSERT INTO news_articles (title, category, image, excerpt, content, featured, author_id, published_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [title, category, image, excerpt, JSON.stringify(content), featured, adminUserId]
         );
-        res.status(201).json({ id: result.insertId });
+        res.status(201).json({ id: result.insertId, message: 'Noticia creada.' });
     } catch (error) {
-        console.error('Error creating news:', error);
-        res.status(500).json({ message: 'Error al crear la noticia.' });
+        console.error("[CREATE NEWS] ERROR:", error);
+        res.status(500).json({ message: "Error al crear la noticia." });
     }
 });
 
-app.put('/api/news/:id', checkAdminRole, async (req, res) => {
+app.put('/api/news/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { title, category, image, excerpt, content, featured } = req.body;
         await db.query(
-            'UPDATE news_articles SET title = ?, category = ?, image_url = ?, excerpt = ?, content = ?, is_featured = ? WHERE id = ?',
+            `UPDATE news_articles SET title = ?, category = ?, image = ?, excerpt = ?, content = ?, featured = ?
+             WHERE id = ?`,
             [title, category, image, excerpt, JSON.stringify(content), featured, id]
         );
         res.status(200).json({ message: 'Noticia actualizada.' });
     } catch (error) {
-        console.error('Error updating news:', error);
-        res.status(500).json({ message: 'Error al actualizar la noticia.' });
+        console.error("[UPDATE NEWS] ERROR:", error);
+        res.status(500).json({ message: "Error al actualizar la noticia." });
     }
 });
 
-app.delete('/api/news/:id', checkAdminRole, async (req, res) => {
+app.delete('/api/news/:id', async (req, res) => {
     try {
         const { id } = req.params;
         await db.query('DELETE FROM news_articles WHERE id = ?', [id]);
         res.status(200).json({ message: 'Noticia eliminada.' });
     } catch (error) {
-        console.error('Error deleting news:', error);
-        res.status(500).json({ message: 'Error al eliminar la noticia.' });
+        console.error("[DELETE NEWS] ERROR:", error);
+        res.status(500).json({ message: "Error al eliminar la noticia." });
     }
 });
+
+// --- Games Management ---
+app.get('/api/games', async (req, res) => {
+    try {
+        const [games] = await db.query('SELECT *, learning_objective as learningObjective FROM games ORDER BY id DESC');
+        const formattedGames = games.map(g => {
+            const { learning_objective, ...rest } = g; // Remove original snake_case field
+            return {
+                ...rest,
+                payload: JSON.parse(g.payload || '{}'),
+            };
+        });
+        res.json(formattedGames);
+    } catch (error) {
+        console.error('[GET GAMES] ERROR:', error);
+        res.status(500).json({ message: 'Error al obtener los juegos.' });
+    }
+});
+
+app.post('/api/games', async (req, res) => {
+    try {
+        const { title, category, image, type, learningObjective, payload } = req.body;
+        const [result] = await db.query(
+            'INSERT INTO games (title, category, image, type, learning_objective, payload) VALUES (?, ?, ?, ?, ?, ?)',
+            [title, category, image, type, learningObjective, JSON.stringify(payload)]
+        );
+        res.status(201).json({ id: result.insertId, message: 'Juego creado.' });
+    } catch (error) {
+        console.error('[CREATE GAME] ERROR:', error);
+        res.status(500).json({ message: 'Error al crear el juego.' });
+    }
+});
+
+app.put('/api/games/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, category, image, type, learningObjective, payload } = req.body;
+        await db.query(
+            'UPDATE games SET title = ?, category = ?, image = ?, type = ?, learning_objective = ?, payload = ? WHERE id = ?',
+            [title, category, image, type, learningObjective, JSON.stringify(payload), id]
+        );
+        res.status(200).json({ message: 'Juego actualizado.' });
+    } catch (error) {
+        console.error('[UPDATE GAME] ERROR:', error);
+        res.status(500).json({ message: 'Error al actualizar el juego.' });
+    }
+});
+
+app.delete('/api/games/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.query('DELETE FROM games WHERE id = ?', [id]);
+        res.status(200).json({ message: 'Juego eliminado.' });
+    } catch (error) {
+        console.error('[DELETE GAME] ERROR:', error);
+        res.status(500).json({ message: 'Error al eliminar el juego.' });
+    }
+});
+
 
 // --- Community Endpoints ---
 app.get('/api/community/channels', async (req, res) => {
-    try {
-        const [channels] = await db.query('SELECT * FROM channels ORDER BY id');
-        res.json(channels);
-    } catch (error) {
-        console.error('Error fetching channels:', error);
-        res.status(500).send('Server error');
-    }
+    res.json([
+        { id: 1, name: 'general', description: 'Charlas generales' },
+        { id: 2, name: 'dudas', description: 'Preguntas sobre reciclaje' }
+    ]);
 });
 
 app.get('/api/community/members', async (req, res) => {
-    try {
-        const [members] = await db.query("SELECT id, name, profile_picture_url, role FROM users WHERE role IN ('dueño', 'moderador', 'usuario') ORDER BY CASE WHEN role = 'dueño' THEN 1 WHEN role = 'moderador' THEN 2 ELSE 3 END, name");
+     try {
+        const [members] = await db.query("SELECT id, name, profile_picture_url, role FROM users ORDER BY name");
         const formattedMembers = members.map(m => ({ ...m, is_admin: m.role === 'dueño' || m.role === 'moderador' }));
         res.json(formattedMembers);
     } catch (error) {
-        console.error('Error fetching members:', error);
+        console.error('[GET MEMBERS] Error:', error);
         res.status(500).send('Server error');
     }
 });
@@ -419,153 +445,208 @@ app.get('/api/community/members', async (req, res) => {
 app.get('/api/community/messages/:channelId', async (req, res) => {
     try {
         const { channelId } = req.params;
-        const query = `
-            SELECT cm.id, u.name as user, u.profile_picture_url as avatarUrl, cm.content as text, cm.created_at as timestamp, cm.is_edited as edited
-            FROM community_messages cm
-            JOIN users u ON cm.user_id = u.id
-            WHERE cm.channel_id = ?
-            ORDER BY cm.created_at ASC;
-        `;
-        const [messages] = await db.query(query, [channelId]);
-        res.json(messages);
+        const [messages] = await db.query(
+            `SELECT 
+                m.id, m.user_id, m.content, m.created_at, m.edited, m.reactions, m.replying_to_message_id,
+                u.name as user, u.profile_picture_url as avatarUrl
+             FROM community_messages m 
+             JOIN users u ON m.user_id = u.id 
+             WHERE m.channel_id = ? 
+             ORDER BY m.created_at ASC`, [channelId]
+        );
+        
+        const replyIds = messages.map(m => m.replying_to_message_id).filter(id => id);
+        let repliesMap = {};
+        if (replyIds.length > 0) {
+            const [replyMessages] = await db.query(
+                `SELECT m.id, m.content, u.name as user 
+                 FROM community_messages m 
+                 JOIN users u ON m.user_id = u.id 
+                 WHERE m.id IN (?)`, [replyIds]
+            );
+            repliesMap = replyMessages.reduce((acc, reply) => {
+                acc[reply.id] = { messageId: reply.id, user: reply.user, text: reply.content };
+                return acc;
+            }, {});
+        }
+        
+        const formattedMessages = messages.map(msg => ({
+            id: msg.id,
+            user_id: msg.user_id.toString(),
+            user: msg.user,
+            avatarUrl: msg.avatarUrl,
+            timestamp: msg.created_at,
+            text: msg.content,
+            edited: msg.edited,
+            reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
+            replyingTo: msg.replying_to_message_id ? repliesMap[msg.replying_to_message_id] : null
+        }));
+        
+        res.json(formattedMessages);
     } catch (error) {
-        console.error('Error fetching messages:', error);
-        res.status(500).send('Server error');
+        console.error(`[GET MESSAGES] Error:`, error);
+        res.status(500).json({ message: 'Error al obtener mensajes.' });
     }
 });
 
 app.post('/api/community/messages', async (req, res) => {
-    try {
-        const { channelId, userId, content } = req.body;
-        if (!channelId || !userId || !content) return res.status(400).send('Missing fields');
-        const [result] = await db.query('INSERT INTO community_messages (channel_id, user_id, content) VALUES (?, ?, ?)', [channelId, userId, content]);
-        res.status(201).json({ id: result.insertId });
+     try {
+        const { channelId, userId, content, replyingToId } = req.body;
+        await db.query(
+            'INSERT INTO community_messages (channel_id, user_id, content, replying_to_message_id) VALUES (?, ?, ?, ?)',
+            [channelId, userId, content, replyingToId || null]
+        );
+        res.status(201).json({ message: 'Mensaje enviado.' });
     } catch (error) {
-        console.error('Error sending message:', error);
-        res.status(500).send('Server error');
+        console.error("[POST MESSAGE] ERROR:", error);
+        res.status(500).json({ message: "Error al enviar el mensaje." });
     }
 });
+
+app.put('/api/community/messages/:messageId', async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { content, userId, userRole } = req.body;
+        
+        const [messages] = await db.query('SELECT user_id FROM community_messages WHERE id = ?', [messageId]);
+        if (messages.length === 0) return res.status(404).json({ message: 'Mensaje no encontrado.' });
+
+        const messageAuthorId = messages[0].user_id.toString();
+        if (messageAuthorId !== userId && userRole !== 'dueño' && userRole !== 'moderador') {
+            return res.status(403).json({ message: 'No tienes permiso para editar este mensaje.' });
+        }
+        
+        await db.query(
+            'UPDATE community_messages SET content = ?, edited = true WHERE id = ?',
+            [content, messageId]
+        );
+        res.status(200).json({ message: 'Mensaje actualizado.' });
+    } catch (error) {
+        console.error("[EDIT MESSAGE] ERROR:", error);
+        res.status(500).json({ message: "Error al editar el mensaje." });
+    }
+});
+
+app.delete('/api/community/messages/:messageId', async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { userId, userRole } = req.body;
+        
+        const [messages] = await db.query('SELECT user_id FROM community_messages WHERE id = ?', [messageId]);
+        if (messages.length === 0) return res.status(404).json({ message: 'Mensaje no encontrado.' });
+
+        const messageAuthorId = messages[0].user_id.toString();
+        if (messageAuthorId !== userId && userRole !== 'dueño' && userRole !== 'moderador') {
+            return res.status(403).json({ message: 'No tienes permiso para eliminar este mensaje.' });
+        }
+        
+        await db.query('DELETE FROM community_messages WHERE id = ?', [messageId]);
+        res.status(200).json({ message: 'Mensaje eliminado.' });
+    } catch (error) {
+        console.error("[DELETE MESSAGE] ERROR:", error);
+        res.status(500).json({ message: "Error al eliminar el mensaje." });
+    }
+});
+
+app.post('/api/community/messages/:messageId/react', async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { userName, emoji } = req.body;
+
+        const [messages] = await db.query('SELECT reactions FROM community_messages WHERE id = ?', [messageId]);
+        if (messages.length === 0) return res.status(404).json({ message: 'Mensaje no encontrado.' });
+
+        let reactions = messages[0].reactions ? JSON.parse(messages[0].reactions) : {};
+
+        if (!reactions[emoji]) {
+            reactions[emoji] = [];
+        }
+
+        const userIndex = reactions[emoji].findIndex((u) => u === userName);
+        if (userIndex > -1) {
+            reactions[emoji].splice(userIndex, 1);
+            if (reactions[emoji].length === 0) {
+                delete reactions[emoji];
+            }
+        } else {
+            reactions[emoji].push(userName);
+        }
+
+        await db.query(
+            'UPDATE community_messages SET reactions = ? WHERE id = ?',
+            [JSON.stringify(reactions), messageId]
+        );
+        res.status(200).json({ message: 'Reacción actualizada.' });
+    } catch (error) {
+        console.error("[REACT MESSAGE] ERROR:", error);
+        res.status(500).json({ message: "Error al reaccionar al mensaje." });
+    }
+});
+
 
 // --- Contact & Admin Panel Endpoints ---
 app.post('/api/contact', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
-        if (!name || !email || !subject || !message) {
-            return res.status(400).json({ message: 'Todos los campos son requeridos.' });
-        }
         await db.query(
             'INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
             [name, email, subject, message]
         );
         res.status(201).json({ message: 'Mensaje enviado exitosamente.' });
     } catch (error) {
-        console.error('Error saving contact message:', error);
-        res.status(500).json({ message: 'Error al enviar el mensaje.' });
+        console.error("[CONTACT] ERROR:", error);
+        res.status(500).json({ message: "Error al enviar el mensaje." });
     }
 });
 
 app.get('/api/admin/messages', async (req, res) => {
-    // This could be protected by a middleware in a real app
     try {
         const [messages] = await db.query('SELECT * FROM contact_messages ORDER BY submitted_at DESC');
         res.json(messages);
     } catch (error) {
-        console.error('Error fetching contact messages:', error);
-        res.status(500).json({ message: 'Error al obtener mensajes.' });
+        console.error("[GET ADMIN MESSAGES] ERROR:", error);
+        res.status(500).json({ message: "Error al obtener mensajes." });
     }
 });
-
-app.put('/api/admin/messages/:id', checkAdminRole, async (req, res) => {
+app.put('/api/admin/messages/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        if (!['read', 'unread', 'archived'].includes(status)) {
-            return res.status(400).json({ message: 'Estado no válido.' });
-        }
         await db.query('UPDATE contact_messages SET status = ? WHERE id = ?', [status, id]);
-        res.status(200).json({ message: 'Estado actualizado.' });
+        res.status(200).json({ message: 'Status updated' });
     } catch (error) {
-        console.error('Error updating message status:', error);
-        res.status(500).json({ message: 'Error al actualizar el estado.' });
+         res.status(500).json({ message: "Error al actualizar mensaje." });
     }
 });
-
 app.get('/api/admin/reports', async (req, res) => {
-     try {
-        const query = `
-            SELECT r.id, l.name as locationName, u.name as userName, r.reason, r.comment, r.image_url as imageUrl, r.status, r.reported_at
-            FROM location_reports r
-            JOIN locations l ON r.location_id = l.id
-            JOIN users u ON r.user_id = u.id
-            ORDER BY r.reported_at DESC;
-        `;
-        const [reports] = await db.query(query);
+    try {
+        const [reports] = await db.query(
+            `SELECT r.*, u.name as userName, l.name as locationName 
+             FROM reports r JOIN users u ON r.user_id = u.id 
+             JOIN locations l ON r.location_id = l.id 
+             ORDER BY r.reported_at DESC`
+        );
         res.json(reports);
     } catch (error) {
-        console.error('Error fetching reports:', error);
-        res.status(500).json({ message: 'Error al obtener reportes.' });
+        console.error("[GET ADMIN REPORTS] ERROR:", error);
+        res.status(500).json({ message: "Error al obtener reportes." });
     }
 });
-
-app.put('/api/admin/reports/:id', checkAdminRole, async (req, res) => {
+app.put('/api/admin/reports/:id', async (req, res) => {
      try {
         const { id } = req.params;
         const { status } = req.body;
-        if (!['resolved', 'dismissed', 'pending'].includes(status)) {
-            return res.status(400).json({ message: 'Estado no válido.' });
-        }
-        await db.query('UPDATE location_reports SET status = ? WHERE id = ?', [status, id]);
-        res.status(200).json({ message: 'Estado del reporte actualizado.' });
+        await db.query('UPDATE reports SET status = ? WHERE id = ?', [status, id]);
+        res.status(200).json({ message: 'Status updated' });
     } catch (error) {
-        console.error('Error updating report status:', error);
-        res.status(500).json({ message: 'Error al actualizar el estado del reporte.' });
+         res.status(500).json({ message: "Error al actualizar reporte." });
     }
 });
 
 // --- Recycling Guide Endpoint ---
 app.get('/api/recycling-guides', async (req, res) => {
-    try {
-        const [guides] = await db.query('SELECT * FROM recycling_guides');
-        const [items] = await db.query('SELECT * FROM guide_content_items');
-        const [steps] = await db.query('SELECT * FROM guide_process_steps ORDER BY step_number');
-        const [stats] = await db.query('SELECT * FROM guide_impact_stats');
-        const [questions] = await db.query('SELECT * FROM quiz_questions');
-        const [options] = await db.query('SELECT * FROM quiz_options');
-
-        const guidesData = {};
-
-        for (const guide of guides) {
-            const guideId = guide.id;
-            
-            const guideQuestions = questions.filter(q => q.guide_id === guideId).map(q => ({
-                question: q.question_text,
-                options: options.filter(o => o.question_id === q.id).map(o => o.option_text),
-                correctAnswer: options.filter(o => o.question_id === q.id).findIndex(o => o.is_correct)
-            }));
-            
-            guidesData[guideId] = {
-                name: guide.name,
-                tip: guide.tip,
-                yes: items.filter(i => i.guide_id === guideId && i.type === 'yes').map(i => ({ text: i.text, icon: i.icon })),
-                no: items.filter(i => i.guide_id === guideId && i.type === 'no').map(i => ({ text: i.text, icon: i.icon })),
-                commonMistakes: items.filter(i => i.guide_id === guideId && i.type === 'mistake').map(i => i.text),
-                recyclingProcess: steps.filter(s => s.guide_id === guideId).map(s => ({ step: s.step_number, title: s.title, description: s.description, icon: s.icon })),
-                impactStats: stats.filter(s => s.guide_id === guideId).map(s => ({ stat: s.stat_name, value: s.value, icon: s.icon })),
-                quiz: {
-                    points: guide.quiz_points,
-                    questions: guideQuestions
-                }
-            };
-        }
-        
-        res.json(guidesData);
-
-    } catch (error) {
-        console.error('Error fetching recycling guides:', error);
-        res.status(500).json({ message: 'Error al obtener las guías de reciclaje.' });
-    }
+    res.json(comoReciclarData);
 });
-
 
 // --- Start Server ---
 const startServer = async () => {

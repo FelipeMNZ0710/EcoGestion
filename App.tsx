@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -10,7 +11,6 @@ import ContactoPage from './pages/ContactoPage';
 import PerfilPage from './pages/PerfilPage';
 import AdminPage from './pages/AdminPage';
 import type { Page, User, Notification, GamificationAction } from './types';
-import { processAction } from './services/gamificationService';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -38,24 +38,44 @@ const App: React.FC = () => {
   }, [user]);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const newNotification = { ...notification, id: Date.now() };
+    const newNotification = { ...notification, id: Date.now() + Math.random() };
     setNotifications(prev => [...prev, newNotification]);
     setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
     }, 5000);
   }, []);
 
-  const handleUserAction = useCallback((action: GamificationAction, payload?: any) => {
+  const handleUserAction = useCallback(async (action: GamificationAction, payload?: any) => {
     if (!user || user.role === 'dueño') return;
-    
-    if(action === 'daily_login') {
+
+    // Daily login check remains on client to prevent unnecessary API calls
+    if (action === 'daily_login') {
         const today = new Date().toISOString().split('T')[0];
         if (user.lastLogin === today) return;
     }
 
-    const result = processAction(user, action, payload);
-    setUser(result.updatedUser);
-    result.notifications.forEach(addNotification);
+    try {
+        const response = await fetch('http://localhost:3001/api/user-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, action, payload })
+        });
+        if (!response.ok) throw new Error('Server error during user action.');
+        
+        const result: { updatedUser: User; notifications: Omit<Notification, 'id'>[] } = await response.json();
+        
+        setUser(result.updatedUser);
+        result.notifications.forEach(addNotification);
+
+    } catch (error) {
+        console.error("Error processing user action:", error);
+        addNotification({
+            type: 'achievement',
+            title: 'Error de Sincronización',
+            message: 'No se pudo guardar tu progreso. Revisa tu conexión.',
+            icon: '⚠️'
+        });
+    }
   }, [user, addNotification]);
   
   const handleLogin = (newUser: User | null) => {
@@ -65,13 +85,12 @@ const App: React.FC = () => {
     }
     
     const today = new Date().toISOString().split('T')[0];
-    let userToSet = newUser;
     if (newUser.lastLogin !== today && newUser.role !== 'dueño') {
-        const { updatedUser, notifications } = processAction(newUser, 'daily_login');
-        userToSet = updatedUser;
-        notifications.forEach(addNotification);
+        handleUserAction('daily_login');
+        // The user object will be updated by the response from handleUserAction
+    } else {
+        setUser(newUser);
     }
-    setUser(userToSet);
   };
 
   const updateUser = useCallback((updatedUser: User) => {

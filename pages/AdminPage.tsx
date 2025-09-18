@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, ContactMessage, Report, ReportStatus } from '../types';
 
@@ -33,7 +34,6 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
-            // This technique forces the browser to bypass its cache.
             const cacheBuster = `?t=${new Date().getTime()}`;
             const endpoint = activeTab === 'messages' ? 'messages' : 'reports';
             
@@ -49,7 +49,6 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
                 }
             } catch (error) {
                 console.error(`Error fetching ${activeTab}:`, error);
-                // Reset the specific data on error to avoid showing stale data
                 if (activeTab === 'messages') setMessages([]); else setReports([]);
             } finally {
                 setIsLoading(false);
@@ -57,7 +56,7 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
         };
 
         fetchData();
-    }, [activeTab]); // This effect now correctly re-runs whenever the activeTab changes.
+    }, [activeTab]);
 
     const handleUpdateMessageStatus = async (messageId: number, status: ContactMessage['status']) => {
         try {
@@ -66,7 +65,6 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, adminUserId: user?.id }),
             });
-            // Optimistic update for instant feedback
             setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, status } : msg));
             if (selectedItem && 'subject' in selectedItem && selectedItem.id === messageId) {
                 setSelectedItem(prev => prev ? { ...prev, status } as ContactMessage : null);
@@ -84,7 +82,6 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, adminUserId: user?.id }),
             });
-            // Optimistic update
             setReports(prev => prev.map(rep => rep.id === reportId ? { ...rep, status } : rep));
             if (selectedItem && 'reason' in selectedItem && selectedItem.id === reportId) {
                 setSelectedItem(prev => prev ? { ...prev, status } as Report : null);
@@ -97,7 +94,6 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
     
     const handleSelectItem = (item: ContactMessage | Report) => {
         setSelectedItem(item);
-        // Automatically mark message as read when opened
         if ('subject' in item && item.status === 'unread') {
             handleUpdateMessageStatus(item.id, 'read');
         }
