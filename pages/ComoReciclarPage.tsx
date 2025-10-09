@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { User, Material, MaterialContent, QuizQuestion, GamificationAction, MaterialContentItem, ProcessStep, ImpactStat } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -13,6 +11,19 @@ const materialNames: Record<Material, string> = {
     vidrio: 'Vidrio',
     metales: 'Metales'
 };
+
+const PulsingScanner: React.FC = () => (
+    <div className="pulsing-scanner">
+        <div className="icon-wrapper">
+            <div className="pulse-ring"></div>
+            <div className="pulse-ring"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10l.01.01" /></svg>
+        </div>
+        <p className="mt-4 font-semibold text-lg animate-pulse">Analizando imagen...</p>
+        <p className="text-sm text-text-secondary">La IA está identificando el objeto.</p>
+    </div>
+);
+
 
 const MaterialInfoList: React.FC<{ title: string; items: MaterialContentItem[]; colorClass: string }> = ({ title, items, colorClass }) => (
     <div className="material-content-card flex-1">
@@ -56,7 +67,7 @@ const ImpactStats: React.FC<{ stats: ImpactStat[] }> = ({ stats }) => (
 );
 
 
-const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: GamificationAction, payload?: any) => void, isAdminMode: boolean }> = ({ user, onUserAction }) => {
+const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: GamificationAction, payload?: any) => void, isAdminMode: boolean }> = ({ user, onUserAction, isAdminMode }) => {
     const [activeTab, setActiveTab] = useState<Material>('papel');
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -65,7 +76,7 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
 
     const [isIdentifierActive, setIsIdentifierActive] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState<{name: string, isRecyclable: boolean, instructions: string} | null>(null);
+    const [analysisResult, setAnalysisResult] = useState<{name: string, isRecyclable: boolean, recyclingInstructions: string, reuseTips: string[]} | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
@@ -90,7 +101,7 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
 
     const startCamera = useCallback(async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 1080, height: 1080 } });
             streamRef.current = stream;
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
@@ -134,7 +145,11 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
         const base64Data = dataUrl.split(',')[1];
         
         const model = 'gemini-2.5-flash';
-        const prompt = "Analiza la imagen. Identifica el objeto principal y determina si es reciclable en Formosa, Argentina y cómo debe ser reciclado. Sé breve y directo. Responde en JSON con las claves 'name' (string), 'isRecyclable' (boolean), y 'instructions' (string, max 150 caracteres).";
+        const prompt = `Analiza la imagen e identifica el objeto principal. Tu tarea es proporcionar información útil sobre reciclaje y reutilización para este objeto, específicamente para un usuario en Formosa, Argentina. Responde SIEMPRE en formato JSON, adhiriéndote estrictamente al siguiente esquema:
+- name: string (El nombre del objeto identificado, ej: "Botella de plástico PET")
+- isRecyclable: boolean (Indica si es comúnmente reciclable en un sistema municipal estándar)
+- recyclingInstructions: string (Instrucciones claras y concisas sobre CÓMO reciclarlo. Ej: "Enjuagar, aplastar y depositar en el contenedor de plásticos.")
+- reuseTips: string[] (Un array con 2 o 3 ideas creativas y prácticas para REUTILIZAR el objeto. Ej: ["Convertirla en un macetero para plantas pequeñas.", "Usarla como un embudo cortando la base."])`;
         
         try {
             const response = await ai.models.generateContent({
@@ -150,9 +165,13 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
                         properties: {
                             name: { type: Type.STRING },
                             isRecyclable: { type: Type.BOOLEAN },
-                            instructions: { type: Type.STRING }
+                            recyclingInstructions: { type: Type.STRING },
+                            reuseTips: {
+                                type: Type.ARRAY,
+                                items: { type: Type.STRING }
+                            }
                         },
-                        required: ["name", "isRecyclable", "instructions"]
+                        required: ["name", "isRecyclable", "recyclingInstructions", "reuseTips"]
                     }
                 }
             });
@@ -162,7 +181,12 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
             setAnalysisResult(result);
         } catch (error) {
             console.error("Gemini API error:", error);
-            setAnalysisResult({ name: 'Error', isRecyclable: false, instructions: 'No se pudo analizar la imagen. Asegúrate de que el objeto esté bien iluminado y vuelve a intentarlo.' });
+            setAnalysisResult({
+                name: 'Error',
+                isRecyclable: false,
+                recyclingInstructions: 'No se pudo analizar la imagen. Asegúrate de que el objeto esté bien iluminado y vuelve a intentarlo.',
+                reuseTips: []
+            });
         } finally {
             setIsAnalyzing(false);
         }
@@ -190,7 +214,7 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
         return (
             <div className="pt-20 h-screen flex items-center justify-center">
                 <div className="text-center text-text-secondary p-8">
-                    <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     Cargando Guía de Reciclaje...
                 </div>
             </div>
@@ -209,33 +233,68 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
                     <h2 className="text-2xl font-bold font-display text-center text-text-main mb-8">Identificador de Residuos con IA</h2>
                     <div className="max-w-xl mx-auto">
                         {!isIdentifierActive ? (
-                            <button onClick={() => setIsIdentifierActive(true)} className="w-full cta-button text-lg">
-                                Activar Cámara para Identificar
-                            </button>
+                             <div className="text-center p-8 border-2 border-dashed border-slate-700 rounded-2xl">
+                                <p className="text-5xl mb-4">📸</p>
+                                <p className="text-text-secondary mb-6">¿Dudas sobre un objeto? Usa tu cámara para que nuestra IA te diga si es reciclable y qué hacer con él.</p>
+                                <button onClick={() => setIsIdentifierActive(true)} className="cta-button text-lg">
+                                    Activar Escáner IA
+                                </button>
+                            </div>
                         ) : (
-                            <div className="camera-view">
-                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-4">
-                                     <button onClick={handleIdentify} disabled={isAnalyzing} className="w-16 h-16 bg-white rounded-full flex items-center justify-center border-4 border-slate-400 disabled:opacity-50">
-                                        <div className="w-12 h-12 bg-white rounded-full active:bg-slate-200"></div>
-                                    </button>
-                                     <button onClick={() => setIsIdentifierActive(false)} className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
+                            <div className="scanner-container">
+                                <video ref={videoRef} autoPlay playsInline muted className="scanner-video"></video>
+                                <div className="scanner-guide scanner-guide-tl"></div>
+                                <div className="scanner-guide scanner-guide-tr"></div>
+                                <div className="scanner-guide scanner-guide-bl"></div>
+                                <div className="scanner-guide scanner-guide-br"></div>
+                                <div className="scanline"></div>
+                                
+                                {!isAnalyzing && !analysisResult && (
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-6 animate-fade-in-up">
+                                        <button onClick={() => setIsIdentifierActive(false)} className="w-14 h-14 bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                        <button onClick={handleIdentify} disabled={isAnalyzing} className="shutter-button disabled:opacity-50">
+                                            <div className="inner-circle"></div>
+                                        </button>
+                                        <div className="w-14 h-14"></div>
+                                    </div>
+                                )}
+
                                 {(isAnalyzing || analysisResult) && (
-                                    <div className="ai-result-overlay">
+                                    <div className="scanner-overlay">
                                         {isAnalyzing ? (
-                                             <div className="text-center text-white">
-                                                <svg className="animate-spin h-12 w-12 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                <p className="mt-4 font-semibold">Analizando imagen...</p>
-                                            </div>
+                                             <PulsingScanner />
                                         ) : analysisResult && (
-                                            <div className="text-center text-white">
-                                                <div className={`text-6xl mb-4 ai-result-icon ${analysisResult.isRecyclable ? 'text-emerald-400' : 'text-red-400'}`}>{analysisResult.isRecyclable ? '✅' : '❌'}</div>
-                                                <h3 className="text-2xl font-bold ai-result-text">{analysisResult.name}</h3>
-                                                <p className="mt-2 text-slate-200 ai-result-subtext">{analysisResult.instructions}</p>
-                                                <button onClick={() => setAnalysisResult(null)} className="mt-6 px-4 py-2 bg-white/20 rounded-full">Analizar otro</button>
+                                            <div className="w-full max-w-md text-center text-white bg-background/50 rounded-2xl p-6 animate-scale-in">
+                                                <div className="animate-fade-in-up">
+                                                    <div className={`text-6xl mb-3 ${analysisResult.isRecyclable ? 'text-emerald-400' : 'text-red-400'}`}>{analysisResult.isRecyclable ? '✅' : '❌'}</div>
+                                                    <h3 className="text-2xl font-bold">{analysisResult.name}</h3>
+                                                    <p className={`font-semibold ${analysisResult.isRecyclable ? 'text-emerald-400' : 'text-red-400'}`}>{analysisResult.isRecyclable ? 'Es Reciclable' : 'No es Reciclable'}</p>
+                                                </div>
+                                                
+                                                <div className="space-y-4 mt-6 text-left">
+                                                    <div className="result-card animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                                                        <h4 className="font-bold mb-2 flex items-center gap-2">♻️ Instrucciones de Reciclaje</h4>
+                                                        <p className="text-sm text-slate-300">{analysisResult.recyclingInstructions}</p>
+                                                    </div>
+                                                    
+                                                    {analysisResult.reuseTips && analysisResult.reuseTips.length > 0 && (
+                                                        <div className="result-card animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+                                                            <h4 className="font-bold mb-3 flex items-center gap-2">💡 Ideas para Reutilizar</h4>
+                                                            <ul className="space-y-2 text-sm text-slate-300">
+                                                                {analysisResult.reuseTips.map((tip, index) => (
+                                                                    <li key={index} className="result-tip-item">
+                                                                        <span className="icon mt-1">✨</span>
+                                                                        <span>{tip}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <button onClick={() => setAnalysisResult(null)} className="mt-6 px-5 py-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors animate-fade-in-up" style={{ animationDelay: '600ms' }}>Analizar otro objeto</button>
                                             </div>
                                         )}
                                     </div>

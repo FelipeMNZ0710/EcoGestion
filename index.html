@@ -322,12 +322,36 @@
       .recycling-tab:hover { color: #f5f5f5; }
       .recycling-tab.active { color: #10B981; border-color: #10B981; }
       .material-content-card { background-color: #212121; border: 1px solid #444; border-radius: 0.75rem; padding: 1.5rem; }
-      .camera-view { position: relative; width: 100%; max-width: 500px; margin: auto; aspect-ratio: 1/1; overflow: hidden; border-radius: 0.75rem; background-color: #111; }
-      .camera-view video { width: 100%; height: 100%; object-fit: cover; }
-      .ai-result-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; }
-      .ai-result-icon { animation: scaleIn 0.5s ease; }
-      .ai-result-text { animation: fadeInUp 0.5s 0.2s ease forwards; opacity: 0; }
-      .ai-result-subtext { animation: fadeInUp 0.5s 0.4s ease forwards; opacity: 0; }
+      
+      /* --- AI Identifier --- */
+      .scanner-container { position: relative; width: 100%; max-width: 500px; margin: auto; aspect-ratio: 1/1; overflow: hidden; border-radius: 1.25rem; background-color: #111; border: 2px solid #444; }
+      .scanner-video { width: 100%; height: 100%; object-fit: cover; transform: scale(1.02); }
+      .scanner-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; background-color: rgba(10,10,10,0.8); backdrop-filter: blur(4px); animation: fadeIn 0.3s forwards; }
+      .scanner-guide { position: absolute; width: 30px; height: 30px; border-color: rgba(255,255,255,0.6); }
+      .scanner-guide-tl { top: 1rem; left: 1rem; border-top: 4px solid; border-left: 4px solid; border-radius: 12px 0 0 0; }
+      .scanner-guide-tr { top: 1rem; right: 1rem; border-top: 4px solid; border-right: 4px solid; border-radius: 0 12px 0 0; }
+      .scanner-guide-bl { bottom: 1rem; left: 1rem; border-bottom: 4px solid; border-left: 4px solid; border-radius: 0 0 0 12px; }
+      .scanner-guide-br { bottom: 1rem; right: 1rem; border-bottom: 4px solid; border-right: 4px solid; border-radius: 0 0 12px 0; }
+      .scanline { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(to right, transparent, #10B981, transparent); box-shadow: 0 0 10px #10B981; animation: scanline-anim 3s linear infinite; }
+      @keyframes scanline-anim { 0% { top: 0; } 100% { top: 100%; } }
+
+      .pulsing-scanner { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #10B981; }
+      .pulsing-scanner .icon-wrapper { position: relative; width: 80px; height: 80px; }
+      .pulsing-scanner .pulse-ring { position: absolute; inset: 0; border: 2px solid #10B981; border-radius: 50%; animation: pulse-outer 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+      .pulsing-scanner .pulse-ring:nth-child(2) { animation-delay: -1s; }
+      @keyframes pulse-outer { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+      .pulsing-scanner svg { position: relative; z-index: 5; }
+
+      .shutter-button { width: 72px; height: 72px; border-radius: 50%; background-color: #2b2d31; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; border: 2px solid #444; }
+      .shutter-button:hover { transform: scale(1.05); }
+      .shutter-button:active { transform: scale(0.95); }
+      .shutter-button .inner-circle { width: 56px; height: 56px; border-radius: 50%; background-color: #f5f5f5; transition: all 0.2s ease; }
+      .shutter-button:hover .inner-circle { background-color: #d0d0d0; }
+      
+      .result-card { background-color: #2b2d31; border: 1px solid #444; border-radius: 0.75rem; padding: 1.5rem; }
+      .result-tip-item { display: flex; align-items: start; gap: 0.75rem; }
+      .result-tip-item .icon { color: #10B981; }
+
       .process-timeline { position: relative; padding-left: 2rem; }
       .process-timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background-color: #444; }
       .process-step { position: relative; margin-bottom: 1.5rem; padding-left: 1rem; }

@@ -79,11 +79,12 @@ const MessageItem: React.FC<{
                 
                 {message.reactions && Object.keys(message.reactions).length > 0 && (
                      <div className="discord-reactions-bar">
+                        {/* FIX: Cast 'users' to string[] as TypeScript infers it as 'unknown' from Object.entries. */}
                         {Object.entries(message.reactions).map(([emoji, users]) => (
                             <button key={emoji} onClick={() => onToggleReaction(message.id, emoji)}
-                                className={`reaction-pill ${users.includes(user?.name ?? '') ? 'reacted-by-user' : ''}`}>
+                                className={`reaction-pill ${(users as string[]).includes(user?.name ?? '') ? 'reacted-by-user' : ''}`}>
                                 <span className="emoji">{emoji}</span>
-                                <span className="count">{users.length}</span>
+                                <span className="count">{(users as string[]).length}</span>
                             </button>
                         ))}
                     </div>

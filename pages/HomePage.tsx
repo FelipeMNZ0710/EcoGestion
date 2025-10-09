@@ -78,7 +78,8 @@ const AnimatedNumber: React.FC<{ value: number }> = ({ value }) => {
     return <p ref={ref} className="text-5xl font-display text-white">{value > 1000 && count > 1000 ? '+' : ''}{formattedCount}</p>
 }
 
-const FeatureCard = ({ icon, title, text }: { icon: JSX.Element, title: string, text: string }) => (
+// FIX: Changed icon type from JSX.Element to React.ReactNode to resolve namespace error.
+const FeatureCard = ({ icon, title, text }: { icon: React.ReactNode, title: string, text: string }) => (
   <div className="modern-card p-6 text-center fade-in-section">
     <div className="flex justify-center items-center mb-4 h-12 w-12 rounded-full bg-secondary/10 text-secondary mx-auto">{icon}</div>
     <h3 className="text-xl font-display mb-2 text-text-main">{title}</h3>
