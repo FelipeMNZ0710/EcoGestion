@@ -672,6 +672,78 @@
       .crop-handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
       .crop-handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
       .crop-handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+      
+      /* --- Testimonial Carousel --- */
+      .testimonial-carousel {
+        position: relative;
+      }
+      .testimonial-track {
+        display: flex;
+        transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+      .testimonial-slide {
+        flex: 0 0 100%;
+        padding: 0 0.5rem; /* Small gap between slides visually if needed */
+        box-sizing: border-box;
+      }
+      .carousel-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        background-color: rgba(33, 33, 33, 0.5);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        opacity: 0;
+      }
+      .testimonial-carousel:hover .carousel-arrow {
+        opacity: 1;
+      }
+      .carousel-arrow:hover {
+        background-color: #10B981;
+      }
+      .carousel-arrow.left-0 { left: 10px; }
+      .carousel-arrow.right-0 { right: 10px; }
+
+      @media (max-width: 768px) {
+          .carousel-arrow {
+              opacity: 1;
+              background-color: rgba(33, 33, 33, 0.3);
+          }
+          .carousel-arrow.left-0 { left: 0px; }
+          .carousel-arrow.right-0 { right: 0px; }
+      }
+
+      .carousel-dots {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+      }
+      .carousel-dots .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border: none;
+        padding: 0;
+      }
+      .carousel-dots .dot:hover {
+        background-color: rgba(255, 255, 255, 0.7);
+      }
+      .carousel-dots .dot.active {
+        background-color: #10B981;
+      }
 
     </style>
     <script type="importmap">

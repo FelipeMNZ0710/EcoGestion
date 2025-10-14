@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { Page, User } from '../types';
+import TestimonialsCarousel from '../components/TestimonialsCarousel';
 
 interface ImpactStats {
     recycledKg: number;
@@ -236,6 +237,9 @@ const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | nul
                 </div>
             </div>
         </section>
+
+      {/* Testimonials Section */}
+      <TestimonialsCarousel />
 
       {/* FAQ Section */}
       <section className="py-20 bg-background">
