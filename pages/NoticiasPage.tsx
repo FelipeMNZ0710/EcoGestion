@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, NewsArticle } from '../types';
 import NewsDetailModal from '../components/NewsDetailModal';
+import { initialNews } from '../data/newsData';
 
 const NewsCard: React.FC<{ 
     article: NewsArticle; 
@@ -18,24 +19,29 @@ const NewsCard: React.FC<{
     }, [date]);
 
     return (
-        <div className="modern-card overflow-hidden group fade-in-section relative flex flex-col h-full" onClick={onClick}>
+        <div className="modern-card group fade-in-section relative flex flex-col h-full cursor-pointer" onClick={onClick}>
             {isAdminMode && (
                 <div className="card-admin-controls">
                     <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
                     <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                 </div>
             )}
-            <img src={image} alt={title} className="w-full h-48 object-cover"/>
+            <div className="overflow-hidden rounded-t-lg">
+                <img src={image} alt={title} className="w-full h-48 object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"/>
+            </div>
             <div className="p-4 flex flex-col flex-grow">
-                <p className="text-sm text-secondary font-semibold mb-2">{category}</p>
-                <h3 className="font-bold text-lg text-text-main mb-2 group-hover:text-primary transition-colors flex-grow">{title}</h3>
-                <p className="text-text-secondary text-sm mb-4">{excerpt}</p>
-                <p className="text-text-secondary text-xs mb-3">{formattedDate}</p>
-                <span className="font-semibold text-sm text-primary mt-auto">Leer más &rarr;</span>
+                <div className="flex justify-between items-center text-xs text-text-secondary mb-2">
+                    <span className="font-bold uppercase text-primary tracking-wider">{category}</span>
+                    <span>{formattedDate}</span>
+                </div>
+                <h3 className="font-bold text-lg text-text-main mb-3 group-hover:text-primary transition-colors flex-grow">{title}</h3>
+                <p className="text-text-secondary text-sm mb-4 leading-relaxed">{excerpt}</p>
+                <span className="font-semibold text-sm text-primary mt-auto self-start group-hover:underline">Leer más &rarr;</span>
             </div>
         </div>
     );
 };
+
 
 const SidebarWidget: React.FC<{title: string; children: React.ReactNode}> = ({title, children}) => (
     <div className="modern-card p-4 fade-in-section">
@@ -121,25 +127,27 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todas');
 
-    const fetchNews = useCallback(async () => {
+    useEffect(() => {
         setIsLoading(true);
-        try {
-            const response = await fetch('http://localhost:3001/api/news', { cache: 'no-store' });
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data: NewsArticle[] = await response.json();
-            setNews(data);
-        } catch (error) {
-            console.error("Failed to fetch news:", error);
-        } finally {
+        setTimeout(() => {
+            const sortedNews = [...initialNews].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setNews(sortedNews);
             setIsLoading(false);
-        }
+        }, 300);
     }, []);
 
-    useEffect(() => {
-        fetchNews();
-    }, [fetchNews]);
-
     const categories = useMemo(() => ['Todas', ...Array.from(new Set(news.map(n => n.category)))], [news]);
+    
+    const categoryCounts = useMemo(() => {
+        return news.reduce((acc, article) => {
+            if (!acc[article.category]) {
+                acc[article.category] = 0;
+            }
+            acc[article.category]++;
+            return acc;
+        }, {} as Record<string, number>);
+    }, [news]);
+
 
     const filteredArticles = useMemo(() => {
         return news
@@ -172,7 +180,7 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         return () => observer.disconnect();
     }, [filteredArticles]);
     
-    const heroArticle = useMemo(() => filteredArticles.find(a => a.featured) || filteredArticles[0], [filteredArticles]);
+    const heroArticle = useMemo(() => filteredArticles.find(a => a.featured), [filteredArticles]);
     const regularArticles = useMemo(() => filteredArticles.filter(a => a.id !== heroArticle?.id), [filteredArticles, heroArticle]);
     
     const handleOpenEditModal = (article: NewsArticle | null = null) => {
@@ -180,48 +188,49 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         setIsEditModalOpen(true);
     };
 
-    const handleSaveArticle = async (articleData: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
-        if (!user) {
-            alert("Necesitas iniciar sesión como administrador.");
+    const handleSaveArticle = (articleData: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
+        if (!user || !isAdminMode) {
+            alert("No tienes permiso para realizar esta acción.");
             return;
         }
-        const method = articleData.id ? 'PUT' : 'POST';
-        const url = articleData.id ? `http://localhost:3001/api/news/${articleData.id}` : 'http://localhost:3001/api/news';
-        
-        try {
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...articleData, adminUserId: user.id })
-            });
-            if (!response.ok) throw new Error('Falló al guardar la noticia');
+
+        setNews(prevNews => {
+            let newsWithUpdates = [...prevNews];
             
-            setIsEditModalOpen(false);
-            await fetchNews(); 
-        } catch (error) {
-            console.error('Error guardando noticia:', error);
-            alert("Error al guardar la noticia. Revisa la consola.");
-        }
+            if (articleData.featured) {
+                 newsWithUpdates = newsWithUpdates.map(n => ({...n, featured: false}));
+            }
+
+            if (articleData.id) {
+                // Update
+                newsWithUpdates = newsWithUpdates.map(article =>
+                    article.id === articleData.id
+                        ? { ...article, ...articleData } as NewsArticle
+                        : article
+                );
+            } else {
+                // Create
+                const newArticle: NewsArticle = {
+                    ...articleData,
+                    id: Math.max(0, ...newsWithUpdates.map(a => a.id)) + 1,
+                    date: new Date().toISOString().split('T')[0],
+                };
+                newsWithUpdates.unshift(newArticle);
+            }
+            
+            return newsWithUpdates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        });
+
+        setIsEditModalOpen(false);
     };
 
-    const handleDeleteArticle = async (articleId: number) => {
-        if (!user) {
-            alert("Necesitas iniciar sesión como administrador.");
+    const handleDeleteArticle = (articleId: number) => {
+        if (!user || !isAdminMode) {
+            alert("No tienes permiso para realizar esta acción.");
             return;
         }
         if (window.confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
-            try {
-                const response = await fetch(`http://localhost:3001/api/news/${articleId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUserId: user.id })
-                });
-                if (!response.ok) throw new Error('Falló al eliminar la noticia');
-                await fetchNews();
-            } catch (error) {
-                console.error('Error eliminando noticia:', error);
-                alert("Error al eliminar la noticia. Revisa la consola.");
-            }
+            setNews(prevNews => prevNews.filter(article => article.id !== articleId));
         }
     };
     
@@ -245,9 +254,12 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
                                 <img src={heroArticle.image} alt={heroArticle.title} className="w-full h-[50vh] object-cover" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                                 <div className="absolute bottom-0 left-0 p-8 text-white">
-                                    <span className="text-sm font-semibold bg-primary px-3 py-1 rounded-full">{heroArticle.category}</span>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-sm font-semibold bg-primary px-3 py-1 rounded-full">{heroArticle.category}</span>
+                                        <span className="text-sm text-slate-300">{ new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${heroArticle.date}T00:00:00`)) }</span>
+                                    </div>
                                     <h1 className="text-3xl lg:text-5xl font-bold font-display mt-4 leading-tight">{heroArticle.title}</h1>
-                                    <p className="mt-2 text-slate-300 max-w-2xl">{heroArticle.excerpt}</p>
+                                    <p className="mt-2 text-slate-300 max-w-2xl hidden md:block">{heroArticle.excerpt}</p>
                                 </div>
                             </section>
                         )}
@@ -264,7 +276,7 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
                                 </div>
                             </div>
 
-                            <aside className="space-y-6">
+                            <aside className="space-y-6 lg:sticky top-24 h-fit">
                                 {isAdminMode && (
                                     <button onClick={() => handleOpenEditModal()} className="w-full cta-button">
                                         + Crear Nueva Noticia
@@ -274,13 +286,16 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
                                     <input type="search" placeholder="Buscar noticias..." className="form-input w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                                 </SidebarWidget>
                                 <SidebarWidget title="Categorías">
-                                <ul className="space-y-2 text-text-secondary">
+                                <ul className="space-y-1 text-text-secondary">
                                         {categories.map(category => (
                                             <li key={category}>
                                                 <a href="#" 
                                                 onClick={(e) => { e.preventDefault(); setActiveCategory(category); }} 
-                                                className={`hover:text-primary transition-colors news-category-link ${activeCategory === category ? 'active' : ''}`}>
-                                                {category}
+                                                className={`news-category-link hover:text-primary transition-colors ${activeCategory === category ? 'active' : ''}`}>
+                                                    <span>{category}</span>
+                                                    <span className="category-count">
+                                                        {category === 'Todas' ? news.length : categoryCounts[category] || 0}
+                                                    </span>
                                                 </a>
                                             </li>
                                         ))}

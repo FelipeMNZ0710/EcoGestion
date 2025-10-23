@@ -10,7 +10,7 @@ interface ChatMessageBubbleProps {
 
 const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onNavigate, onFeedback }) => {
     const isUser = message.sender === 'user';
-    const showTypingIndicator = message.sender === 'bot' && message.text === '';
+    const showTypingIndicator = message.sender === 'bot' && message.text === '' && !message.isLoading;
 
     const botAvatar = (
         <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center" title="Ecobot">
@@ -29,6 +29,12 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onNaviga
             <div className="dot"></div>
             <div className="dot"></div>
             <div className="dot"></div>
+        </div>
+    );
+
+    const thinkingIndicator = (
+         <div className="px-4 py-2 text-sm text-text-secondary animate-pulse-faint">
+            Ecobot está pensando...
         </div>
     );
     
@@ -74,11 +80,16 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onNaviga
         <div className={`flex items-start gap-3 ${isUser ? 'justify-end animate-slide-in-right' : 'justify-start animate-slide-in-left'}`}>
             {!isUser && botAvatar}
             <div className={`max-w-xs md:max-w-md rounded-2xl message-bubble-wrapper group relative ${isUser ? 'bg-primary text-white rounded-br-none' : 'bg-surface text-text-main rounded-bl-none'}`}>
-                 <div className={`${showTypingIndicator ? '' : 'px-4 py-2'}`}>
-                    {showTypingIndicator ? typingIndicator : renderMessageContent()}
+                 <div className={`${showTypingIndicator || message.isLoading ? '' : 'px-4 py-2'}`}>
+                    {message.isLoading
+                        ? thinkingIndicator
+                        : showTypingIndicator
+                            ? typingIndicator
+                            : renderMessageContent()
+                    }
                  </div>
 
-                 {!isUser && !showTypingIndicator && message.text && (
+                 {!isUser && !showTypingIndicator && !message.isLoading && message.text && (
                      <div className="feedback-controls">
                          <button 
                             onClick={() => onFeedback(message.id, 'like')} 

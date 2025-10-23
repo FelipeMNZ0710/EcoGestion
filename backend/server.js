@@ -1,9 +1,11 @@
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const db = require('./db');
 const comoReciclarData = require('./data/comoReciclarData');
 const { processAction } = require('./services/gamificationService');
+let { initialGames } = require('./data/gamesData'); // Use 'let' to allow modification
 require('dotenv').config();
 
 const app = express();
@@ -367,15 +369,12 @@ app.delete('/api/news/:id', async (req, res) => {
 // --- Games Management ---
 app.get('/api/games', async (req, res) => {
     try {
-        const [games] = await db.query('SELECT *, learning_objective as learningObjective FROM games ORDER BY id DESC');
-        const formattedGames = games.map(g => {
-            const { learning_objective, ...rest } = g; // Remove original snake_case field
-            return {
-                ...rest,
-                payload: JSON.parse(g.payload || '{}'),
-            };
-        });
-        res.json(formattedGames);
+        const games = initialGames;
+        const formattedGames = games.map(g => ({
+            ...g,
+            payload: g.payload || {},
+        }));
+        res.json(formattedGames.sort((a, b) => b.id - a.id));
     } catch (error) {
         console.error('[GET GAMES] ERROR:', error);
         res.status(500).json({ message: 'Error al obtener los juegos.' });
@@ -385,11 +384,17 @@ app.get('/api/games', async (req, res) => {
 app.post('/api/games', async (req, res) => {
     try {
         const { title, category, image, type, learningObjective, payload } = req.body;
-        const [result] = await db.query(
-            'INSERT INTO games (title, category, image, type, learning_objective, payload) VALUES (?, ?, ?, ?, ?, ?)',
-            [title, category, image, type, learningObjective, JSON.stringify(payload)]
-        );
-        res.status(201).json({ id: result.insertId, message: 'Juego creado.' });
+        const newGame = {
+            id: initialGames.length > 0 ? Math.max(...initialGames.map(g => g.id)) + 1 : 1,
+            title,
+            category,
+            image,
+            type,
+            learningObjective,
+            payload
+        };
+        initialGames.push(newGame);
+        res.status(201).json({ id: newGame.id, message: 'Juego creado.' });
     } catch (error) {
         console.error('[CREATE GAME] ERROR:', error);
         res.status(500).json({ message: 'Error al crear el juego.' });
@@ -399,11 +404,12 @@ app.post('/api/games', async (req, res) => {
 app.put('/api/games/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, category, image, type, learningObjective, payload } = req.body;
-        await db.query(
-            'UPDATE games SET title = ?, category = ?, image = ?, type = ?, learning_objective = ?, payload = ? WHERE id = ?',
-            [title, category, image, type, learningObjective, JSON.stringify(payload), id]
-        );
+        const gameIndex = initialGames.findIndex(g => g.id == id);
+        if (gameIndex === -1) {
+            return res.status(404).json({ message: 'Juego no encontrado.' });
+        }
+        const updatedGame = { ...initialGames[gameIndex], ...req.body };
+        initialGames[gameIndex] = updatedGame;
         res.status(200).json({ message: 'Juego actualizado.' });
     } catch (error) {
         console.error('[UPDATE GAME] ERROR:', error);
@@ -414,7 +420,11 @@ app.put('/api/games/:id', async (req, res) => {
 app.delete('/api/games/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        await db.query('DELETE FROM games WHERE id = ?', [id]);
+        const gameIndex = initialGames.findIndex(g => g.id == id);
+        if (gameIndex === -1) {
+            return res.status(404).json({ message: 'Juego no encontrado.' });
+        }
+        initialGames.splice(gameIndex, 1);
         res.status(200).json({ message: 'Juego eliminado.' });
     } catch (error) {
         console.error('[DELETE GAME] ERROR:', error);
@@ -434,7 +444,12 @@ app.get('/api/community/channels', async (req, res) => {
 app.get('/api/community/members', async (req, res) => {
      try {
         const [members] = await db.query("SELECT id, name, profile_picture_url, role FROM users ORDER BY name");
-        const formattedMembers = members.map(m => ({ ...m, is_admin: m.role === 'dueño' || m.role === 'moderador' }));
+        const formattedMembers = members.map(m => ({
+            id: m.id.toString(),
+            name: m.name,
+            profile_picture_url: m.profile_picture_url,
+            is_admin: m.role === 'dueño' || m.role === 'moderador'
+        }));
         res.json(formattedMembers);
     } catch (error) {
         console.error('[GET MEMBERS] Error:', error);

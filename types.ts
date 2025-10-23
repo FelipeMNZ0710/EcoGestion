@@ -303,6 +303,7 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'bot';
   feedback?: 'like' | 'dislike' | null;
+  isLoading?: boolean;
 }
 
 // --- Contact Message Type ---

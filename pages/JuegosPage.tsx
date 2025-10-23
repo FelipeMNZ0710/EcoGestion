@@ -1,6 +1,8 @@
 
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, Game, GamificationAction, GameType } from '../types';
+import { initialGames } from '../data/gamesData';
 import TriviaGame from '../components/games/TriviaGame';
 import MemoryGame from '../components/games/MemoryGame';
 import SortingGame from '../components/games/SortingGame';
@@ -176,23 +178,14 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Todos');
     
-    const fetchGames = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('http://localhost:3001/api/games', { cache: 'no-store' });
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            setGames(data);
-        } catch (error) {
-            console.error("Failed to fetch games:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        fetchGames();
-    }, [fetchGames]);
+        setIsLoading(true);
+        // Simulate loading from a local source
+        setTimeout(() => {
+            setGames(initialGames.sort((a, b) => b.id - a.id));
+            setIsLoading(false);
+        }, 300);
+    }, []);
 
     const gameCategories = useMemo(() => ['Todos', ...Array.from(new Set(games.map(g => g.category)))], [games]);
 
@@ -237,34 +230,26 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         setIsEditModalOpen(true);
     };
 
-    const handleSaveGame = async (gameToSave: Omit<Game, 'id' | 'learningObjective'> & { id?: number, learningObjective: string }) => {
-        const method = gameToSave.id ? 'PUT' : 'POST';
-        const url = gameToSave.id ? `http://localhost:3001/api/games/${gameToSave.id}` : 'http://localhost:3001/api/games';
-        try {
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(gameToSave)
-            });
-            if (!response.ok) throw new Error('Failed to save game');
-            setIsEditModalOpen(false);
-            await fetchGames();
-        } catch (error) {
-            console.error('Error saving game:', error);
-            alert("Error al guardar el juego.");
-        }
+    const handleSaveGame = (gameToSave: Omit<Game, 'id'> & { id?: number }) => {
+        setGames(prevGames => {
+            if (gameToSave.id) {
+                // Update
+                return prevGames.map(g => g.id === gameToSave.id ? { ...g, ...gameToSave } as Game : g);
+            } else {
+                // Create
+                const newGame = {
+                    ...gameToSave,
+                    id: Math.max(0, ...prevGames.map(g => g.id)) + 1,
+                } as Game;
+                return [newGame, ...prevGames];
+            }
+        });
+        setIsEditModalOpen(false);
     };
     
-    const handleDeleteGame = async (gameId: number) => {
+    const handleDeleteGame = (gameId: number) => {
         if (window.confirm("¿Seguro que quieres eliminar este juego?")) {
-            try {
-                const response = await fetch(`http://localhost:3001/api/games/${gameId}`, { method: 'DELETE' });
-                if (!response.ok) throw new Error('Failed to delete game');
-                await fetchGames();
-            } catch (error) {
-                console.error('Error deleting game:', error);
-                alert("Error al eliminar el juego.");
-            }
+            setGames(prevGames => prevGames.filter(g => g.id !== gameId));
         }
     };
 

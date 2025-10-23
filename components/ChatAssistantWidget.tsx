@@ -40,7 +40,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
     useEffect(() => {
         if (isOpen && messages.length === 0) {
             const typingMessageId = Date.now();
-            const typingMessage: ChatMessage = { id: typingMessageId, text: '', sender: 'bot' };
+            const typingMessage: ChatMessage = { id: typingMessageId, text: '', sender: 'bot', isLoading: true };
             setMessages([typingMessage]);
 
             setTimeout(() => {
@@ -55,7 +55,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
                 }
                 
                 setMessages(prev => prev.map(m => 
-                    m.id === typingMessageId ? { ...m, text: welcomeText } : m
+                    m.id === typingMessageId ? { ...m, text: welcomeText, isLoading: false } : m
                 ));
             }, 800);
         }
@@ -74,29 +74,46 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
 
         setIsLoading(true);
         const botMessageId = Date.now() + 1;
-        const placeholderBotMessage: ChatMessage = { id: botMessageId, text: '', sender: 'bot' };
-        setMessages(prev => [...prev, placeholderBotMessage]);
+        // Display "thinking" message immediately
+        const thinkingMessage: ChatMessage = { id: botMessageId, text: '', sender: 'bot', isLoading: true };
+        setMessages(prev => [...prev, thinkingMessage]);
 
         let fullResponse = '';
+        let isFirstChunk = true;
         try {
             const stream = getBotResponseStream(text);
             for await (const chunk of stream) {
-                fullResponse += chunk;
-                setMessages(prev =>
-                    prev.map(msg =>
-                        msg.id === botMessageId ? { ...msg, text: fullResponse } : msg
-                    )
-                );
+                if (isFirstChunk) {
+                    // Replace "thinking" message with the first chunk
+                    fullResponse = chunk;
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === botMessageId ? { ...msg, text: fullResponse, isLoading: false } : msg
+                        )
+                    );
+                    isFirstChunk = false;
+                } else {
+                    fullResponse += chunk;
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === botMessageId ? { ...msg, text: fullResponse } : msg
+                        )
+                    );
+                }
             }
         } catch (error) {
             console.error("Error streaming bot response:", error);
             const errorMessage = "Lo siento, ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo más tarde.";
             setMessages(prev =>
                 prev.map(msg =>
-                    msg.id === botMessageId ? { ...msg, text: errorMessage } : msg
+                    msg.id === botMessageId ? { ...msg, text: errorMessage, isLoading: false } : msg
                 )
             );
         } finally {
+            // If the stream was empty or failed before the first chunk
+            if (isFirstChunk) {
+                 setMessages(prev => prev.filter(msg => msg.id !== botMessageId));
+            }
             setIsLoading(false);
             if (fullResponse) {
                 setInCache(text, fullResponse);
@@ -147,7 +164,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
                 <ChatHistory 
                     messages={messages} 
                     isLoading={isLoading} 
-                    showQuickQuestions={messages.length === 1 && !!messages[0].text}
+                    showQuickQuestions={messages.length === 1 && !!messages[0].text && !messages[0].isLoading}
                     quickQuestions={shuffledQuestions}
                     onQuickQuestionClick={handleSend}
                     onNavigate={handleNavigate}
