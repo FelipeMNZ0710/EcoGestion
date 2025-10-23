@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 const db = require('./db');
 const comoReciclarData = require('./data/comoReciclarData');
 const { processAction } = require('./services/gamificationService');
-let { initialGames } = require('./data/gamesData'); // Use 'let' to allow modification
 require('dotenv').config();
 
 const app = express();
@@ -25,6 +24,7 @@ const testDatabaseConnection = async () => {
     } catch (error) {
         console.error('❌ ERROR CRÍTICO: No se pudo conectar a la base de datos.');
         console.error('DETALLES DEL ERROR:', error.message);
+        console.error('Por favor, revisa la configuración en backend/.env y asegúrate de que XAMPP y MySQL están corriendo.');
         process.exit(1);
     }
 };
@@ -67,47 +67,76 @@ const formatUserForFrontend = (dbUser) => {
 
 // --- Auth ---
 app.post('/api/register', async (req, res) => {
+    console.log('\n[REGISTER] Petición recibida para registrar nuevo usuario.');
     try {
         const { name, email, password } = req.body;
+        console.log(`[REGISTER] Datos recibidos: email=${email}, name=${name}`);
         if (!name || !email || !password) {
+            console.log('[REGISTER] Error: Faltan campos requeridos.');
             return res.status(400).json({ message: 'Nombre, email y contraseña son requeridos.' });
         }
 
+        console.log('[REGISTER] Verificando si el email ya existe en la DB...');
         const [existingUsers] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
         if (existingUsers.length > 0) {
+            console.log(`[REGISTER] Error: El email ${email} ya está registrado.`);
             return res.status(409).json({ message: 'El email ya está registrado.' });
         }
+        console.log('[REGISTER] Email disponible. Procediendo con el registro.');
 
+        console.log('[REGISTER] Hasheando contraseña...');
         const password_hash = await bcrypt.hash(password, saltRounds);
         const last_login = new Date();
         const defaultStats = JSON.stringify({ messagesSent: 0, pointsVisited: 0, reportsMade: 0, dailyLogins: 1, completedQuizzes: [], quizzesCompleted: 0, gamesPlayed: 0, objectsIdentified: 0 });
+        console.log('[REGISTER] Contraseña hasheada. Preparando para insertar en la DB...');
 
         const [result] = await db.query(
             'INSERT INTO users (name, email, password_hash, last_login, role, points, kg_recycled, stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [name, email, password_hash, last_login, 'usuario', 0, 0, defaultStats]
         );
+        console.log(`[REGISTER] ¡ÉXITO! Usuario insertado en la DB con ID: ${result.insertId}.`);
 
+        console.log('[REGISTER] Obteniendo datos del nuevo usuario para devolver al frontend...');
         const [newUserRows] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
+        console.log('[REGISTER] Usuario obtenido. Enviando respuesta 201 al frontend.');
         res.status(201).json(formatUserForFrontend(newUserRows[0]));
 
     } catch (error) {
-        console.error('[REGISTER] ERROR:', error);
-        res.status(500).json({ message: 'Error en el servidor. Revisa la consola del backend.' });
+        console.error('----------------------------------------------------');
+        console.error('>>> [REGISTER] ¡ERROR CRÍTICO DURANTE EL REGISTRO! <<<');
+        console.error('----------------------------------------------------');
+        console.error('Este es el error que impide guardar el usuario en la base de datos:');
+        console.error(error);
+        console.error('----------------------------------------------------');
+        console.error('POSIBLES CAUSAS:');
+        console.error('1. La base de datos "ecogestion_db" no existe o no la creaste con el script SQL.');
+        console.error('2. La tabla "users" no existe o sus columnas tienen nombres diferentes a los esperados.');
+        console.error('3. Los datos en el archivo .env (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME) son incorrectos.');
+        console.error('----------------------------------------------------');
+        res.status(500).json({ message: 'Error en el servidor. Revisa la consola del backend para más detalles.' });
     }
 });
 
 app.post('/api/login', async (req, res) => {
+    console.log(`\n[LOGIN] Petición de inicio de sesión para ${req.body.email}.`);
     try {
         const { email, password } = req.body;
         if (!email || !password) return res.status(400).json({ message: 'Email y contraseña son requeridos.' });
         
         const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-        if (users.length === 0) return res.status(401).json({ message: 'Email o contraseña incorrectos.' });
+        if (users.length === 0) {
+            console.log(`[LOGIN] Fallo: Email no encontrado.`);
+            return res.status(401).json({ message: 'Email o contraseña incorrectos.' });
+        }
         
         const dbUser = users[0];
         const match = await bcrypt.compare(password, dbUser.password_hash);
-        if (!match) return res.status(401).json({ message: 'Email o contraseña incorrectos.' });
+        if (!match) {
+            console.log(`[LOGIN] Fallo: Contraseña incorrecta para ${email}.`);
+            return res.status(401).json({ message: 'Email o contraseña incorrectos.' });
+        }
         
+        console.log(`[LOGIN] Éxito: Usuario ${email} autenticado. Actualizando last_login...`);
         await db.query('UPDATE users SET last_login = ? WHERE id = ?', [new Date(), dbUser.id]);
         
         const [refetchedUser] = await db.query('SELECT * FROM users WHERE id = ?', [dbUser.id]);
@@ -313,9 +342,14 @@ app.get('/api/news', async (req, res) => {
     try {
         const [articles] = await db.query('SELECT * FROM news_articles ORDER BY published_at DESC, id DESC');
         const formattedNews = articles.map(art => ({
-            ...art,
+            id: art.id,
+            image: art.image,
+            category: art.category,
+            title: art.title,
             date: new Date(art.published_at).toISOString().split('T')[0],
-            content: JSON.parse(art.content || '[]')
+            excerpt: art.excerpt,
+            content: JSON.parse(art.content || '[]'),
+            featured: !!art.featured
         }));
         res.json(formattedNews);
     } catch (error) {
@@ -369,12 +403,12 @@ app.delete('/api/news/:id', async (req, res) => {
 // --- Games Management ---
 app.get('/api/games', async (req, res) => {
     try {
-        const games = initialGames;
+        const [games] = await db.query('SELECT * FROM games ORDER BY id DESC');
         const formattedGames = games.map(g => ({
             ...g,
-            payload: g.payload || {},
+            payload: JSON.parse(g.payload || '{}'),
         }));
-        res.json(formattedGames.sort((a, b) => b.id - a.id));
+        res.json(formattedGames);
     } catch (error) {
         console.error('[GET GAMES] ERROR:', error);
         res.status(500).json({ message: 'Error al obtener los juegos.' });
@@ -384,17 +418,11 @@ app.get('/api/games', async (req, res) => {
 app.post('/api/games', async (req, res) => {
     try {
         const { title, category, image, type, learningObjective, payload } = req.body;
-        const newGame = {
-            id: initialGames.length > 0 ? Math.max(...initialGames.map(g => g.id)) + 1 : 1,
-            title,
-            category,
-            image,
-            type,
-            learningObjective,
-            payload
-        };
-        initialGames.push(newGame);
-        res.status(201).json({ id: newGame.id, message: 'Juego creado.' });
+        const [result] = await db.query(
+            `INSERT INTO games (title, category, image, type, learningObjective, payload) VALUES (?, ?, ?, ?, ?, ?)`,
+            [title, category, image, type, learningObjective, JSON.stringify(payload)]
+        );
+        res.status(201).json({ id: result.insertId, message: 'Juego creado.' });
     } catch (error) {
         console.error('[CREATE GAME] ERROR:', error);
         res.status(500).json({ message: 'Error al crear el juego.' });
@@ -404,12 +432,12 @@ app.post('/api/games', async (req, res) => {
 app.put('/api/games/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const gameIndex = initialGames.findIndex(g => g.id == id);
-        if (gameIndex === -1) {
-            return res.status(404).json({ message: 'Juego no encontrado.' });
-        }
-        const updatedGame = { ...initialGames[gameIndex], ...req.body };
-        initialGames[gameIndex] = updatedGame;
+        const { title, category, image, type, learningObjective, payload } = req.body;
+        const [result] = await db.query(
+            `UPDATE games SET title = ?, category = ?, image = ?, type = ?, learningObjective = ?, payload = ? WHERE id = ?`,
+            [title, category, image, type, learningObjective, JSON.stringify(payload), id]
+        );
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Juego no encontrado.' });
         res.status(200).json({ message: 'Juego actualizado.' });
     } catch (error) {
         console.error('[UPDATE GAME] ERROR:', error);
@@ -420,11 +448,8 @@ app.put('/api/games/:id', async (req, res) => {
 app.delete('/api/games/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const gameIndex = initialGames.findIndex(g => g.id == id);
-        if (gameIndex === -1) {
-            return res.status(404).json({ message: 'Juego no encontrado.' });
-        }
-        initialGames.splice(gameIndex, 1);
+        const [result] = await db.query('DELETE FROM games WHERE id = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Juego no encontrado.' });
         res.status(200).json({ message: 'Juego eliminado.' });
     } catch (error) {
         console.error('[DELETE GAME] ERROR:', error);
@@ -435,9 +460,11 @@ app.delete('/api/games/:id', async (req, res) => {
 
 // --- Community Endpoints ---
 app.get('/api/community/channels', async (req, res) => {
+    // For now, channels are static. Could be moved to DB.
     res.json([
         { id: 1, name: 'general', description: 'Charlas generales' },
-        { id: 2, name: 'dudas', description: 'Preguntas sobre reciclaje' }
+        { id: 2, name: 'dudas', description: 'Preguntas sobre reciclaje' },
+        { id: 3, name: 'anuncios', description: 'Anuncios importantes', admin_only_write: true },
     ]);
 });
 
@@ -603,10 +630,12 @@ app.post('/api/community/messages/:messageId/react', async (req, res) => {
 app.post('/api/contact', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
+        console.log(`[CONTACT] Nuevo mensaje de ${name} (${email}). Asunto: ${subject}`);
         await db.query(
             'INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
             [name, email, subject, message]
         );
+        console.log('[CONTACT] Mensaje guardado en la DB.');
         res.status(201).json({ message: 'Mensaje enviado exitosamente.' });
     } catch (error) {
         console.error("[CONTACT] ERROR:", error);

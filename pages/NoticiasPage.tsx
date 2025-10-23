@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, NewsArticle } from '../types';
 import NewsDetailModal from '../components/NewsDetailModal';
-import { initialNews } from '../data/newsData';
 
 const NewsCard: React.FC<{ 
     article: NewsArticle; 
@@ -127,14 +126,23 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todas');
 
-    useEffect(() => {
+    const fetchNews = useCallback(async () => {
         setIsLoading(true);
-        setTimeout(() => {
-            const sortedNews = [...initialNews].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setNews(sortedNews);
+        try {
+            const response = await fetch('http://localhost:3001/api/news');
+            if (!response.ok) throw new Error('Failed to fetch news');
+            const data = await response.json();
+            setNews(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
             setIsLoading(false);
-        }, 300);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchNews();
+    }, [fetchNews]);
 
     const categories = useMemo(() => ['Todas', ...Array.from(new Set(news.map(n => n.category)))], [news]);
     
@@ -188,49 +196,46 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         setIsEditModalOpen(true);
     };
 
-    const handleSaveArticle = (articleData: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
+    const handleSaveArticle = async (articleData: Omit<NewsArticle, 'id' | 'date'> & { id?: number }) => {
         if (!user || !isAdminMode) {
             alert("No tienes permiso para realizar esta acción.");
             return;
         }
 
-        setNews(prevNews => {
-            let newsWithUpdates = [...prevNews];
-            
-            if (articleData.featured) {
-                 newsWithUpdates = newsWithUpdates.map(n => ({...n, featured: false}));
-            }
+        const isCreating = !articleData.id;
+        const url = isCreating ? 'http://localhost:3001/api/news' : `http://localhost:3001/api/news/${articleData.id}`;
+        const method = isCreating ? 'POST' : 'PUT';
 
-            if (articleData.id) {
-                // Update
-                newsWithUpdates = newsWithUpdates.map(article =>
-                    article.id === articleData.id
-                        ? { ...article, ...articleData } as NewsArticle
-                        : article
-                );
-            } else {
-                // Create
-                const newArticle: NewsArticle = {
-                    ...articleData,
-                    id: Math.max(0, ...newsWithUpdates.map(a => a.id)) + 1,
-                    date: new Date().toISOString().split('T')[0],
-                };
-                newsWithUpdates.unshift(newArticle);
-            }
-            
-            return newsWithUpdates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        });
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...articleData, adminUserId: user.id }),
+            });
 
-        setIsEditModalOpen(false);
+            if (!response.ok) throw new Error('Failed to save article');
+            setIsEditModalOpen(false);
+            fetchNews(); // Refresh data from server
+        } catch (error) {
+            console.error("Error saving article:", error);
+            alert("No se pudo guardar la noticia.");
+        }
     };
 
-    const handleDeleteArticle = (articleId: number) => {
+    const handleDeleteArticle = async (articleId: number) => {
         if (!user || !isAdminMode) {
             alert("No tienes permiso para realizar esta acción.");
             return;
         }
         if (window.confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
-            setNews(prevNews => prevNews.filter(article => article.id !== articleId));
+            try {
+                const response = await fetch(`http://localhost:3001/api/news/${articleId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete article');
+                fetchNews(); // Refresh data
+            } catch (error) {
+                console.error("Error deleting article:", error);
+                alert("No se pudo eliminar la noticia.");
+            }
         }
     };
     

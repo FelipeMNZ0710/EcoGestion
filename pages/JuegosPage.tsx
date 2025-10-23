@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, Game, GamificationAction, GameType } from '../types';
-import { initialGames } from '../data/gamesData';
 import TriviaGame from '../components/games/TriviaGame';
 import MemoryGame from '../components/games/MemoryGame';
 import SortingGame from '../components/games/SortingGame';
@@ -178,14 +177,23 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Todos');
     
-    useEffect(() => {
+    const fetchGames = useCallback(async () => {
         setIsLoading(true);
-        // Simulate loading from a local source
-        setTimeout(() => {
-            setGames(initialGames.sort((a, b) => b.id - a.id));
+        try {
+            const response = await fetch('http://localhost:3001/api/games');
+            if (!response.ok) throw new Error('Failed to fetch games');
+            const data = await response.json();
+            setGames(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
             setIsLoading(false);
-        }, 300);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchGames();
+    }, [fetchGames]);
 
     const gameCategories = useMemo(() => ['Todos', ...Array.from(new Set(games.map(g => g.category)))], [games]);
 
@@ -230,26 +238,36 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         setIsEditModalOpen(true);
     };
 
-    const handleSaveGame = (gameToSave: Omit<Game, 'id'> & { id?: number }) => {
-        setGames(prevGames => {
-            if (gameToSave.id) {
-                // Update
-                return prevGames.map(g => g.id === gameToSave.id ? { ...g, ...gameToSave } as Game : g);
-            } else {
-                // Create
-                const newGame = {
-                    ...gameToSave,
-                    id: Math.max(0, ...prevGames.map(g => g.id)) + 1,
-                } as Game;
-                return [newGame, ...prevGames];
-            }
-        });
-        setIsEditModalOpen(false);
+    const handleSaveGame = async (gameToSave: Omit<Game, 'id'> & { id?: number }) => {
+        const isCreating = !gameToSave.id;
+        const url = isCreating ? `http://localhost:3001/api/games` : `http://localhost:3001/api/games/${gameToSave.id}`;
+        const method = isCreating ? 'POST' : 'PUT';
+        
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gameToSave)
+            });
+            if (!response.ok) throw new Error('Failed to save game');
+            setIsEditModalOpen(false);
+            fetchGames();
+        } catch (error) {
+            console.error("Error saving game:", error);
+            alert('Failed to save game');
+        }
     };
     
-    const handleDeleteGame = (gameId: number) => {
+    const handleDeleteGame = async (gameId: number) => {
         if (window.confirm("¿Seguro que quieres eliminar este juego?")) {
-            setGames(prevGames => prevGames.filter(g => g.id !== gameId));
+            try {
+                const response = await fetch(`http://localhost:3001/api/games/${gameId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete game');
+                fetchGames();
+            } catch (error) {
+                console.error("Error deleting game:", error);
+                alert('Failed to delete game');
+            }
         }
     };
 
@@ -285,7 +303,10 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
                     </div>
 
                     {isLoading ? (
-                        <div className="text-center py-20 text-text-secondary">Cargando juegos...</div>
+                        <div className="text-center py-20 text-text-secondary">
+                            <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Cargando juegos...
+                        </div>
                     ) : (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                             {filteredGames.map(game => (

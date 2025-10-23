@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { User, GamificationAction, CommunityMessage } from '../types';
-import { initialChannels, initialMembers, initialMessages } from '../data/communityData';
 
 // --- Types ---
 interface Channel {
@@ -55,7 +54,7 @@ const MessageItem: React.FC<{
             {isGroupStart && (
                 <div className="discord-message-avatar">
                     {message.avatarUrl ? <img src={message.avatarUrl} alt={message.user} className="w-10 h-10 rounded-full object-cover" />
-                    : <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${message.avatarColor}`}>{message.avatarInitials}</div>}
+                    : <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${getConsistentColor(message.user)}`}>{getUserInitials(message.user)}</div>}
                 </div>
             )}
             
@@ -81,7 +80,6 @@ const MessageItem: React.FC<{
                 
                 {message.reactions && Object.keys(message.reactions).length > 0 && (
                      <div className="discord-reactions-bar">
-                        {/* FIX: Cast 'users' to string[] as TypeScript infers it as 'unknown' from Object.entries. */}
                         {Object.entries(message.reactions).map(([emoji, users]) => (
                             <button key={emoji} onClick={() => onToggleReaction(message.id, emoji)}
                                 className={`reaction-pill ${(users as string[]).includes(user?.name ?? '') ? 'reacted-by-user' : ''}`}>
@@ -107,20 +105,57 @@ const MessageItem: React.FC<{
 
 // --- Main Component ---
 const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: GamificationAction, payload?: any) => void; }> = ({ user, onUserAction }) => {
-    const [channels, setChannels] = useState<Channel[]>(initialChannels);
-    const [members, setMembers] = useState<Member[]>(initialMembers);
-    const [activeChannelId, setActiveChannelId] = useState<number>(initialChannels[0]?.id || 1);
-    const [messages, setMessages] = useState<MessagesState>(initialMessages);
+    const [channels, setChannels] = useState<Channel[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [activeChannelId, setActiveChannelId] = useState<number | null>(null);
+    const [messages, setMessages] = useState<MessagesState>({});
     const [newMessage, setNewMessage] = useState('');
     const [replyingTo, setReplyingTo] = useState<CommunityMessage | null>(null);
     const [editingMessage, setEditingMessage] = useState<CommunityMessage | null>(null);
     const [editedText, setEditedText] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
     const isAdmin = user?.role === 'dueño' || user?.role === 'moderador';
+
+    const fetchChannels = useCallback(async () => {
+        try {
+            const response = await fetch('http://localhost:3001/api/community/channels');
+            const data = await response.json();
+            setChannels(data);
+            if (data.length > 0) setActiveChannelId(data[0].id);
+        } catch (error) { console.error("Error fetching channels:", error); }
+    }, []);
+
+    const fetchMembers = useCallback(async () => {
+        try {
+            const response = await fetch('http://localhost:3001/api/community/members');
+            const data = await response.json();
+            setMembers(data);
+        } catch (error) { console.error("Error fetching members:", error); }
+    }, []);
+
+    const fetchMessages = useCallback(async (channelId: number) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`http://localhost:3001/api/community/messages/${channelId}`);
+            const data = await response.json();
+            setMessages(prev => ({ ...prev, [channelId]: data }));
+        } catch (error) { console.error("Error fetching messages:", error); } finally { setIsLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        fetchChannels();
+        fetchMembers();
+    }, [fetchChannels, fetchMembers]);
+
+    useEffect(() => {
+        if (activeChannelId) {
+            fetchMessages(activeChannelId);
+        }
+    }, [activeChannelId, fetchMessages]);
 
     useEffect(() => {
         const chatContainer = chatContainerRef.current;
@@ -137,78 +172,60 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !user || activeChannelId === null) return;
-
-        const newMessageObject: CommunityMessage = {
-            id: Date.now(),
-            user_id: user.id,
-            user: user.name,
-            avatarUrl: user.profilePictureUrl || null,
-            avatarInitials: getUserInitials(user.name),
-            avatarColor: getConsistentColor(user.name),
-            timestamp: new Date(),
-            text: newMessage.trim(),
-            replyingTo: replyingTo ? { messageId: replyingTo.id, user: replyingTo.user, text: replyingTo.text } : undefined,
-        };
-
-        setMessages(prev => ({
-            ...prev,
-            [activeChannelId]: [...(prev[activeChannelId] || []), newMessageObject]
-        }));
-        
-        setNewMessage('');
-        setReplyingTo(null);
-        onUserAction('send_message');
+        try {
+            await fetch('http://localhost:3001/api/community/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    channelId: activeChannelId,
+                    userId: user.id,
+                    content: newMessage.trim(),
+                    replyingToId: replyingTo?.id || null,
+                }),
+            });
+            setNewMessage('');
+            setReplyingTo(null);
+            onUserAction('send_message');
+            fetchMessages(activeChannelId);
+        } catch (error) { console.error("Error sending message:", error); }
     };
     
     const handleEditMessage = async () => {
         if (!editedText.trim() || !editingMessage || !user || activeChannelId === null) return;
-        
-        setMessages(prev => ({
-            ...prev,
-            [activeChannelId]: (prev[activeChannelId] || []).map(msg => 
-                msg.id === editingMessage.id 
-                    ? { ...msg, text: editedText.trim(), edited: true } 
-                    : msg
-            )
-        }));
-
-        setEditingMessage(null);
-        setEditedText('');
+        try {
+            await fetch(`http://localhost:3001/api/community/messages/${editingMessage.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editedText.trim(), userId: user.id, userRole: user.role }),
+            });
+            setEditingMessage(null);
+            setEditedText('');
+            fetchMessages(activeChannelId);
+        } catch (error) { console.error("Error editing message:", error); }
     };
 
     const handleDeleteMessage = async (messageId: number) => {
         if (!user || !window.confirm("¿Seguro que quieres eliminar este mensaje?") || activeChannelId === null) return;
-        
-        setMessages(prev => ({
-            ...prev,
-            [activeChannelId]: (prev[activeChannelId] || []).filter(msg => msg.id !== messageId)
-        }));
+        try {
+            await fetch(`http://localhost:3001/api/community/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, userRole: user.role }),
+            });
+            fetchMessages(activeChannelId);
+        } catch (error) { console.error("Error deleting message:", error); }
     };
 
     const handleToggleReaction = async (messageId: number, emoji: string) => {
         if (!user || activeChannelId === null) return;
-
-        setMessages(prev => {
-            const channelMessages = prev[activeChannelId] || [];
-            const updatedMessages = channelMessages.map(msg => {
-                if (msg.id === messageId) {
-                    const newMsg = { ...msg, reactions: { ...(msg.reactions || {}) } };
-                    const usersWhoReacted = newMsg.reactions[emoji] || [];
-
-                    if (usersWhoReacted.includes(user.name)) {
-                        newMsg.reactions[emoji] = usersWhoReacted.filter(name => name !== user.name);
-                        if (newMsg.reactions[emoji].length === 0) {
-                            delete newMsg.reactions[emoji];
-                        }
-                    } else {
-                        newMsg.reactions[emoji] = [...usersWhoReacted, user.name];
-                    }
-                    return newMsg;
-                }
-                return msg;
+        try {
+            await fetch(`http://localhost:3001/api/community/messages/${messageId}/react`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userName: user.name, emoji }),
             });
-            return { ...prev, [activeChannelId]: updatedMessages };
-        });
+            fetchMessages(activeChannelId);
+        } catch (error) { console.error("Error toggling reaction:", error); }
     };
 
     useEffect(() => { if (editingMessage) setEditedText(editingMessage.text); }, [editingMessage]);
