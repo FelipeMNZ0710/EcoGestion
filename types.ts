@@ -185,6 +185,7 @@ export interface Report {
   id: number;
   locationName: string;
   userName: string;
+  userEmail: string;
   reason: ReportReason;
   comment: string | null;
   imageUrl: string | null;

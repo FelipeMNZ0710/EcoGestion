@@ -24,12 +24,96 @@ const reasonLabels: Record<Report['reason'], string> = {
 
 type AdminTab = 'messages' | 'reports';
 
+const ReplyModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    recipientEmail: string;
+    defaultSubject: string;
+    onSend: (body: string) => Promise<void>;
+}> = ({ isOpen, onClose, recipientEmail, defaultSubject, onSend }) => {
+    const [body, setBody] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setBody('');
+            setError('');
+            setIsSending(false);
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!body.trim()) {
+            setError('El cuerpo del mensaje no puede estar vacío.');
+            return;
+        }
+        setError('');
+        setIsSending(true);
+        try {
+            await onSend(body);
+            onClose();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido.');
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-content !max-w-2xl" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit} className="p-6">
+                    <h2 className="text-xl font-bold font-display text-text-main mb-4">Responder por Email</h2>
+                    <div className="space-y-4 modal-form">
+                        <div>
+                            <label className="form-label">Para:</label>
+                            <input type="text" value={recipientEmail} readOnly className="form-input bg-slate-800 cursor-not-allowed" />
+                        </div>
+                        <div>
+                            <label className="form-label">Asunto:</label>
+                            <input type="text" value={defaultSubject} readOnly className="form-input bg-slate-800 cursor-not-allowed" />
+                        </div>
+                        <div>
+                            <label className="form-label">Respuesta:</label>
+                            <textarea
+                                value={body}
+                                onChange={e => setBody(e.target.value)}
+                                rows={8}
+                                placeholder="Escribe tu respuesta aquí..."
+                                className="form-input"
+                                required
+                            />
+                        </div>
+                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-6">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>
+                        <button type="submit" disabled={isSending} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:bg-slate-500 flex items-center">
+                            {isSending && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+                            {isSending ? 'Enviando...' : 'Enviar Respuesta'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+
 const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('messages');
     const [messages, setMessages] = useState<ContactMessage[]>([]);
     const [reports, setReports] = useState<Report[]>([]);
     const [selectedItem, setSelectedItem] = useState<ContactMessage | Report | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+    const [replyData, setReplyData] = useState<{ email: string; subject: string } | null>(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -98,6 +182,34 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
             handleUpdateMessageStatus(item.id, 'read');
         }
     };
+    
+    const handleSendReply = async (body: string) => {
+        if (!replyData || !user) throw new Error("No hay datos para enviar la respuesta.");
+
+        const response = await fetch('http://localhost:3001/api/admin/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: replyData.email,
+                subject: replyData.subject,
+                body: body,
+                adminUserId: user.id
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al enviar la respuesta.');
+        }
+
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+    };
+    
+    const handleOpenReplyModal = (email: string, subject: string) => {
+        setReplyData({ email, subject });
+        setIsReplyModalOpen(true);
+    };
 
     const renderMessageDetails = (msg: ContactMessage) => (
         <>
@@ -105,9 +217,18 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
             <p className="text-sm text-text-secondary">De: {msg.name} &lt;{msg.email}&gt;</p>
             <p className="text-xs text-text-secondary mt-1">Recibido: {new Date(msg.submitted_at).toLocaleString('es-AR')}</p>
             <div className="mt-4 pt-4 border-t border-white/10 text-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto">{msg.message}</div>
-            <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-                {msg.status !== 'archived' && <button onClick={() => handleUpdateMessageStatus(msg.id, 'archived')} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500 text-sm">Archivar</button>}
-                {msg.status !== 'read' && <button onClick={() => handleUpdateMessageStatus(msg.id, 'read')} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark text-sm">Marcar como leído</button>}
+            <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
+                 <button
+                    onClick={() => handleOpenReplyModal(msg.email, `Re: ${msg.subject}`)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 text-sm flex items-center gap-2"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                    Responder
+                </button>
+                <div className="flex gap-3">
+                    {msg.status !== 'archived' && <button onClick={() => handleUpdateMessageStatus(msg.id, 'archived')} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500 text-sm">Archivar</button>}
+                    {msg.status !== 'read' && <button onClick={() => handleUpdateMessageStatus(msg.id, 'read')} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark text-sm">Marcar como leído</button>}
+                </div>
             </div>
         </>
     );
@@ -120,9 +241,20 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
             <p className="font-bold text-primary mt-3">{reasonLabels[rep.reason]}</p>
             {rep.comment && <div className="mt-4 pt-4 border-t border-white/10 text-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto">{rep.comment}</div>}
             {rep.imageUrl && <div className="mt-4"><a href={rep.imageUrl} target="_blank" rel="noopener noreferrer"><img src={rep.imageUrl} alt="Foto del reporte" className="max-h-48 rounded-lg"/></a></div>}
-            <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-                {rep.status !== 'resolved' && <button onClick={() => handleUpdateReportStatus(rep.id, 'resolved')} className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 text-sm">Marcar como Resuelto</button>}
-                {rep.status !== 'dismissed' && <button onClick={() => handleUpdateReportStatus(rep.id, 'dismissed')} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500 text-sm">Descartar</button>}
+            <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
+                 <button
+                    disabled={!rep.userEmail}
+                    onClick={() => handleOpenReplyModal(rep.userEmail, `Re: Tu reporte en ${rep.locationName}`)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 text-sm flex items-center gap-2 disabled:bg-slate-500 disabled:cursor-not-allowed"
+                    title={rep.userEmail ? 'Responder al usuario' : 'Email del usuario no disponible'}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                    Responder
+                </button>
+                <div className="flex justify-end gap-3">
+                    {rep.status !== 'resolved' && <button onClick={() => handleUpdateReportStatus(rep.id, 'resolved')} className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 text-sm">Marcar como Resuelto</button>}
+                    {rep.status !== 'dismissed' && <button onClick={() => handleUpdateReportStatus(rep.id, 'dismissed')} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500 text-sm">Descartar</button>}
+                </div>
             </div>
         </>
     );
@@ -186,6 +318,11 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
 
     return (
         <div className="bg-background pt-20 min-h-screen">
+            {showSuccess && (
+                <div className="fixed top-24 right-5 bg-emerald-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in-up z-50">
+                    Respuesta enviada exitosamente (simulado).
+                </div>
+            )}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Panel de Administración</h1>
@@ -212,6 +349,16 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
                         </div>
                     </div>
                 </div>
+            )}
+            
+            {replyData && (
+                <ReplyModal
+                    isOpen={isReplyModalOpen}
+                    onClose={() => setIsReplyModalOpen(false)}
+                    recipientEmail={replyData.email}
+                    defaultSubject={replyData.subject}
+                    onSend={handleSendReply}
+                />
             )}
         </div>
     );

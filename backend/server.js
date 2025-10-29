@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
@@ -665,7 +666,7 @@ app.put('/api/admin/messages/:id', async (req, res) => {
 app.get('/api/admin/reports', async (req, res) => {
     try {
         const [reports] = await db.query(
-            `SELECT r.*, u.name as userName, l.name as locationName 
+            `SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
              FROM reports r JOIN users u ON r.user_id = u.id 
              JOIN locations l ON r.location_id = l.id 
              ORDER BY r.reported_at DESC`
@@ -685,6 +686,32 @@ app.put('/api/admin/reports/:id', async (req, res) => {
     } catch (error) {
          res.status(500).json({ message: "Error al actualizar reporte." });
     }
+});
+
+app.post('/api/admin/reply', async (req, res) => {
+    const { to, subject, body, adminUserId } = req.body;
+    console.log('\n[ADMIN REPLY] Solicitud de respuesta recibida.');
+
+    if (!to || !subject || !body) {
+        console.log('[ADMIN REPLY] Error: Faltan campos (to, subject, body).');
+        return res.status(400).json({ message: 'Faltan campos requeridos para enviar la respuesta.' });
+    }
+    
+    // --- SIMULACIÓN DE ENVÍO DE EMAIL ---
+    console.log('****************************************************');
+    console.log('***           SIMULANDO ENVÍO DE EMAIL           ***');
+    console.log('****************************************************');
+    console.log(`DE: noreply@ecogestion.com`);
+    console.log(`PARA: ${to}`);
+    console.log(`ASUNTO: ${subject}`);
+    console.log('-------------------- CUERPO --------------------');
+    console.log(body);
+    console.log('------------------------------------------------');
+    console.log(`(Respuesta enviada por Admin ID: ${adminUserId || 'No especificado'})`);
+    console.log('****************************************************');
+    // --- FIN DE SIMULACIÓN ---
+
+    res.status(200).json({ message: 'Respuesta enviada exitosamente (simulación).' });
 });
 
 // --- Recycling Guide Endpoint ---
