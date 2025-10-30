@@ -10,6 +10,10 @@ import ComunidadPage from './pages/ComunidadPage';
 import ContactoPage from './pages/ContactoPage';
 import PerfilPage from './pages/PerfilPage';
 import AdminPage from './pages/AdminPage';
+import PoliticaPrivacidadPage from './pages/PoliticaPrivacidadPage';
+import TerminosUsoPage from './pages/TerminosUsoPage';
+import PoliticaCookiesPage from './pages/PoliticaCookiesPage';
+import SobreNosotrosPage from './pages/SobreNosotrosPage';
 import type { Page, User, Notification, GamificationAction } from './types';
 
 const App: React.FC = () => {
@@ -118,6 +122,14 @@ const App: React.FC = () => {
         return <PerfilPage user={user} updateUser={updateUser} setCurrentPage={setCurrentPage} />;
       case 'admin':
         return isAdminMode ? <AdminPage user={user} /> : <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
+      case 'politica-privacidad':
+        return <PoliticaPrivacidadPage />;
+      case 'terminos-uso':
+        return <TerminosUsoPage />;
+      case 'politica-cookies':
+        return <PoliticaCookiesPage />;
+      case 'sobre-nosotros':
+        return <SobreNosotrosPage />;
       default:
         return <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
     }

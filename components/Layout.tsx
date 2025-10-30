@@ -26,7 +26,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, setCurrentPage, 
       <main className="flex-1 w-full">
         {children}
       </main>
-      <Footer />
+      <Footer setCurrentPage={setCurrentPage} />
       <NotificationToaster notifications={notifications} />
       <ChatAssistantWidget user={user} setCurrentPage={setCurrentPage} />
     </div>

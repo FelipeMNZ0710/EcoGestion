@@ -7,7 +7,11 @@ export type Page =
   | 'comunidad'
   | 'contacto'
   | 'perfil'
-  | 'admin';
+  | 'admin'
+  | 'politica-privacidad'
+  | 'terminos-uso'
+  | 'politica-cookies'
+  | 'sobre-nosotros';
 
 // Structured Content Types for news articles
 export interface TextBlock {
