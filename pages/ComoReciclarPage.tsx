@@ -336,10 +336,12 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
             {isQuizModalOpen && (
                  <div className="modal-backdrop">
                     <div className="modal-content !max-w-2xl !max-h-[600px] !bg-surface !text-text-main">
+                       {/* FIX: Add missing userHighScore prop to TriviaGame. */}
                        <TriviaGame 
                             questions={quizQuestions} 
                             onComplete={handleQuizComplete} 
                             onClose={() => setIsQuizModalOpen(false)}
+                            userHighScore={0}
                        />
                     </div>
                 </div>

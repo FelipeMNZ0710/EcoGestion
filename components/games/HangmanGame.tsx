@@ -3,7 +3,8 @@ import type { HangmanWord } from '../../types';
 
 interface HangmanGameProps {
     words: HangmanWord[];
-    onComplete: () => void;
+    onComplete: (score: number) => void;
+    userHighScore: number;
 }
 
 const ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
@@ -52,10 +53,11 @@ const SadPlanet: React.FC<{ mistakes: number }> = ({ mistakes }) => {
 };
 
 
-const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
+const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighScore }) => {
     const [{ word, hint }, setCurrentWord] = useState<{word: string; hint: string}>({word: '', hint: ''});
     const [guessedLetters, setGuessedLetters] = useState(new Set<string>());
     const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
+    const [score, setScore] = useState(0);
 
     const incorrectGuesses = useMemo(() => {
         return [...guessedLetters].filter(letter => !word.toUpperCase().includes(letter)).length;
@@ -70,6 +72,7 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
         setCurrentWord({word: newWordData.word.toUpperCase(), hint: newWordData.hint});
         setGuessedLetters(new Set<string>());
         setGameState('playing');
+        setScore(0);
     }, [words]);
 
     useEffect(() => {
@@ -77,18 +80,26 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
     }, [setupNewGame]);
     
      useEffect(() => {
+        if (gameState !== 'playing') return;
+
         if (maskedWord === word && word !== '') {
+            const finalScore = 100 - (incorrectGuesses * 10);
+            setScore(finalScore);
             setGameState('won');
-            setTimeout(onComplete, 2000);
+            onComplete(finalScore);
         } else if (incorrectGuesses >= MAX_MISTAKES) {
+            setScore(0);
             setGameState('lost');
+            onComplete(0);
         }
-    }, [maskedWord, word, incorrectGuesses, onComplete]);
+    }, [maskedWord, word, incorrectGuesses, onComplete, gameState]);
 
     const handleGuess = (letter: string) => {
         if (gameState !== 'playing') return;
         setGuessedLetters(prev => new Set(prev).add(letter));
     };
+    
+    const isNewHighScore = score > userHighScore;
 
     if (gameState !== 'playing') {
         return (
@@ -96,11 +107,16 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete }) => {
                 <div className={`text-7xl mb-4 ${gameState === 'won' ? 'animate-bounce' : ''}`}>{gameState === 'won' ? '🎉' : '😥'}</div>
                 <h2 className="text-3xl font-bold text-text-main">{gameState === 'won' ? '¡Lo Adivinaste!' : '¡Planeta Contaminado!'}</h2>
                 <p className="text-text-secondary mt-2 text-lg">La palabra era: <strong className="text-primary">{word}</strong></p>
+                
+                {gameState === 'won' && isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                {gameState === 'won' && <p className="text-text-secondary mt-2 text-lg">Puntaje: <strong className="text-primary text-2xl">{score}</strong></p>}
+                {gameState === 'won' && <p className="text-text-secondary text-sm">Récord anterior: {userHighScore}</p>}
+
                 <div className="mt-4 p-4 bg-background rounded-lg text-sm text-text-secondary">
                     <strong className="text-primary">Dato Curioso:</strong> {hint}
                 </div>
                 <button onClick={setupNewGame} className="mt-8 bg-primary text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-dark transition-colors">
-                    {gameState === 'won' ? 'Jugar de Nuevo' : 'Volver a Intentar'}
+                    Jugar de Nuevo
                 </button>
             </div>
         );

@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, Game, GamificationAction, GameType } from '../types';
 import TriviaGame from '../components/games/TriviaGame';
@@ -9,6 +7,33 @@ import HangmanGame from '../components/games/HangmanGame';
 import RecyclingChainGame from '../components/games/RecyclingChainGame';
 import WasteCatcherGame from '../components/games/WasteCatcherGame';
 import RepairItGame from '../components/games/RepairItGame';
+import EcoQuizGame from '../components/games/EcoQuizGame';
+import FindTheIntruderGame from '../components/games/FindTheIntruderGame';
+import RecyclingPathGame from '../components/games/RecyclingPathGame';
+import RiverCleanerGame from '../components/games/RiverCleanerGame';
+import CompostSequenceGame from '../components/games/CompostSequenceGame';
+import MythBustersGame from '../components/games/MythBustersGame';
+import ConceptConnectorGame from '../components/games/ConceptConnectorGame';
+import WaterSaverGame from '../components/games/WaterSaverGame';
+import EcoWordleGame from '../components/games/EcoWordleGame';
+import SustainableBuilderGame from '../components/games/SustainableBuilderGame';
+import EnergyImpactGame from '../components/games/EnergyImpactGame';
+import NatureSoundsGame from '../components/games/NatureSoundsGame';
+import SpotTheDifferenceGame from '../components/games/SpotTheDifferenceGame';
+
+
+const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+    return (
+        <div className="flex text-yellow-400">
+            {[...Array(fullStars)].map((_, i) => <svg key={`f${i}`} className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>)}
+            {halfStar && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
+            {[...Array(emptyStars)].map((_, i) => <svg key={`e${i}`} className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>)}
+        </div>
+    );
+};
 
 
 const GameCard: React.FC<{ 
@@ -32,9 +57,17 @@ const GameCard: React.FC<{
         )}
         <img src={game.image} alt={game.title} className="w-full h-40 object-cover" />
         <div className="p-4 flex flex-col flex-grow">
-            <p className="text-sm text-secondary font-semibold mb-1">{game.category}</p>
+            <div className="flex justify-between items-center mb-1">
+                <p className="text-sm text-secondary font-semibold">{game.category}</p>
+                {game.rating && <StarRating rating={game.rating} />}
+            </div>
             <h3 className="font-bold text-lg text-text-main mb-2">{game.title}</h3>
             <p className="text-xs text-text-secondary mb-4 flex-grow">{game.learningObjective}</p>
+            {user && (
+                <div className="text-xs bg-slate-700/50 rounded-md p-2 mb-3 text-center">
+                    Tu récord: <span className="font-bold text-primary">{game.userHighScore.toLocaleString('es-AR')} pts</span>
+                </div>
+            )}
             <button 
                 onClick={() => onPlay(game)}
                 className="w-full mt-auto bg-primary text-white font-semibold py-2 rounded-lg hover:bg-primary-dark transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
@@ -49,39 +82,41 @@ const GameCard: React.FC<{
 const GamePlayer: React.FC<{
     game: Game;
     onClose: () => void;
-    onGameComplete: (points: number) => void;
+    onGameComplete: (payload: { gameId: number; score: number }) => void;
 }> = ({ game, onClose, onGameComplete }) => {
     
-    const handleCompletion = useCallback(() => {
-        onGameComplete(game.payload.points);
-    }, [onGameComplete, game.payload.points]);
+    const handleCompletion = useCallback((score: number) => {
+        onGameComplete({ gameId: game.id, score });
+    }, [onGameComplete, game.id]);
     
     const renderGame = () => {
         const { payload } = game;
+        const props = { onComplete: handleCompletion, userHighScore: game.userHighScore };
         switch(game.type) {
-            case 'trivia':
-                if (!payload.questions) return <div>Error: Faltan datos para el juego de trivia.</div>;
-                return <TriviaGame questions={payload.questions} onComplete={handleCompletion} onClose={onClose} />;
-            case 'memory':
-                if (!payload.cards) return <div>Error: Faltan datos para el juego de memoria.</div>;
-                return <MemoryGame cards={payload.cards} onComplete={handleCompletion} />;
-            case 'sorting':
-                 if (!payload.items || !payload.bins || !payload.duration) return <div>Error: Faltan datos para el juego de clasificación.</div>;
-                 return <SortingGame items={payload.items} bins={payload.bins} duration={payload.duration} onComplete={handleCompletion} />;
-            case 'hangman':
-                if (!payload.words) return <div>Error: Faltan datos para el juego de ahorcado.</div>;
-                return <HangmanGame words={payload.words} onComplete={handleCompletion} />;
-            case 'chain':
-                if (!payload.items || !payload.bins || !payload.duration) return <div>Error: Faltan datos para el juego de cadena.</div>;
-                return <RecyclingChainGame items={payload.items} bins={payload.bins} duration={payload.duration} onComplete={handleCompletion} />;
-            case 'catcher':
-                if (!payload.fallingItems || !payload.lives) return <div>Error: Faltan datos para el juego de atrapar.</div>;
-                return <WasteCatcherGame items={payload.fallingItems} lives={payload.lives} onComplete={handleCompletion} />;
-            case 'repair':
-                if (!payload.repairableItems || !payload.timePerItem) return <div>Error: Faltan datos para el juego de reparar.</div>;
-                return <RepairItGame items={payload.repairableItems} timePerItem={payload.timePerItem} onComplete={handleCompletion} />;
-            default:
-                return <div>Juego no reconocido.</div>
+            case 'trivia': return <TriviaGame questions={payload.questions || []} onClose={onClose} {...props} />;
+            case 'memory': return <MemoryGame cards={payload.cards || []} {...props} />;
+            case 'sorting': return <SortingGame items={payload.items || []} bins={payload.bins || []} duration={payload.duration || 60} {...props} />;
+            case 'hangman': return <HangmanGame words={payload.words || []} {...props} />;
+            case 'chain': return <RecyclingChainGame items={payload.items || []} bins={payload.bins || []} duration={payload.duration || 90} {...props} />;
+            case 'catcher': return <WasteCatcherGame items={payload.fallingItems || []} lives={payload.lives || 3} {...props} />;
+            case 'repair': return <RepairItGame items={payload.repairableItems || []} timePerItem={payload.timePerItem || 15} {...props} />;
+            
+            // New Placeholder Games
+            case 'eco-quiz': return <EcoQuizGame {...props} />;
+            case 'find-the-intruder': return <FindTheIntruderGame {...props} />;
+            case 'recycling-path': return <RecyclingPathGame {...props} />;
+            case 'river-cleaner': return <RiverCleanerGame {...props} />;
+            case 'compost-sequence': return <CompostSequenceGame {...props} />;
+            case 'myth-busters': return <MythBustersGame {...props} />;
+            case 'concept-connector': return <ConceptConnectorGame {...props} />;
+            case 'water-saver': return <WaterSaverGame {...props} />;
+            case 'eco-wordle': return <EcoWordleGame {...props} />;
+            case 'sustainable-builder': return <SustainableBuilderGame {...props} />;
+            case 'energy-impact': return <EnergyImpactGame {...props} />;
+            case 'nature-sounds': return <NatureSoundsGame {...props} />;
+            case 'spot-the-difference': return <SpotTheDifferenceGame {...props} />;
+            
+            default: return <div>Juego no reconocido.</div>;
         }
     };
     
@@ -101,7 +136,7 @@ const GamePlayer: React.FC<{
 const GameEditModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (game: Omit<Game, 'id'> & { id?: number }) => void;
+    onSave: (game: Omit<Game, 'id' | 'userHighScore'> & { id?: number }) => void;
     game: Game | null;
 }> = ({ isOpen, onClose, onSave, game }) => {
     const [title, setTitle] = useState('');
@@ -140,6 +175,14 @@ const GameEditModal: React.FC<{
             alert("Error: El JSON en 'Payload' no es válido.");
         }
     };
+    
+    const allGameTypes: GameType[] = [
+        'trivia', 'memory', 'sorting', 'hangman', 'chain', 'catcher', 'repair',
+        'eco-quiz', 'find-the-intruder', 'recycling-path', 'river-cleaner', 'compost-sequence',
+        'myth-busters', 'concept-connector', 'water-saver', 'eco-wordle', 'sustainable-builder',
+        'energy-impact', 'nature-sounds', 'spot-the-difference'
+    ];
+
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -152,8 +195,7 @@ const GameEditModal: React.FC<{
                             <div><label>Categoría</label><input type="text" value={category} onChange={e => setCategory(e.target.value)} required /></div>
                             <div><label>Tipo de Juego</label>
                                 <select value={type} onChange={e => setType(e.target.value as GameType)}>
-                                    <option value="trivia">Trivia</option><option value="memory">Memoria</option><option value="sorting">Clasificación</option>
-                                    <option value="hangman">Ahorcado</option><option value="chain">Cadena</option><option value="catcher">Atrapar</option><option value="repair">Reparar</option>
+                                    {allGameTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -180,7 +222,8 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     const fetchGames = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/games');
+            const url = user ? `http://localhost:3001/api/games?userId=${user.id}` : 'http://localhost:3001/api/games';
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Failed to fetch games');
             const data = await response.json();
             setGames(data);
@@ -189,7 +232,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         fetchGames();
@@ -226,11 +269,27 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         return () => observer.disconnect();
     }, [filteredGames]);
 
-    const handleGameComplete = (points: number) => {
-        onUserAction('complete_game', { points });
-        setTimeout(() => {
-            setActiveGame(null);
-        }, 3000);
+    const handleGameComplete = (payload: { gameId: number; score: number }) => {
+        const completedGame = games.find(g => g.id === payload.gameId);
+        if (completedGame && user) {
+            const isNewHighScore = payload.score > completedGame.userHighScore;
+            
+            onUserAction('complete_game', { 
+                gameId: payload.gameId, 
+                score: payload.score, 
+                points: completedGame.payload.points // EcoPoints
+            });
+
+            // Update UI optimistically
+            setGames(prevGames => prevGames.map(g => 
+                g.id === payload.gameId ? { ...g, userHighScore: isNewHighScore ? payload.score : g.userHighScore } : g
+            ));
+
+             // Close after a delay to show the final screen
+            setTimeout(() => {
+                setActiveGame(null);
+            }, 4000);
+        }
     };
 
     const handleOpenEditModal = (game: Game | null) => {
@@ -238,7 +297,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
         setIsEditModalOpen(true);
     };
 
-    const handleSaveGame = async (gameToSave: Omit<Game, 'id'> & { id?: number }) => {
+    const handleSaveGame = async (gameToSave: Omit<Game, 'id' | 'userHighScore'> & { id?: number }) => {
         const isCreating = !gameToSave.id;
         const url = isCreating ? `http://localhost:3001/api/games` : `http://localhost:3001/api/games/${gameToSave.id}`;
         const method = isCreating ? 'POST' : 'PUT';
@@ -325,8 +384,8 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
                 </div>
             </div>
             {activeGame && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in">
-                    <div className="w-full max-w-2xl h-[95vh] max-h-[700px] bg-surface rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-2 sm:p-4 animate-fade-in">
+                    <div className="w-full max-w-4xl h-[95vh] max-h-[800px] bg-surface rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
                        <GamePlayer 
                             game={activeGame}
                             onClose={() => setActiveGame(null)}

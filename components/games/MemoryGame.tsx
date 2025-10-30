@@ -3,10 +3,11 @@ import type { MemoryCardData } from '../../types';
 
 interface MemoryGameProps {
     cards: MemoryCardData[];
-    onComplete: () => void;
+    onComplete: (score: number) => void;
+    userHighScore: number;
 }
 
-const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
+const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete, userHighScore }) => {
     const [gameCards, setGameCards] = useState<{ id: number; content: string; type: 'icon' | 'image'; matchId: string; isFlipped: boolean; isMatched: boolean; }[]>([]);
     const [flippedIndexes, setFlippedIndexes] = useState<number[]>([]);
     const [moves, setMoves] = useState(0);
@@ -70,9 +71,10 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
     useEffect(() => {
         if (gameCards.length > 0 && gameCards.every(card => card.isMatched)) {
             setIsFinished(true);
-            setTimeout(onComplete, 2000);
+            const score = Math.max(0, 1000 - moves * 10 - seconds * 2);
+            onComplete(score);
         }
-    }, [gameCards, onComplete]);
+    }, [gameCards, onComplete, moves, seconds]);
 
     const handleCardClick = (index: number) => {
         if (isChecking || gameCards[index].isFlipped || gameCards[index].isMatched) {
@@ -89,16 +91,21 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete }) => {
         ));
     };
 
+    const finalScore = Math.max(0, 1000 - moves * 10 - seconds * 2);
+    const isNewHighScore = finalScore > userHighScore;
+
     if (isFinished) {
         return (
              <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">🧠</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Memoria Prodigiosa!</h2>
+                {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                <p className="text-text-secondary mt-2 text-lg">Puntaje Final: <strong className="text-primary text-2xl">{finalScore}</strong></p>
+                <p className="text-text-secondary text-sm">Tu récord anterior: {userHighScore}</p>
                 <div className="flex gap-6 mt-4 text-lg text-text-secondary">
                     <span>Movimientos: <strong className="text-primary">{moves}</strong></span>
                     <span>Tiempo: <strong className="text-primary">{seconds}s</strong></span>
                 </div>
-                <p className="font-bold text-primary text-xl mt-4">¡Ganaste EcoPuntos!</p>
             </div>
         )
     }

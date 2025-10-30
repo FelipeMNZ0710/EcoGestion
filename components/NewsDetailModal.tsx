@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { NewsArticle, ContentBlock } from '../types';
 
@@ -36,8 +37,9 @@ const NewsDetailModal: React.FC<NewsDetailModalProps> = ({ article, onClose }) =
                     {block.items.map((item, i) => <li key={i}>{item}</li>)}
                 </ul>;
             case 'image':
-                 if (!block.imageUrl) return null;
-                 return <img key={index} src={block.imageUrl} alt={`Imagen de la noticia ${index}`} className="my-4 rounded-lg w-full" />;
+                 const src = block.base64Data || block.imageUrl;
+                 if (!src) return null;
+                 return <img key={index} src={src} alt={`Imagen de la noticia ${index}`} className="my-4 rounded-lg w-full" />;
             default:
                 return null;
         }

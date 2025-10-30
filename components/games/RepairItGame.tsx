@@ -4,10 +4,11 @@ import type { RepairableItem } from '../../types';
 interface RepairItGameProps {
     items: RepairableItem[];
     timePerItem: number;
-    onComplete: () => void;
+    onComplete: (score: number) => void;
+    userHighScore: number;
 }
 
-const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onComplete }) => {
+const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onComplete, userHighScore }) => {
     const [gameItems, setGameItems] = useState<RepairableItem[]>([]);
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(timePerItem);
@@ -25,9 +26,9 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
             setTimeLeft(timePerItem);
         } else {
             setIsFinished(true);
-            setTimeout(onComplete, 1500);
+            onComplete(score);
         }
-    }, [currentItemIndex, gameItems.length, timePerItem, onComplete]);
+    }, [currentItemIndex, gameItems.length, timePerItem, onComplete, score]);
     
     useEffect(() => {
         setGameItems([...items].sort(() => Math.random() - 0.5));
@@ -60,13 +61,16 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
     
     const currentItem = gameItems[currentItemIndex];
     const progress = (timeLeft / timePerItem) * 100;
+    const isNewHighScore = score > userHighScore;
 
     if (isFinished) {
         return (
              <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">🛠️</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
-                <p className="text-text-secondary mt-2 text-lg">Reparaste {score / 10} objetos y ganaste <strong className="text-primary">{score}</strong> EcoPuntos.</p>
+                 {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                <p className="text-text-secondary mt-2 text-lg">Reparaste {score / 10} objetos y tu puntaje es <strong className="text-primary text-2xl">{score}</strong>.</p>
+                 <p className="text-text-secondary text-sm">Tu récord anterior: {userHighScore}</p>
             </div>
         );
     }

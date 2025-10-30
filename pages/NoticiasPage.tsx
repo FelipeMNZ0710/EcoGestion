@@ -1,7 +1,5 @@
-
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import type { User, NewsArticle } from '../types';
+import type { User, NewsArticle, ContentBlock } from '../types';
 import NewsDetailModal from '../components/NewsDetailModal';
 
 const NewsCard: React.FC<{ 
@@ -61,6 +59,14 @@ const newsCategories = [
     'Opinión'
 ];
 
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+
 const NewsModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
@@ -68,10 +74,10 @@ const NewsModal: React.FC<{
     article: NewsArticle | null;
 }> = ({ isOpen, onClose, onSave, article }) => {
     const [title, setTitle] = useState('');
-    const [category, setCategory] = useState('');
+    const [category, setCategory] = useState(newsCategories[0]);
     const [image, setImage] = useState('');
     const [excerpt, setExcerpt] = useState('');
-    const [content, setContent] = useState('[]');
+    const [content, setContent] = useState<ContentBlock[]>([]);
     const [featured, setFeatured] = useState(false);
 
     useEffect(() => {
@@ -80,51 +86,191 @@ const NewsModal: React.FC<{
             setCategory(article.category);
             setImage(article.image);
             setExcerpt(article.excerpt);
-            setContent(JSON.stringify(article.content, null, 2));
+            setContent(article.content.map(b => ({...b, id: b.id || String(Date.now() + Math.random())})));
             setFeatured(article.featured);
         } else {
             setTitle('');
-            setCategory('');
+            setCategory(newsCategories[0]);
             setImage('');
             setExcerpt('');
-            setContent('[\n  {\n    "type": "text",\n    "text": "Escribe aquí el contenido del artículo."\n  }\n]');
+            setContent([{ id: String(Date.now()), type: 'text', text: 'Escribe aquí el contenido del artículo.' }]);
             setFeatured(false);
         }
     }, [article, isOpen]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const parsedContent = JSON.parse(content);
-            onSave({ id: article?.id, title, category, image, excerpt, content: parsedContent, featured });
-        } catch (error) {
-            alert("Error: El JSON en 'Contenido Completo' no es válido.");
-        }
+        onSave({ id: article?.id, title, category, image, excerpt, content, featured });
+    };
+
+    const handleContentChange = (id: string, newBlock: ContentBlock) => {
+        setContent(prev => prev.map(b => (b.id === id ? newBlock : b)));
+    };
+
+    const addBlock = (type: 'text' | 'list' | 'image') => {
+        let newBlock: ContentBlock;
+        const newId = String(Date.now() + Math.random());
+        if (type === 'text') newBlock = { id: newId, type: 'text', text: '' };
+        else if (type === 'list') newBlock = { id: newId, type: 'list', items: [''] };
+        else newBlock = { id: newId, type: 'image', mimeType: 'image/jpeg' };
+        setContent(prev => [...prev, newBlock]);
+    };
+    
+    const removeBlock = (id: string) => {
+        setContent(prev => prev.filter(b => b.id !== id));
+    };
+
+    const moveBlock = (index: number, direction: 'up' | 'down') => {
+        if ((direction === 'up' && index === 0) || (direction === 'down' && index === content.length - 1)) return;
+        const newContent = [...content];
+        const item = newContent.splice(index, 1)[0];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        newContent.splice(newIndex, 0, item);
+        setContent(newContent);
+    };
+
+    const renderBlock = (block: ContentBlock, index: number) => {
+        return (
+            <div key={block.id} className="p-3 bg-background rounded-md border border-slate-700 relative group">
+                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <button type="button" onClick={() => moveBlock(index, 'up')} disabled={index === 0} className="w-6 h-6 bg-slate-600 rounded-full disabled:opacity-30">↑</button>
+                    <button type="button" onClick={() => moveBlock(index, 'down')} disabled={index === content.length - 1} className="w-6 h-6 bg-slate-600 rounded-full disabled:opacity-30">↓</button>
+                    <button type="button" onClick={() => removeBlock(block.id)} className="w-6 h-6 bg-red-600 rounded-full">×</button>
+                </div>
+                {block.type === 'text' && (
+                    <textarea value={block.text} onChange={e => handleContentChange(block.id, { ...block, text: e.target.value })} rows={5} className="form-input w-full" placeholder="Escribe un párrafo..." />
+                )}
+                {block.type === 'image' && (
+                    <div className="space-y-2">
+                        <p className="text-xs text-text-secondary">Carga una imagen desde tu PC o pega una URL.</p>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={block.imageUrl || (block.base64Data ? 'Archivo local cargado' : '')}
+                                onChange={e => handleContentChange(block.id, { ...block, type: 'image', imageUrl: e.target.value, mimeType: 'image/jpeg', base64Data: undefined })}
+                                className="form-input flex-1"
+                                placeholder="Pega una URL de imagen..."
+                                disabled={!!block.base64Data}
+                            />
+                            <label className="px-3 py-2 text-sm bg-slate-600 rounded-md cursor-pointer hover:bg-slate-500 whitespace-nowrap">
+                                Cargar
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const base64 = await fileToBase64(file);
+                                            handleContentChange(block.id, { ...block, type: 'image', base64Data: base64, mimeType: file.type, imageUrl: undefined });
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
+                        {(block.base64Data || block.imageUrl) && (
+                            <div className="relative mt-2">
+                                <img src={block.base64Data || block.imageUrl} alt="Previsualización de contenido" className="rounded-md max-h-40" />
+                                <button type="button" onClick={() => handleContentChange(block.id, { ...block, type: 'image', mimeType: 'image/jpeg', base64Data: undefined, imageUrl: undefined })} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow-lg">×</button>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {block.type === 'list' && (
+                    <div className="space-y-2">
+                        {block.items.map((item, itemIndex) => (
+                            <div key={itemIndex} className="flex items-center gap-2">
+                                <span className="text-slate-500"> • </span>
+                                <input type="text" value={item} onChange={e => {
+                                    const newItems = [...block.items];
+                                    newItems[itemIndex] = e.target.value;
+                                    handleContentChange(block.id, { ...block, items: newItems });
+                                }} className="form-input flex-1" placeholder="Elemento de la lista" />
+                                <button type="button" onClick={() => {
+                                    const newItems = block.items.filter((_, i) => i !== itemIndex);
+                                    handleContentChange(block.id, { ...block, items: newItems });
+                                }} className="text-red-500">×</button>
+                            </div>
+                        ))}
+                         <button type="button" onClick={() => handleContentChange(block.id, { ...block, items: [...block.items, ''] })} className="text-sm text-primary">+ Añadir elemento</button>
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal-content !max-w-2xl" onClick={e => e.stopPropagation()}>
+            <div className="modal-content !max-w-3xl" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 z-20 text-text-secondary hover:text-text-main transition-colors" aria-label="Cerrar modal">
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
                 <form onSubmit={handleSubmit} className="p-6">
                     <h2 className="text-xl font-bold font-display text-text-main mb-4">{article ? 'Editar Noticia' : 'Crear Nueva Noticia'}</h2>
                     <div className="space-y-4 modal-form">
                         <div><label>Título</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} required /></div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label>Categoría</label>
-                                <select value={category} onChange={e => setCategory(e.target.value)} required className="form-input">
-                                    <option value="" disabled>Selecciona una categoría</option>
-                                    {newsCategories.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
+                            <div><label>Categoría</label><select value={category} onChange={e => setCategory(e.target.value)} required className="form-input"><option value="" disabled>Selecciona una categoría</option>{newsCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select></div>
+                            <div className="flex-1">
+                                <label>Imagen Principal</label>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <input
+                                        type="text"
+                                        value={image.startsWith('data:') ? '[Imagen Local Cargada]' : image}
+                                        onChange={e => setImage(e.target.value)}
+                                        className="form-input flex-1"
+                                        placeholder="Pega una URL o carga un archivo"
+                                        disabled={image.startsWith('data:')}
+                                    />
+                                    <label className="px-3 py-2 text-sm bg-slate-600 rounded-md cursor-pointer hover:bg-slate-500 whitespace-nowrap">
+                                        Cargar
+                                        <input
+                                            type="file"
+                                            onChange={async e => {
+                                                const file = e.target.files?.[0];
+                                                if (file) setImage(await fileToBase64(file));
+                                            }}
+                                            accept="image/*"
+                                            className="hidden"
+                                        />
+                                    </label>
+                                </div>
+                                {image && (
+                                    <div className="relative mt-2">
+                                        <img src={image} alt="Previsualización principal" className="rounded-md max-h-40 object-cover" />
+                                        <button type="button" onClick={() => setImage('')} className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">X</button>
+                                    </div>
+                                )}
                             </div>
-                            <div><label>URL de la Imagen Principal</label><input type="text" value={image} onChange={e => setImage(e.target.value)} required /></div>
                         </div>
-                        <div><label>Extracto (Resumen corto para la tarjeta)</label><textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} rows={3} required></textarea></div>
-                        <div><label>Contenido Completo (en formato JSON)</label><textarea value={content} onChange={e => setContent(e.target.value)} rows={10} className="font-mono text-sm"></textarea></div>
+                        <div><label>Extracto (Resumen corto)</label><textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} rows={3} required></textarea></div>
+                        
+                        <div>
+                            <label>Contenido del Artículo</label>
+                            <div className="space-y-3 p-3 bg-surface rounded-lg border border-slate-700">
+                                {content.map((block, index) => renderBlock(block, index))}
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                                <button type="button" onClick={() => addBlock('text')} className="text-sm px-3 py-1 bg-slate-600 rounded-md"> + Texto</button>
+                                <button type="button" onClick={() => addBlock('list')} className="text-sm px-3 py-1 bg-slate-600 rounded-md"> + Lista</button>
+                                <button type="button" onClick={() => addBlock('image')} className="text-sm px-3 py-1 bg-slate-600 rounded-md"> + Imagen</button>
+                            </div>
+                        </div>
+
                         <div><label className="custom-toggle-label"><input type="checkbox" className="custom-toggle-input" checked={featured} onChange={e => setFeatured(e.target.checked)} /><div className="custom-toggle-track"><div className="custom-toggle-thumb"></div></div><span className="ml-3 text-sm text-text-secondary">¿Es una noticia destacada?</span></label></div>
                         <div className="flex justify-end space-x-3 pt-4">
                             <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>

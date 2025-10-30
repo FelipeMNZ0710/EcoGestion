@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const db = require('./db');
 const comoReciclarData = require('./data/comoReciclarData');
 const { processAction } = require('./services/gamificationService');
+const gamesData = require('./data/gamesData');
 require('dotenv').config();
 
 const app = express();
@@ -14,17 +15,114 @@ const saltRounds = 10;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// --- DB Connection Test ---
-const testDatabaseConnection = async () => {
+// --- Database Initialization Logic ---
+const initializeDatabase = async () => {
     try {
         const connection = await db.getConnection();
         console.log('✅ Conexión a la base de datos exitosa.');
+        
+        // --- Impact Stats Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`impact_stats\` (
+              \`id\` INT NOT NULL AUTO_INCREMENT,
+              \`recycled_kg\` INT NOT NULL DEFAULT 0,
+              \`participants\` INT NOT NULL DEFAULT 0,
+              \`points\` INT NOT NULL DEFAULT 0,
+              PRIMARY KEY (\`id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "impact_stats" asegurada.');
+        const [statsRows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
+        if (statsRows.length === 0) {
+            await db.query(`INSERT INTO \`impact_stats\` (\`id\`, \`recycled_kg\`, \`participants\`, \`points\`) VALUES (1, 14800, 5350, 48);`);
+            console.log('✅ Datos iniciales de estadísticas insertados.');
+        } else {
+            console.log('✅ Fila de estadísticas verificada.');
+        }
+
+        // --- News Articles Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`news_articles\` (
+              \`id\` int(11) NOT NULL AUTO_INCREMENT,
+              \`title\` varchar(255) NOT NULL,
+              \`category\` varchar(100) NOT NULL,
+              \`excerpt\` text NOT NULL,
+              \`image\` mediumtext DEFAULT NULL,
+              \`content\` mediumtext DEFAULT NULL,
+              \`featured\` tinyint(1) DEFAULT 0,
+              \`author_id\` int(11) DEFAULT NULL,
+              \`published_at\` timestamp NOT NULL DEFAULT current_timestamp(),
+              PRIMARY KEY (\`id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "news_articles" asegurada.');
+
+        const dbName = process.env.DB_NAME || 'ecogestion_db';
+        const [columns] = await connection.query(`
+            SELECT COLUMN_NAME, DATA_TYPE 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'news_articles' 
+            AND COLUMN_NAME IN ('image', 'content')`,
+            [dbName]
+        );
+
+        for (const column of columns) {
+            if (column.DATA_TYPE.toLowerCase() !== 'mediumtext') {
+                console.warn(`⚠️  Columna "${column.COLUMN_NAME}" en "news_articles" tiene un tipo incorrecto (${column.DATA_TYPE}). Modificando a MEDIUMTEXT...`);
+                await connection.query(`ALTER TABLE \`news_articles\` MODIFY COLUMN \`${column.COLUMN_NAME}\` MEDIUMTEXT;`);
+                console.log(`✅  Columna "${column.COLUMN_NAME}" actualizada a MEDIUMTEXT.`);
+            }
+        }
+        console.log('✅ Columnas de "news_articles" verificadas.');
+        
+        // --- Games Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`games\` (
+              \`id\` int(11) NOT NULL AUTO_INCREMENT,
+              \`title\` varchar(255) NOT NULL,
+              \`category\` varchar(100) NOT NULL,
+              \`image\` varchar(255) NOT NULL,
+              \`type\` varchar(50) NOT NULL,
+              \`learningObjective\` text NOT NULL,
+              \`payload\` json DEFAULT NULL,
+              \`rating\` decimal(3,2) DEFAULT 3.50,
+              \`ratings_count\` int(11) DEFAULT 0,
+              PRIMARY KEY (\`id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "games" asegurada.');
+        
+        const [gameRows] = await db.query('SELECT COUNT(*) as count FROM games');
+        if (gameRows[0].count === 0) {
+            console.log('⏳ La tabla "games" está vacía. Poblando con datos iniciales...');
+            const query = 'INSERT INTO games (id, title, category, image, type, learningObjective, payload, rating) VALUES ?';
+            const values = gamesData.map(g => [g.id, g.title, g.category, g.image, g.type, g.learningObjective, JSON.stringify(g.payload), g.rating]);
+            await connection.query(query, [values]);
+            console.log(`✅ ¡${gamesData.length} juegos insertados en la base de datos!`);
+        } else {
+            console.log('✅ Tabla "games" verificada.');
+        }
+
+
+        // --- User Game Scores Table ---
+        await connection.query(`
+             CREATE TABLE IF NOT EXISTS \`user_game_scores\` (
+              \`user_id\` int(11) NOT NULL,
+              \`game_id\` int(11) NOT NULL,
+              \`high_score\` int(11) NOT NULL DEFAULT 0,
+              PRIMARY KEY (\`user_id\`, \`game_id\`),
+              KEY \`game_id\` (\`game_id\`),
+              CONSTRAINT \`user_game_scores_ibfk_1\` FOREIGN KEY (\`user_id\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE,
+              CONSTRAINT \`user_game_scores_ibfk_2\` FOREIGN KEY (\`game_id\`) REFERENCES \`games\` (\`id\`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "user_game_scores" asegurada.');
+
         connection.release();
+
     } catch (error) {
-        console.error('❌ ERROR CRÍTICO: No se pudo conectar a la base de datos.');
-        console.error('DETALLES DEL ERROR:', error.message);
-        console.error('Por favor, revisa la configuración en backend/.env y asegúrate de que XAMPP y MySQL están corriendo.');
-        process.exit(1);
+        console.error('❌ ERROR CRÍTICO durante la inicialización de la base de datos:', error);
+        throw error;
     }
 };
 
@@ -156,6 +254,15 @@ app.post('/api/user-action', async (req, res) => {
             await db.query('UPDATE locations SET check_ins = check_ins + 1 WHERE id = ?', [payload.locationId]);
         }
         
+        if (action === 'complete_game' && payload?.gameId && payload?.score !== undefined) {
+             await db.query(
+                `INSERT INTO user_game_scores (user_id, game_id, high_score) 
+                 VALUES (?, ?, ?) 
+                 ON DUPLICATE KEY UPDATE high_score = IF(VALUES(high_score) > high_score, VALUES(high_score), high_score)`,
+                [userId, payload.gameId, payload.score]
+            );
+        }
+
         const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
         if (userRows.length === 0) return res.status(404).json({ message: 'Usuario no encontrado.' });
         
@@ -402,10 +509,30 @@ app.delete('/api/news/:id', async (req, res) => {
 // --- Games Management ---
 app.get('/api/games', async (req, res) => {
     try {
-        const [games] = await db.query('SELECT * FROM games ORDER BY id DESC');
+        const { userId } = req.query;
+        let games;
+        if (userId) {
+            [games] = await db.query(
+                `SELECT g.*, ugs.high_score 
+                 FROM games g 
+                 LEFT JOIN user_game_scores ugs ON g.id = ugs.game_id AND ugs.user_id = ? 
+                 ORDER BY g.id ASC`, 
+                [userId]
+            );
+        } else {
+            [games] = await db.query('SELECT * FROM games ORDER BY id ASC');
+        }
+
         const formattedGames = games.map(g => ({
-            ...g,
+            id: g.id,
+            title: g.title,
+            category: g.category,
+            image: g.image,
+            type: g.type,
+            learningObjective: g.learningObjective,
             payload: JSON.parse(g.payload || '{}'),
+            rating: g.rating ? parseFloat(g.rating) : 3.5,
+            userHighScore: g.high_score !== null && g.high_score !== undefined ? g.high_score : 0,
         }));
         res.json(formattedGames);
     } catch (error) {
@@ -447,6 +574,7 @@ app.put('/api/games/:id', async (req, res) => {
 app.delete('/api/games/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        await db.query('DELETE FROM user_game_scores WHERE game_id = ?', [id]);
         const [result] = await db.query('DELETE FROM games WHERE id = ?', [id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: 'Juego no encontrado.' });
         res.status(200).json({ message: 'Juego eliminado.' });
@@ -679,6 +807,94 @@ app.post('/api/community/messages/:messageId/react', async (req, res) => {
 
 
 // --- Contact & Admin Panel Endpoints ---
+const checkAdminRole = (role, requiredRole) => {
+    if (requiredRole === 'dueño') return role === 'dueño';
+    if (requiredRole === 'moderador') return role === 'dueño' || role === 'moderador';
+    return false;
+};
+
+const authAdmin = async (req, res, requiredRole) => {
+    const adminUserId = req.query.adminUserId || req.body.adminUserId;
+    if (!adminUserId) {
+        res.status(401).json({ message: 'Se requiere autenticación de administrador.' });
+        return false;
+    }
+    try {
+        const [admins] = await db.query('SELECT role FROM users WHERE id = ?', [adminUserId]);
+        if (admins.length === 0 || !checkAdminRole(admins[0].role, requiredRole)) {
+            res.status(403).json({ message: 'Acceso denegado.' });
+            return false;
+        }
+        return true;
+    } catch (error) {
+        res.status(500).json({ message: 'Error de servidor al verificar permisos.' });
+        return false;
+    }
+};
+
+app.get('/api/admin/users', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
+    try {
+        const [users] = await db.query('SELECT * FROM users ORDER BY name ASC');
+        res.json(users.map(formatUserForFrontend));
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener usuarios.' });
+    }
+});
+
+app.get('/api/admin/users/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
+    try {
+        const [users] = await db.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+        if(users.length === 0) return res.status(404).json({message: 'Usuario no encontrado'});
+        res.json(formatUserForFrontend(users[0]));
+    } catch(error) {
+        res.status(500).json({ message: 'Error al obtener usuario.' });
+    }
+});
+
+app.put('/api/admin/users/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
+    try {
+        const { id } = req.params;
+        const { name, role, points } = req.body;
+        await db.query('UPDATE users SET name = ?, role = ?, points = ? WHERE id = ?', [name, role, points, id]);
+        res.status(200).json({ message: 'Usuario actualizado.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar usuario.' });
+    }
+});
+
+app.delete('/api/admin/users/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
+    try {
+        await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);
+        res.status(200).json({ message: 'Usuario eliminado.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al eliminar usuario.' });
+    }
+});
+
+app.put('/api/admin/users/:id/achievements', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
+    try {
+        const { id } = req.params;
+        const { achievementId, unlocked } = req.body;
+        const [users] = await db.query('SELECT unlocked_achievements FROM users WHERE id = ?', [id]);
+        if (users.length === 0) return res.status(404).json({ message: 'Usuario no encontrado.' });
+        
+        let unlockedIds = new Set(users[0].unlocked_achievements ? JSON.parse(users[0].unlocked_achievements) : []);
+        if (unlocked) unlockedIds.add(achievementId);
+        else unlockedIds.delete(achievementId);
+        
+        await db.query('UPDATE users SET unlocked_achievements = ? WHERE id = ?', [JSON.stringify(Array.from(unlockedIds)), id]);
+        res.status(200).json({ message: 'Logros actualizados.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar logros.' });
+    }
+});
+
+
 app.post('/api/contact', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
@@ -765,6 +981,55 @@ app.post('/api/admin/reply', async (req, res) => {
     res.status(200).json({ message: 'Respuesta enviada exitosamente (simulación).' });
 });
 
+// --- Impact Stats Endpoints ---
+app.get('/api/impact-stats', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
+        
+        if (rows.length === 0) {
+            console.warn("[GET IMPACT STATS] Fila no encontrada. Creando...");
+            await db.query(`INSERT INTO \`impact_stats\` (\`id\`, \`recycled_kg\`, \`participants\`, \`points\`) VALUES (1, 14800, 5350, 48) ON DUPLICATE KEY UPDATE id=1;`);
+            const [newRows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
+            res.json({ recycledKg: newRows[0].recycled_kg, participants: newRows[0].participants, points: newRows[0].points });
+            return;
+        }
+
+        const stats = rows[0];
+        res.json({
+            recycledKg: stats.recycled_kg,
+            participants: stats.participants,
+            points: stats.points
+        });
+    } catch (error) {
+        console.error("[GET IMPACT STATS] ERROR:", error);
+        res.status(500).json({ message: "Error al obtener las estadísticas." });
+    }
+});
+
+
+app.put('/api/impact-stats', isAdmin, async (req, res) => {
+    try {
+        const { recycledKg, participants, points } = req.body;
+        if (recycledKg === undefined || participants === undefined || points === undefined) {
+            return res.status(400).json({ message: 'Todos los campos de estadísticas son requeridos.' });
+        }
+        const [result] = await db.query(
+            'UPDATE impact_stats SET recycled_kg = ?, participants = ?, points = ? WHERE id = 1',
+            [recycledKg, participants, points]
+        );
+
+        if (result.affectedRows === 0) {
+            throw new Error("La fila de estadísticas no se encontró en la base de datos para actualizar. Intenta reiniciar el servidor.");
+        }
+
+        res.status(200).json({ message: 'Estadísticas actualizadas correctamente.' });
+    } catch (error) {
+        console.error("[UPDATE IMPACT STATS] ERROR:", error);
+        res.status(500).json({ message: "Error al actualizar las estadísticas." });
+    }
+});
+
+
 // --- Recycling Guide Endpoint ---
 app.get('/api/recycling-guides', async (req, res) => {
     res.json(comoReciclarData);
@@ -772,10 +1037,18 @@ app.get('/api/recycling-guides', async (req, res) => {
 
 // --- Start Server ---
 const startServer = async () => {
-    await testDatabaseConnection();
-    app.listen(port, () => {
-        console.log(`🚀 Servidor de EcoGestión escuchando en http://localhost:${port}`);
-    });
+    try {
+        console.log('⏳ Inicializando la base de datos...');
+        await initializeDatabase();
+        
+        app.listen(port, () => {
+            console.log(`🚀 Servidor de EcoGestión escuchando en http://localhost:${port}`);
+            console.log('✅ Base de datos y servidor listos.');
+        });
+    } catch (error) {
+        console.error('❌ FATAL: No se pudo iniciar el servidor. La inicialización de la base de datos falló.');
+        process.exit(1);
+    }
 };
 
 startServer();

@@ -5,7 +5,8 @@ interface RecyclingChainGameProps {
     items: SortableItemData[];
     bins: BinType[];
     duration: number;
-    onComplete: () => void;
+    onComplete: (score: number) => void;
+    userHighScore: number;
 }
 
 const binInfo: Record<BinType, { name: string; color: string; icon: string; dropColor: string }> = {
@@ -16,7 +17,7 @@ const binInfo: Record<BinType, { name: string; color: string; icon: string; drop
     organico: { name: 'Orgánico', color: 'bg-orange-500', icon: '🍎', dropColor: 'border-orange-500' }
 };
 
-const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, duration, onComplete }) => {
+const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, duration, onComplete, userHighScore }) => {
     const [gameItems, setGameItems] = useState<{ item: SortableItemData; id: number; position: number }[]>([]);
     const [score, setScore] = useState(0);
     const [combo, setCombo] = useState(0);
@@ -63,9 +64,9 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
             return () => clearTimeout(timer);
         } else if (timeLeft <= 0 && !isFinished) {
             setIsFinished(true);
-            setTimeout(onComplete, 1500);
+            onComplete(score);
         }
-    }, [timeLeft, isFinished, onComplete]);
+    }, [timeLeft, isFinished, onComplete, score]);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, itemId: number) => {
         setIsDragging(itemId);
@@ -91,13 +92,16 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
         setDragOverBin(null);
     };
 
+    const isNewHighScore = score > userHighScore;
+
     if (isFinished) {
         return (
             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">🏆</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Se acabó el tiempo!</h2>
-                 <p className="text-text-secondary mt-2 text-lg">Tu puntaje final es <strong className="text-primary">{score}</strong>.</p>
-                <p className="font-bold text-primary text-xl mt-4">¡Ganaste {score} EcoPuntos!</p>
+                {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                 <p className="text-text-secondary mt-2 text-lg">Tu puntaje final: <strong className="text-primary text-2xl">{score}</strong>.</p>
+                 <p className="text-text-secondary text-sm">Tu récord anterior: {userHighScore}</p>
             </div>
         );
     }
@@ -130,7 +134,6 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
                         style={{ left: `${position}px` }}
                     >
                         <span className="text-4xl pointer-events-none">{item.image}</span>
-                        {/* FIX: Changed item.item.name to item.name */}
                         <span className="text-xs font-semibold text-text-main pointer-events-none">{item.name}</span>
                     </div>
                 ))}

@@ -3,19 +3,20 @@ import type { QuizQuestion } from '../../types';
 
 interface TriviaGameProps {
     questions: QuizQuestion[];
-    onComplete: () => void;
+    onComplete: (score: number) => void;
     onClose: () => void;
+    userHighScore: number;
 }
 
-const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose }) => {
+const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose, userHighScore }) => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [showFeedback, setShowFeedback] = useState(false);
     const [score, setScore] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
     
-    const PASS_PERCENTAGE = 0.7;
-    const passed = (score / questions.length) >= PASS_PERCENTAGE;
+    const finalScore = score;
+    const isNewHighScore = finalScore > userHighScore;
 
     const restartGame = useCallback(() => {
         setCurrentQuestionIndex(0);
@@ -30,7 +31,7 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose 
         setSelectedAnswer(answerIndex);
         setShowFeedback(true);
         if (answerIndex === questions[currentQuestionIndex].correctAnswer) {
-            setScore(s => s + 1);
+            setScore(s => s + 10);
         }
     };
     
@@ -41,9 +42,7 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose 
             setSelectedAnswer(null);
         } else {
             setIsFinished(true);
-            if (((score) / questions.length) >= PASS_PERCENTAGE) {
-                 setTimeout(onComplete, 2000);
-            }
+            onComplete(score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 10 : 0));
         }
     };
 
@@ -58,7 +57,7 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose 
                     <div>
                         <div className="flex justify-between items-center mb-2 text-sm text-text-secondary">
                             <span>Pregunta {currentQuestionIndex + 1} de {questions.length}</span>
-                            <span>Puntaje: {score * 10}</span>
+                            <span>Puntaje: {score}</span>
                         </div>
                         <div className="w-full bg-background rounded-full h-2.5 mb-4">
                             <div className="bg-primary h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
@@ -92,23 +91,11 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose 
                 </>
             ) : (
                 <div className="w-full h-full flex items-center justify-center text-center p-4 sm:p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
-                    {passed ? (
-                        <>
-                            <div className="text-7xl mb-4">🎉</div>
-                            <h2 className="text-3xl font-bold text-text-main">¡Excelente Trabajo!</h2>
-                            <p className="text-text-secondary mt-2 text-lg">Acertaste {score} de {questions.length} preguntas.</p>
-                            <p className="font-bold text-primary text-xl mt-4">¡Ganaste {score * 10} EcoPuntos!</p>
-                        </>
-                    ) : (
-                         <>
-                            <div className="text-7xl mb-4">🤔</div>
-                            <h2 className="text-3xl font-bold text-text-main">¡Casi lo logras!</h2>
-                            <p className="text-text-secondary mt-2 text-lg">Obtuviste {score} de {questions.length}. Necesitas al menos {Math.ceil(questions.length * PASS_PERCENTAGE)} para ganar.</p>
-                            <button onClick={restartGame} className="mt-8 bg-primary text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-dark transition-colors">
-                                Volver a Intentar
-                            </button>
-                        </>
-                    )}
+                    <div className="text-7xl mb-4">🎉</div>
+                    <h2 className="text-3xl font-bold text-text-main">¡Juego Completado!</h2>
+                    {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                    <p className="text-text-secondary mt-2 text-lg">Puntaje Final: <strong className="text-primary text-2xl">{finalScore}</strong></p>
+                    <p className="text-text-secondary text-sm">Tu récord anterior: {userHighScore}</p>
                 </div>
             )}
         </div>

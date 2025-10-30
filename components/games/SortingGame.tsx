@@ -5,7 +5,8 @@ interface SortingGameProps {
     items: SortableItemData[];
     bins: BinType[];
     duration: number;
-    onComplete: () => void;
+    onComplete: (score: number) => void;
+    userHighScore: number;
 }
 
 const binInfo: Record<BinType, { name: string; color: string, icon: string, dropColor: string }> = {
@@ -16,7 +17,7 @@ const binInfo: Record<BinType, { name: string; color: string, icon: string, drop
     organico: { name: 'Orgánico', color: 'bg-orange-500', icon: '🍎', dropColor: 'border-orange-500' }
 }
 
-const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComplete }) => {
+const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComplete, userHighScore }) => {
     const [gameItems, setGameItems] = useState<SortableItemData[]>([]);
     const [currentItem, setCurrentItem] = useState<SortableItemData | null>(null);
     const [score, setScore] = useState(0);
@@ -37,9 +38,9 @@ const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComp
             return () => clearTimeout(timer);
         } else if (timeLeft <= 0 && !isFinished) {
             setIsFinished(true);
-            setTimeout(onComplete, 1500);
+            onComplete(score);
         }
-    }, [timeLeft, isFinished, onComplete]);
+    }, [timeLeft, isFinished, onComplete, score]);
 
     const nextItem = () => {
         setFeedback(null);
@@ -48,7 +49,7 @@ const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComp
             setCurrentItem(gameItems[currentIndex + 1]);
         } else {
             setIsFinished(true);
-            setTimeout(onComplete, 1500);
+            onComplete(score);
         }
     };
     
@@ -65,13 +66,16 @@ const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComp
         setTimeout(nextItem, 800);
     };
     
+    const isNewHighScore = score > userHighScore;
+
     if (isFinished) {
          return (
             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">♻️</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
-                <p className="text-text-secondary mt-2 text-lg">Tu puntaje final es <strong className="text-primary">{score}</strong>.</p>
-                <p className="font-bold text-primary text-xl mt-4">¡Ganaste {score} EcoPuntos!</p>
+                {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                <p className="text-text-secondary mt-2 text-lg">Tu puntaje final: <strong className="text-primary text-2xl">{score}</strong>.</p>
+                <p className="text-text-secondary text-sm">Tu récord anterior: {userHighScore}</p>
             </div>
         );
     }

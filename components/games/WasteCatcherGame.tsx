@@ -4,10 +4,11 @@ import type { CatcherItem } from '../../types';
 interface WasteCatcherGameProps {
     items: CatcherItem[];
     lives: number;
-    onComplete: () => void;
+    onComplete: (score: number) => void;
+    userHighScore: number;
 }
 
-const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initialLives, onComplete }) => {
+const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initialLives, onComplete, userHighScore }) => {
     const gameAreaRef = useRef<HTMLDivElement>(null);
     const cartRef = useRef<HTMLDivElement>(null);
     
@@ -102,9 +103,9 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     useEffect(() => {
         if (lives <= 0 && !isFinished) {
             setIsFinished(true);
-            setTimeout(onComplete, 1500);
+            onComplete(score);
         }
-    }, [lives, isFinished, onComplete]);
+    }, [lives, isFinished, onComplete, score]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!gameAreaRef.current) return;
@@ -115,13 +116,16 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
         setCartX(newCartX);
     };
     
+    const isNewHighScore = score > userHighScore;
+
     if (isFinished) {
         return (
             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">♻️</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
-                <p className="text-text-secondary mt-2 text-lg">Tu puntaje final es <strong className="text-primary">{score}</strong>.</p>
-                <p className="font-bold text-primary text-xl mt-4">¡Ganaste {score} EcoPuntos!</p>
+                {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
+                <p className="text-text-secondary mt-2 text-lg">Tu puntaje final: <strong className="text-primary text-2xl">{score}</strong>.</p>
+                <p className="text-text-secondary text-sm">Tu récord anterior: {userHighScore}</p>
             </div>
         );
     }

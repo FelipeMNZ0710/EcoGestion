@@ -15,28 +15,33 @@ export type Page =
 
 // Structured Content Types for news articles
 export interface TextBlock {
+  id: string;
   type: 'text';
   text: string;
 }
 
 export interface ListBlock {
+  id: string;
   type: 'list';
   items: string[];
 }
 
 export interface LinkBlock {
+  id: string;
   type: 'link';
   url: string;
   title: string;
 }
 
 export interface VideoBlock {
+  id: string;
   type: 'video';
   youtubeId: string;
   title: string;
 }
 
 export interface ImageBlock {
+    id: string;
     type: 'image';
     base64Data?: string; 
     imageUrl?: string; 
@@ -44,6 +49,7 @@ export interface ImageBlock {
 }
 
 export interface FAQBlock {
+  id: string;
   type: 'faq';
   questions: string[];
 }
@@ -199,7 +205,12 @@ export interface Report {
 
 
 // --- Game Types ---
-export type GameType = 'trivia' | 'memory' | 'sorting' | 'hangman' | 'chain' | 'catcher' | 'repair';
+export type GameType = 
+  | 'trivia' | 'memory' | 'sorting' | 'hangman' | 'chain' | 'catcher' | 'repair'
+  | 'eco-quiz' | 'find-the-intruder' | 'recycling-path' | 'river-cleaner' | 'compost-sequence'
+  | 'myth-busters' | 'concept-connector' | 'water-saver' | 'eco-wordle' | 'sustainable-builder'
+  | 'energy-impact' | 'nature-sounds' | 'spot-the-difference';
+
 
 export interface MemoryCardData {
   id: string;
@@ -244,7 +255,7 @@ export interface Game {
     type: GameType;
     learningObjective: string;
     payload: {
-        points: number;
+        points: number; // EcoPoints for completion
         // For trivia
         questions?: QuizQuestion[];
         // For memory
@@ -261,7 +272,9 @@ export interface Game {
         // For repair
         repairableItems?: RepairableItem[];
         timePerItem?: number;
-    }
+    };
+    rating?: number;
+    userHighScore: number;
 }
 
 // --- News Types ---

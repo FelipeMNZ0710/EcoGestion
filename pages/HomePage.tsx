@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { Page, User } from '../types';
 import TestimonialsCarousel from '../components/TestimonialsCarousel';
 
@@ -32,52 +32,42 @@ const useIntersectionObserver = (options: IntersectionObserverInit) => {
 
 const AnimatedNumber: React.FC<{ value: number }> = ({ value }) => {
     const [count, setCount] = useState(0);
-    const ref = useRef<HTMLParagraphElement>(null);
-    const hasAnimated = useRef(false);
 
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting && !hasAnimated.current) {
-                    hasAnimated.current = true;
-                    let start = 0;
-                    const end = value;
-                    if (start === end) return;
+        const start = count;
+        const end = value;
+        if (start === end) return;
 
-                    const duration = 2000;
-                    const increment = end / (duration / 16); 
+        const duration = 800; // Faster animation
+        const range = end - start;
+        let startTime: number | null = null;
 
-                    const counter = () => {
-                        start += increment;
-                        if (start < end) {
-                           setCount(Math.ceil(start));
-                           requestAnimationFrame(counter);
-                        } else {
-                           setCount(end);
-                        }
-                    };
-                    requestAnimationFrame(counter);
-                }
-            },
-            { threshold: 0.5 }
-        );
+        const animate = (timestamp: number) => {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            
+            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
 
-        const currentRef = ref.current;
-        if (currentRef) {
-            observer.observe(currentRef);
-        }
+            const newCount = Math.floor(start + range * easeOutProgress);
+            setCount(newCount);
 
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef);
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                setCount(end);
             }
         };
-    }, [value]);
-    
-    const formattedCount = Math.ceil(count).toLocaleString('es-AR');
 
-    return <p ref={ref} className="text-5xl font-display text-white">{value > 1000 && count > 1000 ? '+' : ''}{formattedCount}</p>
+        const animationFrameId = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [value]); // Depend only on value to avoid re-triggering on count change
+
+    const formattedCount = count.toLocaleString('es-AR');
+
+    return <p className="text-5xl font-display text-white">{value > 1000 ? '+' : ''}{formattedCount}</p>;
 }
+
 
 // FIX: Changed icon type from JSX.Element to React.ReactNode to resolve namespace error.
 const FeatureCard = ({ icon, title, text }: { icon: React.ReactNode, title: string, text: string }) => (
@@ -107,7 +97,8 @@ const StatsEditModal: React.FC<{
     onClose: () => void;
     stats: ImpactStats;
     onSave: (newStats: ImpactStats) => void;
-}> = ({ isOpen, onClose, stats, onSave }) => {
+    user: User | null;
+}> = ({ isOpen, onClose, stats, onSave, user }) => {
     const [currentStats, setCurrentStats] = useState(stats);
 
     useEffect(() => {
@@ -153,22 +144,78 @@ const StatsEditModal: React.FC<{
 
 const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | null, isAdminMode: boolean}> = ({setCurrentPage, user, isAdminMode}) => {
   const { observe } = useIntersectionObserver({ threshold: 0.1 });
-  const [impactStats, setImpactStats] = useState<ImpactStats>({ recycledKg: 10000, participants: 5000, points: 45 });
+  const [impactStats, setImpactStats] = useState<ImpactStats>({ recycledKg: 0, participants: 0, points: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const elements = document.querySelectorAll('.fade-in-section');
     elements.forEach(el => observe(el));
-  }, [observe]);
+  }, [observe, impactStats]);
   
-  const handleSaveStats = (newStats: ImpactStats) => {
-      setImpactStats(newStats);
+  const fetchStats = useCallback(async () => {
+    const maxRetries = 5;
+    let currentDelay = 1000; // Start with a 1-second delay between retries
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch('http://localhost:3001/api/impact-stats');
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`);
+        }
+        const data = await response.json();
+        setImpactStats(data);
+        return; 
+      } catch (error) {
+        console.warn(`[fetchStats] Attempt ${attempt}/${maxRetries} failed. Retrying in ${currentDelay / 1000}s...`);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, currentDelay));
+          currentDelay *= 1.5;
+        } else {
+          console.error("Error fetching impact stats after all retries. Using fallback data.", error);
+          setImpactStats({ recycledKg: 10000, participants: 5000, points: 45 });
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+      fetchStats();
+  }, [fetchStats]);
+  
+  const handleSaveStats = async (newStats: ImpactStats) => {
+      if (!user || !isAdminMode) {
+          alert("No tienes permiso para editar esto.");
+          return;
+      }
+      
+      const oldStats = impactStats; // Save old state for potential rollback
+      setImpactStats(newStats); // Optimistic update for instant feedback
       setIsModalOpen(false);
+
+      try {
+          const response = await fetch('http://localhost:3001/api/impact-stats', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  ...newStats,
+                  userId: user.id,
+                  userRole: user.role
+              })
+          });
+          if (!response.ok) {
+            throw new Error('Failed to save stats to the server');
+          }
+          // On success, do nothing. The UI is already updated.
+      } catch (error) {
+          console.error("Error saving stats:", error);
+          alert("No se pudieron guardar las estadísticas. Revirtiendo los cambios.");
+          setImpactStats(oldStats); // Rollback on error
+      }
   }
 
   return (
     <div className="w-full">
-      <StatsEditModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} stats={impactStats} onSave={handleSaveStats} />
+      <StatsEditModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} stats={impactStats} onSave={handleSaveStats} user={user} />
       {/* Hero Section */}
       <section className="relative h-screen text-white overflow-hidden">
         <div className="absolute inset-0 bg-black">
