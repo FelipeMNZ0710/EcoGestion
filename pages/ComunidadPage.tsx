@@ -114,6 +114,8 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const [editingMessage, setEditingMessage] = useState<CommunityMessage | null>(null);
     const [editedText, setEditedText] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isChannelsOpen, setIsChannelsOpen] = useState(false);
+    const [isMembersOpen, setIsMembersOpen] = useState(false);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -257,13 +259,22 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const activeChannelInfo = channels.find(c => c.id === activeChannelId);
     const canWrite = user && (!activeChannelInfo?.admin_only_write || isAdmin);
 
+    const closeSidebars = () => {
+        setIsChannelsOpen(false);
+        setIsMembersOpen(false);
+    };
+
     return (
-        <div className="discord-theme flex h-screen pt-20">
-            <aside className="w-60 bg-[color:var(--bg-secondary)] flex flex-col flex-shrink-0">
-                <header className="p-4 h-12 flex items-center shadow-md"><h1 className="font-bold text-white text-lg">Canales</h1></header>
+        <div className="discord-theme flex pt-20">
+             {/* Overlay for mobile */}
+            <div className={`fixed inset-0 bg-black/50 z-30 lg:hidden ${isChannelsOpen || isMembersOpen ? 'block' : 'hidden'}`} onClick={closeSidebars}></div>
+
+            {/* Channels Sidebar */}
+            <aside className={`fixed inset-y-0 left-0 z-40 w-60 bg-[color:var(--bg-secondary)] flex flex-col flex-shrink-0 pt-20 transform transition-transform duration-300 ease-in-out lg:relative lg:pt-0 lg:translate-x-0 ${isChannelsOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <header className="p-4 h-12 flex items-center shadow-md lg:shadow-none"><h1 className="font-bold text-white text-lg">Canales</h1></header>
                 <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                     {channels.map(channel => (
-                        <a key={channel.id} href="#" onClick={(e) => { e.preventDefault(); setActiveChannelId(channel.id); }} className={`relative flex items-center space-x-2 w-full text-left px-2 py-1.5 rounded transition-colors channel-link text-[color:var(--text-muted)] ${activeChannelId === channel.id ? 'active' : ''}`}>
+                        <a key={channel.id} href="#" onClick={(e) => { e.preventDefault(); setActiveChannelId(channel.id); closeSidebars(); }} className={`relative flex items-center space-x-2 w-full text-left px-2 py-1.5 rounded transition-colors channel-link text-[color:var(--text-muted)] ${activeChannelId === channel.id ? 'active' : ''}`}>
                             <span className="text-xl">#</span><span>{channel.name}</span>
                         </a>
                     ))}
@@ -271,8 +282,16 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
             </aside>
 
             <div className="flex-1 flex flex-col min-w-0 bg-[color:var(--bg-primary)]">
-                <header className="flex items-center justify-between p-4 h-12 border-b border-black/20 shadow-sm flex-shrink-0">
-                    <div><h1 className="text-xl font-bold flex items-center space-x-2 text-[color:var(--header-primary)]"><span className="text-2xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1></div>
+                <header className="flex items-center justify-between p-2 h-12 border-b border-black/20 shadow-sm flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                        <button className="p-2 lg:hidden text-[color:var(--header-secondary)]" onClick={() => setIsChannelsOpen(true)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                        <h1 className="text-lg font-bold flex items-center space-x-2 text-[color:var(--header-primary)]"><span className="text-xl text-[color:var(--channel-icon)]">#</span><span>{activeChannelInfo?.name}</span></h1>
+                    </div>
+                     <button className="p-2 lg:hidden text-[color:var(--header-secondary)]" onClick={() => setIsMembersOpen(true)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-2a6 6 0 00-12 0v2" /></svg>
+                    </button>
                 </header>
                  <div className="flex-1 flex min-h-0">
                     <main className="flex-1 flex flex-col min-h-0">
@@ -325,7 +344,8 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
                         </footer>
                     </main>
 
-                    <aside className="w-60 discord-sidebar-members flex-shrink-0 p-2 flex flex-col">
+                     {/* Members Sidebar */}
+                    <aside className={`fixed inset-y-0 right-0 z-40 w-60 discord-sidebar-members flex-shrink-0 p-2 flex-col pt-20 transform transition-transform duration-300 ease-in-out lg:relative lg:pt-2 lg:flex lg:translate-x-0 ${isMembersOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                          <h2 className="p-2 text-[color:var(--header-secondary)] text-xs font-bold uppercase flex-shrink-0">Miembros — {members.length}</h2>
                         <div className="flex-1 overflow-y-auto pr-1">
                             {members.map(member => (

@@ -326,7 +326,7 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
                         {nextLevel && <p className="text-sm text-text-secondary mt-2 text-right">Faltan {pointsToNext.toLocaleString('es-AR')} puntos</p>}
                     </div>
 
-                    <div className="stats-bar animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                         <div className="stat-card">
                             <div className="stat-icon bg-primary/20 text-primary">✨</div>
                             <div>

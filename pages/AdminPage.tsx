@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, ContactMessage, Report, ReportStatus } from '../types';
 
@@ -267,50 +268,54 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
         if (activeTab === 'messages') {
             if (messages.length === 0) return <div className="text-center p-8 text-text-secondary">No hay mensajes de contacto.</div>;
             return (
-                <table className="w-full text-sm text-left text-text-secondary">
-                    <thead className="text-xs uppercase bg-surface">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">Estado</th><th scope="col" className="px-6 py-3">De</th>
-                            <th scope="col" className="px-6 py-3">Asunto</th><th scope="col" className="px-6 py-3 hidden md:table-cell">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {messages.map(msg => (
-                            <tr key={msg.id} className="border-b border-white/10 hover:bg-surface cursor-pointer" onClick={() => handleSelectItem(msg)}>
-                                <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-bold rounded-full border ${messageStatusStyles[msg.status]}`}>{msg.status === 'unread' ? 'Nuevo' : msg.status === 'read' ? 'Leído' : 'Archivado' }</span></td>
-                                <td className="px-6 py-4 font-medium text-text-main">{msg.name}</td>
-                                <td className="px-6 py-4">{msg.subject}</td>
-                                <td className="px-6 py-4 hidden md:table-cell">{new Date(msg.submitted_at).toLocaleDateString('es-AR')}</td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-text-secondary">
+                        <thead className="text-xs uppercase bg-surface">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Estado</th><th scope="col" className="px-6 py-3">De</th>
+                                <th scope="col" className="px-6 py-3">Asunto</th><th scope="col" className="px-6 py-3 hidden md:table-cell">Fecha</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {messages.map(msg => (
+                                <tr key={msg.id} className="border-b border-white/10 hover:bg-surface cursor-pointer" onClick={() => handleSelectItem(msg)}>
+                                    <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-bold rounded-full border ${messageStatusStyles[msg.status]}`}>{msg.status === 'unread' ? 'Nuevo' : msg.status === 'read' ? 'Leído' : 'Archivado' }</span></td>
+                                    <td className="px-6 py-4 font-medium text-text-main whitespace-nowrap">{msg.name}</td>
+                                    <td className="px-6 py-4">{msg.subject}</td>
+                                    <td className="px-6 py-4 hidden md:table-cell whitespace-nowrap">{new Date(msg.submitted_at).toLocaleDateString('es-AR')}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             );
         }
 
         if (activeTab === 'reports') {
             if (reports.length === 0) return <div className="text-center p-8 text-text-secondary">No hay reportes de Puntos Verdes.</div>;
             return (
-                <table className="w-full text-sm text-left text-text-secondary">
-                   <thead className="text-xs uppercase bg-surface">
-                       <tr>
-                           <th scope="col" className="px-6 py-3">Estado</th><th scope="col" className="px-6 py-3">Punto Verde</th>
-                           <th scope="col" className="px-6 py-3">Reportado Por</th><th scope="col" className="px-6 py-3">Motivo</th>
-                           <th scope="col" className="px-6 py-3 hidden md:table-cell">Fecha</th>
-                       </tr>
-                   </thead>
-                   <tbody>
-                       {reports.map(rep => (
-                           <tr key={rep.id} className="border-b border-white/10 hover:bg-surface cursor-pointer" onClick={() => handleSelectItem(rep)}>
-                               <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-bold rounded-full border ${reportStatusStyles[rep.status]}`}>{rep.status === 'pending' ? 'Pendiente' : rep.status === 'resolved' ? 'Resuelto' : 'Descartado' }</span></td>
-                               <td className="px-6 py-4 font-medium text-text-main">{rep.locationName}</td>
-                               <td className="px-6 py-4">{rep.userName}</td>
-                               <td className="px-6 py-4">{reasonLabels[rep.reason]}</td>
-                               <td className="px-6 py-4 hidden md:table-cell">{new Date(rep.reported_at).toLocaleDateString('es-AR')}</td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-text-secondary">
+                       <thead className="text-xs uppercase bg-surface">
+                           <tr>
+                               <th scope="col" className="px-6 py-3">Estado</th><th scope="col" className="px-6 py-3">Punto Verde</th>
+                               <th scope="col" className="px-6 py-3">Reportado Por</th><th scope="col" className="px-6 py-3">Motivo</th>
+                               <th scope="col" className="px-6 py-3 hidden md:table-cell">Fecha</th>
                            </tr>
-                       ))}
-                   </tbody>
-               </table>
+                       </thead>
+                       <tbody>
+                           {reports.map(rep => (
+                               <tr key={rep.id} className="border-b border-white/10 hover:bg-surface cursor-pointer" onClick={() => handleSelectItem(rep)}>
+                                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-bold rounded-full border ${reportStatusStyles[rep.status]}`}>{rep.status === 'pending' ? 'Pendiente' : rep.status === 'resolved' ? 'Resuelto' : 'Descartado' }</span></td>
+                                   <td className="px-6 py-4 font-medium text-text-main whitespace-nowrap">{rep.locationName}</td>
+                                   <td className="px-6 py-4 whitespace-nowrap">{rep.userName}</td>
+                                   <td className="px-6 py-4">{reasonLabels[rep.reason]}</td>
+                                   <td className="px-6 py-4 hidden md:table-cell whitespace-nowrap">{new Date(rep.reported_at).toLocaleDateString('es-AR')}</td>
+                               </tr>
+                           ))}
+                       </tbody>
+                   </table>
+                </div>
             );
         }
     };
@@ -335,9 +340,7 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
                 </div>
 
                 <div className="modern-card overflow-hidden">
-                    <div className="overflow-x-auto">
-                        {renderContent()}
-                    </div>
+                    {renderContent()}
                 </div>
             </div>
 

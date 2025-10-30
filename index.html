@@ -57,6 +57,7 @@
               'slide-in-left': 'slideInLeft 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
               'slide-in-right': 'slideInRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
               'scale-in': 'scaleIn 0.3s ease-out forwards',
+              'game-shake': 'game-shake 0.5s ease-in-out',
             },
             keyframes: {
               fadeInUp: {
@@ -74,6 +75,11 @@
               scaleIn: {
                 '0%': { transform: 'scale(0.8)', opacity: '0' },
                 '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+               'game-shake': {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+                '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' },
               },
             }
           }
@@ -127,28 +133,6 @@
       .menu-open #hamburger .label .innerLabel:first-child { transform: translateY(-20px); opacity: 0; }
       .menu-open #hamburger .label .innerLabel:last-child { transform: translateY(0); opacity: 1; }
       
-      /* --- Header Login Button --- */
-      .header-login-btn {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        font-family: 'Oswald', sans-serif;
-        text-transform: uppercase;
-        font-size: 0.875rem;
-        border: 1px solid #444;
-        border-radius: 6px;
-        color: #f5f5f5;
-        background-color: transparent;
-        transition: all 0.2s ease;
-        cursor: pointer;
-      }
-      .header-login-btn:hover {
-        background-color: #10B981;
-        border-color: #10B981;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      }
-
       /* --- Header Profile Menu --- */
       .profile-menu-button {
         width: 38px;
@@ -317,8 +301,9 @@
       @keyframes slideOutToRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 0; transform: translateX(100%); } }
 
       /* --- Como Reciclar Page --- */
-      .recycling-tabs { display: flex; border-bottom: 2px solid #444; margin-bottom: 2rem; }
-      .recycling-tab { padding: 0.75rem 1.5rem; font-size: 1.125rem; font-weight: 600; color: #a0a0a0; border-bottom: 3px solid transparent; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+      .recycling-tabs { display: flex; flex-wrap: wrap; border-bottom: 2px solid #444; margin-bottom: 2rem; }
+      .recycling-tab { padding: 0.75rem 1rem; font-size: 1rem; font-weight: 600; color: #a0a0a0; border-bottom: 3px solid transparent; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+       @media (min-width: 640px) { .recycling-tab { font-size: 1.125rem; padding: 0.75rem 1.5rem; } }
       .recycling-tab:hover { color: #f5f5f5; }
       .recycling-tab.active { color: #10B981; border-color: #10B981; }
       .material-content-card { background-color: #212121; border: 1px solid #444; border-radius: 0.75rem; padding: 1.5rem; }
@@ -371,6 +356,8 @@
         --input-bg: #1e1f22; --bg-hover: rgba(70, 72, 78, 0.6); --bg-active: rgba(78, 80, 88, 1);
         --bg-mention: rgba(16, 185, 129, 0.1); --text-mention: #10B981;
         --scrollbar-thumb: #111214; --scrollbar-track: #2b2d31;
+        height: 100vh;
+        overflow: hidden;
       }
       .discord-category-header { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0.25rem 0.5rem; text-transform: uppercase; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
       .category-arrow { width: 1rem; height: 1rem; transition: transform 0.2s ease; }
@@ -444,14 +431,17 @@
 
        /* --- Perfil Page --- */
       .profile-header-card { background-color: #212121; border-radius: 1rem; border: 1px solid #444; overflow: hidden; position: relative; }
-      .profile-banner { height: 200px; background-size: cover; background-position: center; position: relative; }
+      .profile-banner { height: 150px; background-size: cover; background-position: center; position: relative; }
+       @media (min-width: 640px) { .profile-banner { height: 200px; } }
       .profile-banner-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(33,33,33,1) 5%, rgba(33,33,33,0.6) 40%, transparent 100%); }
-      .profile-avatar-wrapper { position: relative; margin-top: -72px; width: 144px; height: 144px; }
+      .profile-avatar-wrapper { position: relative; margin-top: -64px; width: 128px; height: 128px; }
+       @media (min-width: 640px) { .profile-avatar-wrapper { margin-top: -72px; width: 144px; height: 144px; } }
       .profile-avatar { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #212121; object-fit: cover; }
       .profile-level-badge { position: absolute; bottom: 8px; right: 8px; background-color: #10B981; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 3px solid #212121; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
       .edit-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.5); color: white; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; cursor: pointer; }
       .profile-banner:hover .edit-overlay, .profile-avatar-wrapper:hover .edit-overlay { opacity: 1; }
-      .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+      .stats-bar { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+      @media (min-width: 640px) { .stats-bar { grid-template-columns: repeat(3, 1fr); } }
       .stat-card { background-color: #2b2d31; border: 1px solid #444; border-radius: 0.5rem; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
       .stat-icon { font-size: 1.75rem; width: 3rem; height: 3rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
       .stat-value { font-size: 1.5rem; font-weight: bold; color: #f5f5f5; line-height: 1.2; }
@@ -753,6 +743,15 @@
       .carousel-dots .dot.active {
         background-color: #10B981;
       }
+
+      /* --- Game Enhancements --- */
+      @keyframes game-glow-correct { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 100% { box-shadow: 0 0 10px 10px rgba(16, 185, 129, 0); } }
+      @keyframes game-pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+      @keyframes game-swoosh-out { 0% { transform: scale(1) translateY(0); opacity: 1; } 100% { transform: scale(0.2) translateY(-100px); opacity: 0; } }
+      @keyframes game-conveyor-scroll { 0% { background-position: 0 0; } 100% { background-position: -100px 0; } }
+      @keyframes game-sparkle { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.5); opacity: 1; } 70% { transform: scale(0.8); opacity: 1; } }
+      @keyframes game-fall-rotate { 0% { transform: translateY(-50px) rotate(0deg); opacity: 0; } 100% { transform: translateY(0) rotate(var(--end-rotate, 360deg)); opacity: 1; } }
+      @keyframes game-screen-flash { 50% { background-color: rgba(239, 68, 68, 0.3); } }
 
     </style>
     <script type="importmap">

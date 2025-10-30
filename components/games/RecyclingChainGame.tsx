@@ -9,7 +9,7 @@ interface RecyclingChainGameProps {
 }
 
 const binInfo: Record<BinType, { name: string; color: string; icon: string; dropColor: string }> = {
-    plastico: { name: 'Plásticos', color: 'bg-yellow-400', icon: '🍾', dropColor: 'border-yellow-400' },
+    plastico: { name: 'Plásticos', color: 'bg-yellow-500', icon: '🍾', dropColor: 'border-yellow-500' },
     papel: { name: 'Papel', color: 'bg-blue-500', icon: '📦', dropColor: 'border-blue-500' },
     vidrio: { name: 'Vidrio', color: 'bg-green-500', icon: '🫙', dropColor: 'border-green-500' },
     metales: { name: 'Metales', color: 'bg-red-500', icon: '🥫', dropColor: 'border-red-500' },
@@ -23,39 +23,37 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     const [timeLeft, setTimeLeft] = useState(duration);
     const [isFinished, setIsFinished] = useState(false);
     const [isDragging, setIsDragging] = useState<number | null>(null);
+    const [dragOverBin, setDragOverBin] = useState<BinType | null>(null);
+
     const gameAreaRef = useRef<HTMLDivElement>(null);
     const nextItemId = useRef(0);
 
     const spawnItem = useCallback(() => {
+        if (isFinished) return;
         const randomItem = items[Math.floor(Math.random() * items.length)];
         const newItem = {
             item: randomItem,
             id: nextItemId.current++,
-            position: 0,
+            position: -64, // Start off-screen
         };
         setGameItems(prev => [...prev, newItem]);
-    }, [items]);
+    }, [items, isFinished]);
 
     useEffect(() => {
         spawnItem();
-        const spawnInterval = setInterval(() => {
-            if (!isFinished) spawnItem();
-        }, 4000); // Spawn a new item every 4 seconds
-
+        const spawnInterval = setInterval(spawnItem, 4000 - (score / 10)); // Spawns faster as score increases
         return () => clearInterval(spawnInterval);
-    }, [spawnItem, isFinished]);
+    }, [spawnItem, isFinished, score]);
 
     useEffect(() => {
         if (isFinished) return;
-
         const gameLoop = setInterval(() => {
             const gameAreaWidth = gameAreaRef.current?.offsetWidth || 800;
-            const speed = 1 + (score / 100); // Speed increases with score
+            const speed = 1 + (score / 200);
             setGameItems(prev =>
                 prev.map(i => ({ ...i, position: i.position + speed })).filter(i => i.position < gameAreaWidth + 50)
             );
-        }, 16); // ~60 FPS
-
+        }, 16);
         return () => clearInterval(gameLoop);
     }, [isFinished, score]);
 
@@ -63,15 +61,16 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
         if (timeLeft > 0 && !isFinished) {
             const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timer);
-        } else if (timeLeft === 0 && !isFinished) {
+        } else if (timeLeft <= 0 && !isFinished) {
             setIsFinished(true);
-            setTimeout(onComplete, 1000);
+            setTimeout(onComplete, 1500);
         }
     }, [timeLeft, isFinished, onComplete]);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, itemId: number) => {
         setIsDragging(itemId);
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setDragImage(new Image(), 0, 0); // Hide default drag preview
     };
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, bin: BinType) => {
@@ -89,30 +88,37 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
             setGameItems(prev => prev.filter(i => i.id !== isDragging));
         }
         setIsDragging(null);
+        setDragOverBin(null);
     };
 
     if (isFinished) {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up bg-surface rounded-lg">
-                <div className="text-6xl mb-4">🏆</div>
-                <h2 className="text-2xl font-bold text-text-main">¡Tiempo!</h2>
-                <p className="text-text-secondary mt-2">Tu puntaje final es <strong className="text-primary">{score}</strong>. ¡Ganaste EcoPuntos!</p>
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
+                <div className="text-7xl mb-4">🏆</div>
+                <h2 className="text-3xl font-bold text-text-main">¡Se acabó el tiempo!</h2>
+                 <p className="text-text-secondary mt-2 text-lg">Tu puntaje final es <strong className="text-primary">{score}</strong>.</p>
+                <p className="font-bold text-primary text-xl mt-4">¡Ganaste {score} EcoPuntos!</p>
             </div>
         );
     }
     
     return (
-        <div className="w-full h-full flex flex-col items-center justify-between p-2 bg-surface rounded-lg text-text-main">
-            <header className="w-full flex justify-between items-center text-xl font-bold">
+        <div className="w-full h-full flex flex-col items-center justify-between p-2 sm:p-4 bg-surface rounded-lg text-text-main">
+            <header className="w-full flex justify-between items-center text-lg sm:text-xl font-bold px-2">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
-                {combo > 1 && <div className="text-primary animate-bounce">COMBO x{combo}!</div>}
-                <div>Tiempo: <span className="text-primary">{timeLeft}s</span></div>
+                {combo > 1 && <div className="text-primary text-2xl font-black animate-bounce">COMBO x{combo}!</div>}
+                <div>Tiempo: <span className={`transition-colors ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>{timeLeft}s</span></div>
             </header>
 
-            <div ref={gameAreaRef} className="relative w-full h-48 my-4 bg-background rounded-lg overflow-hidden">
-                {/* Conveyor Belt */}
-                <div className="absolute inset-0 bg-slate-800"></div>
-                <div className="absolute top-1/2 -translate-y-1/2 w-full h-24 bg-slate-700 opacity-50"></div>
+            <div ref={gameAreaRef} className="relative w-full h-48 my-4 bg-slate-800 rounded-lg overflow-hidden border-y-4 border-slate-900">
+                <div 
+                    className="absolute inset-0"
+                    style={{ 
+                        backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.05) 75%, transparent 75%, transparent)',
+                        backgroundSize: '100px 100px',
+                        animation: 'game-conveyor-scroll 2s linear infinite',
+                    }}
+                ></div>
                 
                 {gameItems.map(({ item, id, position }) => (
                     <div
@@ -120,26 +126,29 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
                         draggable
                         onDragStart={e => handleDragStart(e, id)}
                         onDragEnd={() => setIsDragging(null)}
-                        className="absolute top-1/2 -translate-y-1/2 w-16 h-16 bg-surface rounded-md shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-800"
+                        className={`absolute top-1/2 -translate-y-1/2 w-20 h-20 bg-background rounded-md shadow-lg flex flex-col items-center justify-center p-1 cursor-grab active:cursor-grabbing text-slate-800 transition-transform ${isDragging === id ? 'scale-110 rotate-6' : ''}`}
                         style={{ left: `${position}px` }}
                     >
-                        <span className="text-4xl">{item.image}</span>
+                        <span className="text-4xl pointer-events-none">{item.image}</span>
+                        {/* FIX: Changed item.item.name to item.name */}
+                        <span className="text-xs font-semibold text-text-main pointer-events-none">{item.name}</span>
                     </div>
                 ))}
             </div>
 
-            <footer className="w-full grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <footer className={`w-full grid grid-cols-2 md:grid-cols-${Math.min(bins.length, 5)} gap-2 sm:gap-4`}>
                 {bins.map(bin => {
                     const info = binInfo[bin];
                     return (
                         <div
                             key={bin}
-                            onDragOver={(e) => e.preventDefault()}
+                            onDragOver={(e) => { e.preventDefault(); setDragOverBin(bin); }}
+                            onDragLeave={() => setDragOverBin(null)}
                             onDrop={(e) => handleDrop(e, bin)}
-                            className={`p-2 sm:p-4 rounded-lg text-white font-bold flex flex-col items-center justify-center transition-all duration-200 border-4 border-transparent ${info.color} ${isDragging ? `hover:${info.dropColor}` : ''}`}
+                            className={`p-2 py-4 sm:p-4 rounded-lg text-white font-bold flex flex-col items-center justify-end h-32 sm:h-40 transition-all duration-200 border-4 ${dragOverBin === bin ? info.dropColor : 'border-transparent'} ${info.color}`}
                         >
-                            <span className="text-3xl">{info.icon}</span>
-                            <span className="text-sm hidden sm:block">{info.name}</span>
+                            <span className="text-4xl sm:text-5xl">{info.icon}</span>
+                            <span className="text-sm sm:text-base mt-2">{info.name}</span>
                         </div>
                     );
                 })}
