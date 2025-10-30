@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
@@ -460,13 +458,66 @@ app.delete('/api/games/:id', async (req, res) => {
 
 
 // --- Community Endpoints ---
+let communityChannels = [
+    { id: 1, name: 'general', description: 'Charlas generales' },
+    { id: 2, name: 'dudas', description: 'Preguntas sobre reciclaje' },
+    { id: 3, name: 'anuncios', description: 'Anuncios importantes', admin_only_write: true },
+];
+let nextChannelId = 4;
+
+const isAdmin = async (req, res, next) => {
+    const { userId, userRole } = req.body;
+    if (userRole === 'dueño' || userRole === 'moderador') {
+        return next();
+    }
+    if (userId) {
+        try {
+            const [users] = await db.query('SELECT role FROM users WHERE id = ?', [userId]);
+            if (users.length > 0 && (users[0].role === 'dueño' || users[0].role === 'moderador')) {
+                return next();
+            }
+        } catch (e) {
+            return res.status(500).json({ message: "Error de servidor." });
+        }
+    }
+    return res.status(403).json({ message: 'No tienes permiso para realizar esta acción.' });
+};
+
 app.get('/api/community/channels', async (req, res) => {
-    // For now, channels are static. Could be moved to DB.
-    res.json([
-        { id: 1, name: 'general', description: 'Charlas generales' },
-        { id: 2, name: 'dudas', description: 'Preguntas sobre reciclaje' },
-        { id: 3, name: 'anuncios', description: 'Anuncios importantes', admin_only_write: true },
-    ]);
+    res.json(communityChannels);
+});
+
+app.post('/api/community/channels', isAdmin, async (req, res) => {
+    const { name, description, admin_only_write } = req.body;
+    if (!name || !description) {
+        return res.status(400).json({ message: 'Nombre y descripción son requeridos.' });
+    }
+    const newChannel = {
+        id: nextChannelId++,
+        name: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        description,
+        admin_only_write: !!admin_only_write
+    };
+    communityChannels.push(newChannel);
+    res.status(201).json(newChannel);
+});
+
+app.delete('/api/community/channels/:id', isAdmin, async (req, res) => {
+    const channelId = parseInt(req.params.id, 10);
+    const channelIndex = communityChannels.findIndex(c => c.id === channelId);
+
+    if (channelIndex === -1) return res.status(404).json({ message: 'Canal no encontrado.' });
+    if (channelId === 1) return res.status(400).json({ message: 'No se puede eliminar el canal #general.' });
+
+    communityChannels.splice(channelIndex, 1);
+    
+    try {
+        await db.query('DELETE FROM community_messages WHERE channel_id = ?', [channelId]);
+    } catch(error) {
+        console.error(`[DELETE CHANNEL MESSAGES] Error:`, error);
+    }
+    
+    res.status(200).json({ message: 'Canal eliminado.' });
 });
 
 app.get('/api/community/members', async (req, res) => {
