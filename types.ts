@@ -69,7 +69,7 @@ export interface Achievement {
   };
 }
 
-export type Material = 'papel' | 'plastico' | 'vidrio' | 'metales';
+export type Material = 'papel' | 'plastico' | 'vidrio' | 'metales' | 'organico';
 
 export interface QuizQuestion {
   question: string;

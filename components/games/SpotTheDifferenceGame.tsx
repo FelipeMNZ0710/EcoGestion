@@ -14,7 +14,7 @@ const SpotTheDifferenceGame: React.FC<SpotTheDifferenceGameProps> = ({ onComplet
     }, [onComplete]);
 
     return (
-        <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg">
+        <div className="w-full h-full flex items-center justify-center text-center flex-col">
             <div className="text-7xl mb-4">👀</div>
             <h2 className="text-3xl font-bold text-text-main">Encuentra las Diferencias</h2>
             <p className="text-text-secondary mt-4">Este juego estará disponible próximamente. ¡Vuelve pronto!</p>

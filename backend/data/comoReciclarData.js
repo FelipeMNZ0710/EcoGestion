@@ -1,4 +1,5 @@
 
+
 const materialsContent = {
   papel: {
     yes: [
@@ -124,7 +125,7 @@ const materialsContent = {
       { text: "Latas de conserva (atún, tomate, arvejas)", icon: "🥫" },
       { text: "Tapas de metal de frascos y botellas", icon: "🔩" },
       { text: "Aerosoles vacíos (desodorante, insecticida)", icon: "💨" },
-      { text: "Papel de aluminio limpio y compactado", icon: " Foil " },
+      { text: "Papel de aluminio limpio y compactado", icon: "✨" },
     ],
     no: [
       { text: "Pilas y baterías", icon: "🔋" },
@@ -156,7 +157,47 @@ const materialsContent = {
         { stat: 'Acero en uso', value: '~75%', icon: '🏗️' },
         { stat: 'Veces Reciclable', value: '∞', icon: '🔄' }
     ]
-  }
+  },
+  organico: {
+    yes: [
+      { text: "Cáscaras de frutas y verduras", icon: "🍌" },
+      { text: "Restos de café y saquitos de té", icon: "☕" },
+      { text: "Cáscaras de huevo", icon: "🥚" },
+      { text: "Hojas secas, pasto y ramas pequeñas", icon: "🍂" },
+      { text: "Yerba mate usada", icon: "🧉" }
+    ],
+    no: [
+      { text: "Carnes, huesos y pescado", icon: "🍖" },
+      { text: "Lácteos (queso, yogurt)", icon: "🧀" },
+      { text: "Aceites y grasas", icon: "🥑" },
+      { text: "Alimentos cocinados o procesados", icon: "🍝" },
+      { text: "Excrementos de mascotas", icon: "💩" },
+    ],
+    tip: "El secreto de un buen compost es el equilibrio. Mezcla una parte de residuos 'húmedos' (frutas, verduras) con dos partes de 'secos' (hojas, cartón).",
+    quiz: {
+      points: 50,
+      questions: [
+        { question: "¿Se pueden tirar restos de carne a la compostera?", options: ['Sí, es orgánico', 'No, atrae plagas y genera mal olor', 'Solo si está cocida'], correctAnswer: 1 },
+        { question: "¿Qué se obtiene al final del proceso de compostaje?", options: ['Un tipo de plástico', 'Tierra fértil (abono)', 'Gas natural'], correctAnswer: 1 },
+      ],
+    },
+    commonMistakes: [
+        "Añadir solo residuos de cocina (húmedos), creando una mezcla pastosa y maloliente.",
+        "No airear la compostera, lo que impide la correcta descomposición.",
+        "Agregar productos no compostables como plásticos o metales."
+    ],
+    recyclingProcess: [
+        { step: 1, title: 'Recolecta tus Orgánicos', description: 'Junta los residuos de cocina permitidos en un recipiente. ¡No olvides los secos como hojas o cartón!', icon: '🧺' },
+        { step: 2, title: 'Arma las Capas', description: 'En tu compostera, alterna capas de residuos húmedos (verdes) con capas de residuos secos (marrones).', icon: '📚' },
+        { step: 3, title: 'Mantén y Airea', description: 'Asegúrate de que la mezcla esté húmeda (no mojada) y remuévela una vez por semana para oxigenarla.', icon: '💨' },
+        { step: 4, title: '¡Cosecha tu Abono!', description: 'En unos meses, la parte inferior de tu compostera se habrá convertido en tierra oscura y rica, ¡lista para tus plantas!', icon: '🌱' }
+    ],
+    impactStats: [
+        { stat: 'Reducción de Basura', value: '~50%', icon: '🗑️' },
+        { stat: 'Abono 100% Natural', value: 'Gratis', icon: '🌿' },
+        { stat: 'Reduce Gases de Efecto Invernadero', value: 'CH₄', icon: '💨' }
+    ]
+  },
 };
 
 module.exports = materialsContent;

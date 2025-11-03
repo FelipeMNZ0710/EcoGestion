@@ -20,5 +20,10 @@ export const sabiasQueData: Record<Material, string[]> = {
         "El aluminio puede reciclarse indefinidamente. Se estima que el 75% de todo el aluminio producido en la historia todavía está en uso hoy.",
         "Reciclar una sola lata de aluminio ahorra el 95% de la energía necesaria para producir una nueva desde cero.",
         "El acero es el material más reciclado del planeta, principalmente porque sus propiedades magnéticas facilitan su separación de otros residuos."
+    ],
+    organico: [
+        "Casi el 50% de la basura que generamos en nuestros hogares es materia orgánica que podría ser compostada.",
+        "El compostaje reduce significativamente la emisión de metano, un gas de efecto invernadero 25 veces más potente que el dióxido de carbono.",
+        "El abono resultante del compost mejora la estructura del suelo, ayuda a retener la humedad y reduce la necesidad de fertilizantes químicos."
     ]
 };

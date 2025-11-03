@@ -96,7 +96,7 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
 
     if (isFinished) {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">🏆</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Se acabó el tiempo!</h2>
                 {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
@@ -107,7 +107,7 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     }
     
     return (
-        <div className="w-full h-full flex flex-col items-center justify-between p-2 sm:p-4 bg-surface rounded-lg text-text-main">
+        <div className="w-full h-full flex flex-col items-center justify-between text-text-main">
             <header className="w-full flex justify-between items-center text-lg sm:text-xl font-bold px-2">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
                 {combo > 1 && <div className="text-primary text-2xl font-black animate-bounce">COMBO x{combo}!</div>}

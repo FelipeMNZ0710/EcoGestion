@@ -96,7 +96,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete, userHighScor
 
     if (isFinished) {
         return (
-             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
+             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">🧠</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Memoria Prodigiosa!</h2>
                 {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
@@ -113,7 +113,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ cards, onComplete, userHighScor
     const gridCols = gameCards.length > 12 ? 'grid-cols-4 md:grid-cols-6' : 'grid-cols-3 md:grid-cols-4';
 
     return (
-        <div className="w-full h-full flex flex-col items-center bg-surface rounded-lg p-4">
+        <div className="w-full h-full flex flex-col items-center">
             <div className="w-full flex justify-between items-center mb-4 text-lg font-bold text-text-main px-2">
                 <span>Movimientos: {moves}</span>
                 <span>Tiempo: {seconds}s</span>

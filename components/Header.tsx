@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Page, User } from '../types';
 import { navigationData } from '../data/navigationData';
-import LoginModal from './LoginModal';
+import { LoginModal } from './LoginModal';
 
 interface HeaderProps {
   currentPage: Page;

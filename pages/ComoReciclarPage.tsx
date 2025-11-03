@@ -4,12 +4,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { sabiasQueData } from '../data/sabiasQueData';
 import TriviaGame from '../components/games/TriviaGame';
 
-const materialTypes: Material[] = ['papel', 'plastico', 'vidrio', 'metales'];
+const materialTypes: Material[] = ['papel', 'plastico', 'vidrio', 'metales', 'organico'];
 const materialNames: Record<Material, string> = {
     papel: 'Papel y Cartón',
     plastico: 'Plásticos',
     vidrio: 'Vidrio',
-    metales: 'Metales'
+    metales: 'Metales',
+    organico: 'Orgánicos y Compost'
 };
 
 const PulsingScanner: React.FC = () => (
@@ -34,9 +35,9 @@ const MaterialInfoList: React.FC<{ title: string; items: MaterialContentItem[]; 
     </div>
 );
 
-const RecyclingProcess: React.FC<{ steps: ProcessStep[] }> = ({ steps }) => (
+const RecyclingProcess: React.FC<{ steps: ProcessStep[], title?: string }> = ({ steps, title = "El Viaje del Reciclaje" }) => (
     <div className="material-content-card">
-        <h2 className="text-2xl font-bold font-display text-center text-text-main mb-6">El Viaje del Reciclaje</h2>
+        <h2 className="text-2xl font-bold font-display text-center text-text-main mb-6">{title}</h2>
         <div className="process-timeline">
             {steps.map(step => (
                 <div key={step.step} className="process-step">
@@ -208,7 +209,7 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
     };
     
     const content = guidesContent ? guidesContent[activeTab] : null;
-    const facts = sabiasQueData[activeTab];
+    const facts = sabiasQueData[activeTab] || [];
 
     if (isLoading || !content) {
         return (
@@ -310,8 +311,8 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
 
                 <div className="space-y-8">
                     <div className="flex flex-col md:flex-row gap-8">
-                        <MaterialInfoList title="Qué SÍ reciclar" items={content.yes} colorClass="text-emerald-400" />
-                        <MaterialInfoList title="Qué NO reciclar" items={content.no} colorClass="text-red-400" />
+                        <MaterialInfoList title={activeTab === 'organico' ? "Qué SÍ compostar" : "Qué SÍ reciclar"} items={content.yes} colorClass="text-emerald-400" />
+                        <MaterialInfoList title={activeTab === 'organico' ? "Qué NO compostar" : "Qué NO reciclar"} items={content.no} colorClass="text-red-400" />
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -321,7 +322,7 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
                     </div>
                     
                     <div className="grid lg:grid-cols-2 gap-8">
-                        <RecyclingProcess steps={content.recyclingProcess} />
+                        <RecyclingProcess steps={content.recyclingProcess} title={activeTab === 'organico' ? 'El Proceso del Compostaje' : 'El Viaje del Reciclaje'} />
                         <ImpactStats stats={content.impactStats} />
                     </div>
 

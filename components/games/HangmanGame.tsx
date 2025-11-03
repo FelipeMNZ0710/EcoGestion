@@ -103,7 +103,7 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighSc
 
     if (gameState !== 'playing') {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-4 sm:p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
+            <div className="w-full h-full flex items-center justify-center text-center p-4 sm:p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className={`text-7xl mb-4 ${gameState === 'won' ? 'animate-bounce' : ''}`}>{gameState === 'won' ? '🎉' : '😥'}</div>
                 <h2 className="text-3xl font-bold text-text-main">{gameState === 'won' ? '¡Lo Adivinaste!' : '¡Planeta Contaminado!'}</h2>
                 <p className="text-text-secondary mt-2 text-lg">La palabra era: <strong className="text-primary">{word}</strong></p>
@@ -123,7 +123,7 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighSc
     }
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-around bg-surface rounded-lg text-text-main p-2">
+        <div className="w-full h-full flex flex-col items-center justify-around text-text-main">
             <SadPlanet mistakes={incorrectGuesses} />
             
             <div className="text-center">

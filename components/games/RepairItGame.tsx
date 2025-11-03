@@ -65,7 +65,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
 
     if (isFinished) {
         return (
-             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
+             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">🛠️</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
                  {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
@@ -78,7 +78,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
     if (!currentItem) return <div className="text-text-main">Cargando...</div>;
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-between p-2 sm:p-4 bg-surface rounded-lg text-text-main relative overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center justify-between text-text-main relative overflow-hidden">
             {flyingTool && (
                  <div
                     className="absolute text-5xl z-10 transition-all duration-300 ease-in-out"

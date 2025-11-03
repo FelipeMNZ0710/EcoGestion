@@ -120,7 +120,7 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
 
     if (isFinished) {
         return (
-            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col bg-surface rounded-lg" style={{ animation: 'game-pop-in 0.5s' }}>
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
                 <div className="text-7xl mb-4">♻️</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
                 {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
@@ -131,7 +131,7 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     }
     
     return (
-        <div className={`w-full h-full flex flex-col items-center p-2 relative bg-surface rounded-lg text-text-main overflow-hidden ${flash ? 'animate-pulse' : ''}`} onMouseMove={handleMouseMove} ref={gameAreaRef} style={{ animation: flash ? 'game-screen-flash 0.2s' : 'none' }}>
+        <div className={`w-full h-full flex flex-col items-center relative text-text-main overflow-hidden ${flash ? 'animate-pulse' : ''}`} onMouseMove={handleMouseMove} ref={gameAreaRef} style={{ animation: flash ? 'game-screen-flash 0.2s' : 'none' }}>
              <header className="w-full flex justify-between items-center text-lg sm:text-xl font-bold z-10 p-2">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
                 <div className="flex gap-2 items-center">Vidas: {'❤️'.repeat(lives)}<span className="text-red-500/50">{'❤️'.repeat(Math.max(0, initialLives - lives))}</span></div>

@@ -50,8 +50,7 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose,
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
-        <div className="relative max-w-xl mx-auto p-4 sm:p-6 h-full flex flex-col justify-between text-text-main bg-surface rounded-lg">
-            <button onClick={onClose} className="absolute top-2 right-2 text-3xl leading-none px-2 text-text-secondary hover:text-text-main rounded-full transition-colors z-10">&times;</button>
+        <div className="relative max-w-xl mx-auto h-full flex flex-col justify-between text-text-main">
             {!isFinished ? (
                 <>
                     <div>
