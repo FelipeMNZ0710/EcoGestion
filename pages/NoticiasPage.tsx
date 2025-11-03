@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { User, NewsArticle, ContentBlock } from '../types';
 import NewsDetailModal from '../components/NewsDetailModal';
+import FeaturedNewsCarousel from '../components/FeaturedNewsCarousel';
 
 const NewsCard: React.FC<{ 
     article: NewsArticle; 
@@ -354,8 +355,8 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         return () => observer.disconnect();
     }, [filteredArticles]);
     
-    const heroArticle = useMemo(() => filteredArticles.find(a => a.featured), [filteredArticles]);
-    const regularArticles = useMemo(() => filteredArticles.filter(a => a.id !== heroArticle?.id), [filteredArticles, heroArticle]);
+    const featuredArticles = useMemo(() => filteredArticles.filter(a => a.featured), [filteredArticles]);
+    const regularArticles = useMemo(() => filteredArticles.filter(a => !a.featured), [filteredArticles]);
     
     const handleOpenEditModal = (article: NewsArticle | null = null) => {
         setEditingArticle(article);
@@ -420,29 +421,46 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
 
                 {!isLoading && (
                     <>
-                        {heroArticle && (
-                            <section className="mb-12 relative rounded-xl overflow-hidden modern-card cursor-pointer" onClick={() => setSelectedArticle(heroArticle)}>
-                                {isAdminMode && (
-                                    <div className="card-admin-controls">
-                                        <button onClick={(e) => { e.stopPropagation(); handleOpenEditModal(heroArticle); }} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteArticle(heroArticle.id); }} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        {featuredArticles.length > 0 && (
+                            <section className="mb-12">
+                                <h2 className="text-3xl font-display text-text-main mb-6">Destacadas</h2>
+                                {featuredArticles.length === 1 && (
+                                    <div className="relative rounded-xl overflow-hidden modern-card cursor-pointer" onClick={() => setSelectedArticle(featuredArticles[0])}>
+                                        {isAdminMode && (
+                                            <div className="card-admin-controls">
+                                                <button onClick={(e) => { e.stopPropagation(); handleOpenEditModal(featuredArticles[0]); }} className="admin-action-button" title="Editar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg></button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteArticle(featuredArticles[0].id); }} className="admin-action-button delete" title="Eliminar noticia"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                            </div>
+                                        )}
+                                        <img src={featuredArticles[0].image} alt={featuredArticles[0].title} className="w-full h-[50vh] object-cover" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                                        <div className="absolute bottom-0 left-0 p-8 text-white">
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-sm font-semibold bg-primary px-3 py-1 rounded-full">{featuredArticles[0].category}</span>
+                                                <span className="text-sm text-slate-300">{ new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${featuredArticles[0].date}T00:00:00`)) }</span>
+                                            </div>
+                                            <h1 className="text-3xl lg:text-5xl font-bold font-display mt-4 leading-tight">{featuredArticles[0].title}</h1>
+                                            <p className="mt-2 text-slate-300 max-w-2xl hidden md:block">{featuredArticles[0].excerpt}</p>
+                                        </div>
                                     </div>
                                 )}
-                                <img src={heroArticle.image} alt={heroArticle.title} className="w-full h-[50vh] object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                                <div className="absolute bottom-0 left-0 p-8 text-white">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-sm font-semibold bg-primary px-3 py-1 rounded-full">{heroArticle.category}</span>
-                                        <span className="text-sm text-slate-300">{ new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${heroArticle.date}T00:00:00`)) }</span>
-                                    </div>
-                                    <h1 className="text-3xl lg:text-5xl font-bold font-display mt-4 leading-tight">{heroArticle.title}</h1>
-                                    <p className="mt-2 text-slate-300 max-w-2xl hidden md:block">{heroArticle.excerpt}</p>
-                                </div>
+                                {featuredArticles.length > 1 && (
+                                    <FeaturedNewsCarousel 
+                                        articles={featuredArticles}
+                                        onArticleClick={setSelectedArticle}
+                                        onEdit={handleOpenEditModal}
+                                        onDelete={handleDeleteArticle}
+                                        isAdminMode={isAdminMode}
+                                    />
+                                )}
                             </section>
                         )}
 
                         <div className="grid lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2">
+                                {regularArticles.length > 0 && (
+                                     <h2 className="text-3xl font-display text-text-main mb-6">Todas las Noticias</h2>
+                                )}
                                 <div className="grid md:grid-cols-2 gap-6">
                                     {regularArticles.map(article => 
                                         <NewsCard key={article.id} article={article} isAdminMode={isAdminMode} 

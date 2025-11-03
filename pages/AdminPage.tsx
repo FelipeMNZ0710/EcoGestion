@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, ContactMessage, Report, ReportStatus, UserRole, Achievement } from '../types';
 import AchievementsModal from '../components/AchievementsModal';
@@ -37,7 +38,7 @@ const ReplyModal: React.FC<{
 
     useEffect(() => {
         if (isOpen) {
-            setBody('');
+            setBody(`\n\n---\nEquipo de EcoGestión`);
             setError('');
             setIsSending(false);
         }
@@ -93,6 +94,7 @@ const ReplyModal: React.FC<{
                     <div className="flex justify-end space-x-3 pt-6">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>
                         <button type="submit" disabled={isSending} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:bg-slate-500 flex items-center">
+                            {/* FIX: Complete SVG path and add button text */}
                             {isSending && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
                             {isSending ? 'Enviando...' : 'Enviar Respuesta'}
                         </button>
@@ -103,394 +105,272 @@ const ReplyModal: React.FC<{
     );
 };
 
-const UserEditModal: React.FC<{
+const EditUserModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    userToEdit: User;
-    onSave: (userId: string, data: { name: string, role: UserRole, points: number }) => Promise<void>;
-}> = ({ isOpen, onClose, userToEdit, onSave }) => {
-    const [name, setName] = useState('');
-    const [role, setRole] = useState<UserRole>('usuario');
-    const [points, setPoints] = useState(0);
+    user: User | null;
+    onSave: (updatedUser: Partial<User>) => void;
+}> = ({ isOpen, onClose, user, onSave }) => {
+    const [formData, setFormData] = useState<Partial<User>>({});
 
     useEffect(() => {
-        if (userToEdit && isOpen) {
-            setName(userToEdit.name);
-            setRole(userToEdit.role);
-            setPoints(userToEdit.points);
+        if (user) {
+            setFormData({ name: user.name, role: user.role, points: user.points });
         }
-    }, [userToEdit, isOpen]);
+    }, [user, isOpen]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !user) return null;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        await onSave(userToEdit.id, { name, role, points });
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: name === 'points' ? Number(value) : value }));
     };
-    
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(formData);
+        onClose();
+    };
+
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <form onSubmit={handleSubmit} className="p-6">
-                    <h2 className="text-xl font-bold">Editar Usuario</h2>
-                    <div className="space-y-4 modal-form mt-4">
-                        <div><label>Nombre</label><input type="text" value={name} onChange={e => setName(e.target.value)} required /></div>
-                        <div><label>Rol</label><select value={role} onChange={e => setRole(e.target.value as UserRole)}><option value="usuario">Usuario</option><option value="moderador">Moderador</option><option value="dueño">Dueño</option></select></div>
-                        <div><label>EcoPuntos</label><input type="number" value={points} onChange={e => setPoints(Number(e.target.value))} required /></div>
+                <form onSubmit={handleSubmit} className="p-6 modal-form">
+                    <h2 className="text-xl font-bold font-display text-text-main mb-4">Editar Usuario: {user.name}</h2>
+                    <div className="space-y-4">
+                        <div><label>Nombre</label><input type="text" name="name" value={formData.name || ''} onChange={handleChange} /></div>
+                        <div><label>Rol</label>
+                            <select name="role" value={formData.role} onChange={handleChange}>
+                                <option value="usuario">Usuario</option>
+                                <option value="moderador">Moderador</option>
+                                <option value="dueño">Dueño</option>
+                            </select>
+                        </div>
+                        <div><label>EcoPuntos</label><input type="number" name="points" value={formData.points || 0} onChange={handleChange} /></div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-6">
+                    <div className="flex justify-end space-x-3 pt-6">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 rounded-md">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md">Guardar</button>
+                        <button type="submit" className="px-4 py-2 bg-primary rounded-md text-white">Guardar</button>
                     </div>
                 </form>
             </div>
         </div>
-    )
+    );
 };
+
+
+const MessagesPanel: React.FC<{ messages: ContactMessage[], onUpdateStatus: (id: number, status: ContactMessage['status']) => void, onReply: (message: ContactMessage) => void }> = ({ messages, onUpdateStatus, onReply }) => (
+    <div className="space-y-4">
+        {messages.map(msg => (
+            <details key={msg.id} className="modern-card p-4">
+                <summary className="flex justify-between items-center cursor-pointer">
+                    <div className="flex-1">
+                        <p className="font-bold text-text-main">{msg.subject}</p>
+                        <p className="text-sm text-text-secondary">{msg.name} ({msg.email})</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${messageStatusStyles[msg.status]}`}>{msg.status}</span>
+                        <span className="text-sm text-text-secondary">{new Date(msg.submitted_at).toLocaleDateString()}</span>
+                    </div>
+                </summary>
+                <div className="mt-4 pt-4 border-t border-white/10 text-text-secondary">
+                    <p>{msg.message}</p>
+                    <div className="mt-4 flex gap-2">
+                        <button onClick={() => onReply(msg)} className="px-3 py-1 text-sm bg-primary rounded-md text-white">Responder</button>
+                        {msg.status !== 'read' && <button onClick={() => onUpdateStatus(msg.id, 'read')} className="px-3 py-1 text-sm bg-slate-600 rounded-md">Marcar como Leído</button>}
+                        {msg.status !== 'archived' && <button onClick={() => onUpdateStatus(msg.id, 'archived')} className="px-3 py-1 text-sm bg-slate-700 rounded-md">Archivar</button>}
+                    </div>
+                </div>
+            </details>
+        ))}
+    </div>
+);
+
+const ReportsPanel: React.FC<{ reports: Report[], onUpdateStatus: (id: number, status: ReportStatus) => void }> = ({ reports, onUpdateStatus }) => (
+     <div className="space-y-4">
+        {reports.map(rep => (
+            <details key={rep.id} className="modern-card p-4">
+                <summary className="flex justify-between items-center cursor-pointer">
+                    <div>
+                        <p className="font-bold text-text-main">{reasonLabels[rep.reason]} en <span className="text-primary">{rep.locationName}</span></p>
+                        <p className="text-sm text-text-secondary">Reportado por: {rep.userName}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${reportStatusStyles[rep.status]}`}>{rep.status}</span>
+                </summary>
+                <div className="mt-4 pt-4 border-t border-white/10 text-text-secondary space-y-3">
+                    {rep.comment && <p><strong>Comentario:</strong> {rep.comment}</p>}
+                    {rep.imageUrl && <div><p><strong>Imagen Adjunta:</strong></p><img src={rep.imageUrl} alt="Reporte" className="max-w-xs rounded-lg mt-2"/></div>}
+                    <div className="flex gap-2">
+                        {rep.status !== 'resolved' && <button onClick={() => onUpdateStatus(rep.id, 'resolved')} className="px-3 py-1 text-sm bg-emerald-500/20 text-emerald-300 rounded-md">Marcar como Resuelto</button>}
+                        {rep.status !== 'dismissed' && <button onClick={() => onUpdateStatus(rep.id, 'dismissed')} className="px-3 py-1 text-sm bg-slate-600 rounded-md">Desestimar</button>}
+                    </div>
+                </div>
+            </details>
+        ))}
+    </div>
+);
+
+const UsersPanel: React.FC<{ users: User[], onEdit: (user: User) => void, onDelete: (id: string) => void, onManageAchievements: (user: User) => void }> = ({ users, onEdit, onDelete, onManageAchievements }) => (
+    <div className="modern-card overflow-x-auto">
+        <table className="w-full text-left">
+            <thead className="bg-surface text-xs text-text-secondary uppercase">
+                <tr>
+                    <th className="p-4">Nombre</th>
+                    <th className="p-4">Email</th>
+                    <th className="p-4">Rol</th>
+                    <th className="p-4">EcoPuntos</th>
+                    <th className="p-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {users.map(u => (
+                    <tr key={u.id} className="border-b border-white/10 hover:bg-surface">
+                        <td className="p-4 font-medium text-text-main">{u.name}</td>
+                        <td className="p-4">{u.email}</td>
+                        <td className="p-4">{u.role}</td>
+                        <td className="p-4">{u.points}</td>
+                        <td className="p-4 flex gap-2">
+                            <button onClick={() => onEdit(u)} className="text-sm text-blue-400 hover:underline">Editar</button>
+                            <button onClick={() => onManageAchievements(u)} className="text-sm text-amber-400 hover:underline">Logros</button>
+                            <button onClick={() => onDelete(u.id)} className="text-sm text-red-400 hover:underline">Eliminar</button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+);
 
 
 const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('messages');
     const [messages, setMessages] = useState<ContactMessage[]>([]);
     const [reports, setReports] = useState<Report[]>([]);
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [selectedItem, setSelectedItem] = useState<ContactMessage | Report | null>(null);
+    const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
-    const [replyData, setReplyData] = useState<{ email: string; subject: string } | null>(null);
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const [replyingTo, setReplyingTo] = useState<ContactMessage | null>(null);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
-    const [achievementsUser, setAchievementsUser] = useState<User | null>(null);
     const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState(false);
 
-    const fetchAllData = useCallback(async (tab: AdminTab) => {
+    const fetchData = useCallback(async (tab: AdminTab) => {
         if (!user) return;
         setIsLoading(true);
-        const cacheBuster = `?t=${new Date().getTime()}&adminUserId=${user.id}`;
-        let endpoint = '';
-        switch(tab) {
-            case 'messages': endpoint = 'messages'; break;
-            case 'reports': endpoint = 'reports'; break;
-            case 'users':
-                if (user.role === 'dueño') endpoint = 'users';
-                else { setIsLoading(false); return; }
-                break;
-        }
-
+        setError(null);
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/${endpoint}${cacheBuster}`);
-            if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
+            const response = await fetch(`http://localhost:3001/api/admin/${tab}?adminUserId=${user.id}`);
+            if (!response.ok) throw new Error(`Error ${response.status}: No se pudo obtener los datos.`);
             const data = await response.json();
-
             if (tab === 'messages') setMessages(data);
-            else if (tab === 'reports') setReports(data);
-            else if (tab === 'users') setAllUsers(data);
-        } catch (error) {
-            console.error(`Error fetching ${tab}:`, error);
+            if (tab === 'reports') setReports(data);
+            if (tab === 'users') setUsers(data);
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setIsLoading(false);
         }
     }, [user]);
 
     useEffect(() => {
-        fetchAllData(activeTab);
-    }, [activeTab, fetchAllData]);
+        fetchData(activeTab);
+    }, [activeTab, fetchData]);
 
-    const handleUpdateMessageStatus = async (messageId: number, status: ContactMessage['status']) => {
-        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status } : m));
-        if (selectedItem && 'id' in selectedItem && selectedItem.id === messageId) {
-            setSelectedItem(prev => prev ? { ...prev, status } as ContactMessage : null);
-        }
+    const handleUpdateStatus = async (type: 'messages' | 'reports', id: number, status: string) => {
         try {
-            await fetch(`http://localhost:3001/api/admin/messages/${messageId}`, {
+            await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status }),
+                body: JSON.stringify({ status, adminUserId: user?.id }),
             });
-        } catch (error) {
-            console.error('Failed to update message status:', error);
-            // Optionally revert UI change on failure
-        }
-    };
-    
-    const handleUpdateReportStatus = async (reportId: number, status: ReportStatus) => {
-        setReports(prev => prev.map(r => r.id === reportId ? { ...r, status } : r));
-        if (selectedItem && 'id' in selectedItem && selectedItem.id === reportId) {
-            setSelectedItem(prev => prev ? { ...prev, status } as Report : null);
-        }
-        try {
-            await fetch(`http://localhost:3001/api/admin/reports/${reportId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status }),
-            });
-        } catch (error) {
-            console.error('Failed to update report status:', error);
-            // Optionally revert UI change on failure
-        }
-    };
-    
-    const handleSelectItem = (item: ContactMessage | Report) => {
-        setSelectedItem(item);
-        if ('subject' in item && item.status === 'unread') {
-            handleUpdateMessageStatus(item.id, 'read');
-        }
+            fetchData(activeTab);
+        } catch (err) { console.error(`Error actualizando estado para ${type}:`, err); }
     };
     
     const handleSendReply = async (body: string) => {
-        if (!replyData || !user) throw new Error("No hay datos para enviar la respuesta.");
-        try {
-            const response = await fetch('http://localhost:3001/api/admin/reply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    to: replyData.email,
-                    subject: replyData.subject,
-                    body,
-                    adminUserId: user.id
-                })
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al enviar la respuesta.');
-            }
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 3000);
-        } catch (error) {
-            console.error('Failed to send reply:', error);
-            throw error; // Re-throw to be caught by the modal
-        }
+        if (!replyingTo || !user) return;
+        await fetch('http://localhost:3001/api/admin/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: replyingTo.email, subject: `Re: ${replyingTo.subject}`, body, adminUserId: user.id })
+        });
+        handleUpdateStatus('messages', replyingTo.id, 'read');
     };
 
-    const handleOpenReplyModal = (email: string, subject: string) => {
-        setReplyData({ email, subject });
-        setIsReplyModalOpen(true);
-    };
-
-    const handleSaveUser = async (userId: string, data: { name: string; role: UserRole; points: number }) => {
-        if (!user || user.role !== 'dueño') return alert('Acción no permitida.');
-        if (user.id === userId && data.role !== 'dueño') return alert('No puedes cambiar tu propio rol de "dueño".');
+    const handleUpdateUser = async (updatedUser: Partial<User>) => {
+        if (!editingUser || !user) return;
         try {
-            await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
+            await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, adminUserId: user.id }),
+                body: JSON.stringify({ ...updatedUser, adminUserId: user.id })
             });
-            setIsUserEditModalOpen(false);
-            fetchAllData('users');
-        } catch (error) {
-            console.error(error);
-            alert('Error al guardar el usuario.');
-        }
+            fetchData('users');
+        } catch (err) { console.error('Error al actualizar usuario:', err); }
     };
 
     const handleDeleteUser = async (userId: string) => {
-        if (!user || user.role !== 'dueño') return alert('Acción no permitida.');
-        if (user.id === userId) return alert('No puedes eliminar tu propia cuenta.');
-        if (window.confirm('¿Estás seguro de que quieres eliminar este usuario? Esta acción es irreversible.')) {
+        if (window.confirm('¿Seguro que quieres eliminar este usuario?')) {
             try {
-                await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
+                await fetch(`http://localhost:3001/api/admin/users/${userId}`, { 
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUserId: user.id }),
+                    body: JSON.stringify({ adminUserId: user?.id })
                 });
-                fetchAllData('users');
-            } catch (error) {
-                console.error(error);
-                alert('Error al eliminar el usuario.');
-            }
+                fetchData('users');
+            } catch (err) { console.error('Error al eliminar usuario:', err); }
         }
     };
-
+    
     const handleToggleAchievement = async (achievementId: string, unlocked: boolean) => {
-        if (!achievementsUser || !user || user.role !== 'dueño') return;
+        if (!editingUser || !user) return;
         try {
-            await fetch(`http://localhost:3001/api/admin/users/${achievementsUser.id}/achievements`, {
+            await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}/achievements`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id })
             });
-            // Re-fetch users to get updated achievement list
-            const updatedUserResponse = await fetch(`http://localhost:3001/api/admin/users/${achievementsUser.id}?adminUserId=${user.id}`);
-            const updatedUser = await updatedUserResponse.json();
-            setAchievementsUser(updatedUser);
-            setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-
-        } catch (error) {
-            console.error("Error toggling achievement:", error);
-            alert("No se pudo actualizar el logro.");
-        }
+            setEditingUser(prev => prev ? { ...prev, achievements: prev.achievements.map(a => a.id === achievementId ? { ...a, unlocked } : a) } : null);
+        } catch (err) { console.error("Error al cambiar logro:", err); }
     };
-    
-    // RENDER FUNCTIONS (renderMessageDetails, etc.)
-    const renderMessageDetails = (msg: ContactMessage) => (
-        <>
-            <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="text-xl font-bold text-text-main">{msg.subject}</h3>
-                    <p className="text-sm text-text-secondary">De: {msg.name} ({msg.email})</p>
-                    <p className="text-xs text-slate-400 mt-1">Recibido: {new Date(msg.submitted_at).toLocaleString('es-AR')}</p>
-                </div>
-                <span className={`px-2 py-1 text-xs font-bold rounded-full border ${messageStatusStyles[msg.status]}`}>{msg.status}</span>
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/10">
-                <p className="text-text-secondary whitespace-pre-wrap">{msg.message}</p>
-            </div>
-            <div className="mt-6 flex justify-between items-center">
-                <div>
-                    <button onClick={() => handleOpenReplyModal(msg.email, `RE: ${msg.subject}`)} className="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary-dark">Responder</button>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => handleUpdateMessageStatus(msg.id, 'read')} className="text-xs px-3 py-1 bg-slate-600 rounded-md">Marcar como leído</button>
-                    <button onClick={() => handleUpdateMessageStatus(msg.id, 'archived')} className="text-xs px-3 py-1 bg-slate-600 rounded-md">Archivar</button>
-                </div>
-            </div>
-        </>
-    );
-    const renderReportDetails = (rep: Report) => (
-        <>
-            <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="text-xl font-bold text-text-main">Reporte para: {rep.locationName}</h3>
-                    <p className="text-sm text-text-secondary">Reportado por: {rep.userName} ({rep.userEmail})</p>
-                    <p className="text-xs text-slate-400 mt-1">Recibido: {new Date(rep.reported_at).toLocaleString('es-AR')}</p>
-                </div>
-                 <span className={`px-2 py-1 text-xs font-bold rounded-full border ${reportStatusStyles[rep.status]}`}>{rep.status}</span>
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
-                <div>
-                    <strong className="text-text-main">Motivo:</strong>
-                    <span className="ml-2 text-text-secondary">{reasonLabels[rep.reason]}</span>
-                </div>
-                {rep.comment && (
-                    <div>
-                        <strong className="text-text-main">Comentario:</strong>
-                        <p className="text-text-secondary whitespace-pre-wrap mt-1">{rep.comment}</p>
-                    </div>
-                )}
-                {rep.imageUrl && (
-                    <div>
-                        <strong className="text-text-main">Imagen Adjunta:</strong>
-                        <img src={rep.imageUrl} alt="Imagen del reporte" className="mt-2 rounded-lg max-w-sm" />
-                    </div>
-                )}
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-                <button onClick={() => handleUpdateReportStatus(rep.id, 'pending')} className="text-xs px-3 py-1 bg-slate-600 rounded-md">Marcar como pendiente</button>
-                <button onClick={() => handleUpdateReportStatus(rep.id, 'resolved')} className="text-xs px-3 py-1 bg-emerald-700 rounded-md">Marcar como resuelto</button>
-                <button onClick={() => handleUpdateReportStatus(rep.id, 'dismissed')} className="text-xs px-3 py-1 bg-slate-600 rounded-md">Descartar</button>
-            </div>
-        </>
-    );
 
     const renderContent = () => {
-        if (isLoading) return <div className="p-8 text-center">Cargando...</div>;
-        if (activeTab === 'users') {
-            if (user?.role !== 'dueño') return <div className="p-8 text-center">Acceso denegado.</div>;
-            return (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs uppercase bg-surface">
-                            <tr>
-                                <th className="px-6 py-3">Nombre</th><th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Rol</th><th className="px-6 py-3">Puntos</th><th className="px-6 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {allUsers.map(u => (
-                                <tr key={u.id} className="border-b border-white/10">
-                                    <td className="px-6 py-4 font-medium text-text-main">{u.name}</td>
-                                    <td className="px-6 py-4">{u.email}</td>
-                                    <td className="px-6 py-4">{u.role}</td>
-                                    <td className="px-6 py-4">{u.points}</td>
-                                    <td className="px-6 py-4 flex gap-2">
-                                        <button onClick={() => { setEditingUser(u); setIsUserEditModalOpen(true); }} className="text-xs p-1.5 bg-slate-600 rounded">Editar</button>
-                                        <button onClick={() => { setAchievementsUser(u); setIsAchievementsModalOpen(true); }} className="text-xs p-1.5 bg-slate-600 rounded">Logros</button>
-                                        <button onClick={() => handleDeleteUser(u.id)} className="text-xs p-1.5 bg-red-800 rounded">Eliminar</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )
+        if (isLoading) return <div className="text-center p-8 text-text-secondary">Cargando...</div>;
+        if (error) return <div className="text-center p-8 text-red-400">{error}</div>;
+
+        switch (activeTab) {
+            case 'messages': return <MessagesPanel messages={messages} onUpdateStatus={(id, status) => handleUpdateStatus('messages', id, status)} onReply={setReplyingTo} />;
+            case 'reports': return <ReportsPanel reports={reports} onUpdateStatus={(id, status) => handleUpdateStatus('reports', id, status)} />;
+            case 'users': return <UsersPanel users={users} onEdit={setEditingUser} onDelete={handleDeleteUser} onManageAchievements={(u) => { setEditingUser(u); setIsAchievementsModalOpen(true); }} />;
+            default: return null;
         }
-        if (activeTab === 'messages') {
-            return (
-                <div className="overflow-y-auto max-h-[70vh]">
-                    {messages.map(msg => (
-                        <div key={msg.id} onClick={() => handleSelectItem(msg)} className="p-4 border-b border-white/10 cursor-pointer hover:bg-slate-800">
-                            <div className="flex justify-between items-start">
-                                <p className="font-semibold text-text-main truncate">{msg.subject}</p>
-                                <span className={`flex-shrink-0 ml-2 px-2 py-0.5 text-xs rounded-full border ${messageStatusStyles[msg.status]}`}>{msg.status}</span>
-                            </div>
-                            <p className="text-sm text-text-secondary truncate">{msg.name} ({msg.email})</p>
-                            <p className="text-xs text-slate-500 mt-1">{new Date(msg.submitted_at).toLocaleString('es-AR')}</p>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-        if (activeTab === 'reports') {
-            return (
-                <div className="overflow-y-auto max-h-[70vh]">
-                    {reports.map(rep => (
-                        <div key={rep.id} onClick={() => handleSelectItem(rep)} className="p-4 border-b border-white/10 cursor-pointer hover:bg-slate-800">
-                             <div className="flex justify-between items-start">
-                                <p className="font-semibold text-text-main truncate">{rep.locationName}</p>
-                                <span className={`flex-shrink-0 ml-2 px-2 py-0.5 text-xs rounded-full border ${reportStatusStyles[rep.status]}`}>{rep.status}</span>
-                            </div>
-                            <p className="text-sm text-text-secondary truncate">Motivo: {reasonLabels[rep.reason]}</p>
-                            <p className="text-xs text-slate-500 mt-1">Por: {rep.userName} - {new Date(rep.reported_at).toLocaleString('es-AR')}</p>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-        return <div>Contenido de {activeTab}</div>;
     };
 
-
     return (
-        <div className="bg-background pt-20 min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-extrabold font-display">Panel de Administración</h1>
-                    <p className="mt-4 text-lg text-text-secondary">Gestiona las interacciones de la comunidad.</p>
-                </div>
+        <>
+            <ReplyModal isOpen={!!replyingTo} onClose={() => setReplyingTo(null)} recipientEmail={replyingTo?.email || ''} defaultSubject={`Re: ${replyingTo?.subject}`} onSend={handleSendReply} />
+            <EditUserModal isOpen={!!editingUser && !isAchievementsModalOpen} onClose={() => setEditingUser(null)} user={editingUser} onSave={handleUpdateUser} />
+            <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => setIsAchievementsModalOpen(false)} user={editingUser} isAdminMode={user?.role === 'dueño'} onToggleAchievement={handleToggleAchievement} />
+            
+            <div className="bg-background pt-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl font-extrabold font-display text-text-main">Panel de Administración</h1>
+                        <p className="mt-2 text-text-secondary">Bienvenido, {user?.name}.</p>
+                    </div>
 
-                <div className="flex border-b border-white/10 mb-6">
-                    <button onClick={() => setActiveTab('messages')} className={`px-4 py-2 font-semibold ${activeTab === 'messages' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>Mensajes</button>
-                    <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 font-semibold ${activeTab === 'reports' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>Reportes</button>
-                    {user?.role === 'dueño' && (
-                        <button onClick={() => setActiveTab('users')} className={`px-4 py-2 font-semibold ${activeTab === 'users' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>Usuarios</button>
-                    )}
-                </div>
+                    <div className="flex justify-center border-b border-white/10 mb-8">
+                        {(['messages', 'reports', 'users'] as AdminTab[]).map(tab => (
+                            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 font-semibold transition-colors ${activeTab === tab ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-main'}`}>
+                                {tab === 'messages' ? 'Mensajes' : tab === 'reports' ? 'Reportes' : 'Usuarios'}
+                            </button>
+                        ))}
+                    </div>
 
-                <div className="modern-card overflow-hidden">
                     {renderContent()}
                 </div>
             </div>
-
-            {/* Modals */}
-            {editingUser && <UserEditModal isOpen={isUserEditModalOpen} onClose={() => setIsUserEditModalOpen(false)} userToEdit={editingUser} onSave={handleSaveUser} />}
-            {achievementsUser && <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => setIsAchievementsModalOpen(false)} user={achievementsUser} isAdminMode={user?.role === 'dueño'} onToggleAchievement={handleToggleAchievement} />}
-
-            {selectedItem && (
-                <div className="modal-backdrop" onClick={() => setSelectedItem(null)}>
-                    <div className="modal-content !max-w-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="p-6">
-                           {'subject' in selectedItem ? renderMessageDetails(selectedItem as ContactMessage) : renderReportDetails(selectedItem as Report)}
-                        </div>
-                    </div>
-                </div>
-            )}
-            
-            {replyData && (
-                <ReplyModal isOpen={isReplyModalOpen} onClose={() => setIsReplyModalOpen(false)} recipientEmail={replyData.email} defaultSubject={replyData.subject} onSend={handleSendReply} />
-            )}
-        </div>
+        </>
     );
 };
 

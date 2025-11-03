@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState, useRef, useMemo, forwardRef, useCallback } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import type { User, GamificationAction, Location, Schedule, LocationStatus, ReportReason } from '../types';
@@ -408,9 +409,9 @@ const PuntosVerdesPage: React.FC<{
         const fullLocationData = {
             ...locationData,
             schedule: [],
-            mapData: isCreating ? { id: locationData.id, name: locationData.name, lat: -26.17, lng: -58.17, x: 400, y: 300 } : editingLocation.mapData,
+            mapData: isCreating ? { id: locationData.id, name: locationData.name, lat: -26.17, lng: -58.17, x: 400, y: 300 } : editingLocation!.mapData,
             lastServiced: new Date().toISOString(),
-            checkIns: isCreating ? 0 : editingLocation.checkIns
+            checkIns: isCreating ? 0 : editingLocation!.checkIns
         };
         
         try {

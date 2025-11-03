@@ -40,7 +40,6 @@ const TestimonialsCarousel: React.FC = () => {
                                     <svg className="w-16 h-16 text-primary/30 mx-auto mb-4" viewBox="0 0 448 512" fill="currentColor"><path d="M0 216C0 149.7 53.7 96 120 96h8c17.7 0 32 14.3 32 32s-14.3 32-32 32h-8c-30.9 0-56 25.1-56 56v8h64c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V216zm256 0c0-66.3 53.7-120 120-120h8c17.7 0 32 14.3 32 32s-14.3 32-32 32h-8c-30.9 0-56 25.1-56 56v8h64c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H320c-35.3 0-64-28.7-64-64V216z"/></svg>
                                     <p className="text-lg md:text-xl text-text-main italic mb-6">"{testimonial.quote}"</p>
                                     <div className="flex items-center justify-center">
-                                        <img className="w-12 h-12 rounded-full object-cover mr-4" src={testimonial.avatarUrl} alt={testimonial.name} />
                                         <div>
                                             <p className="font-bold text-text-main">{testimonial.name}</p>
                                             <p className="text-sm text-text-secondary">{testimonial.role}</p>
