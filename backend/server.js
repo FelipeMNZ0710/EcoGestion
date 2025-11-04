@@ -21,6 +21,51 @@ const initializeDatabase = async () => {
         const connection = await db.getConnection();
         console.log('✅ Conexión a la base de datos exitosa.');
         
+        // --- Users Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`users\` (
+              \`id\` int(11) NOT NULL AUTO_INCREMENT,
+              \`name\` varchar(255) NOT NULL,
+              \`email\` varchar(255) NOT NULL,
+              \`password_hash\` varchar(255) NOT NULL,
+              \`points\` int(11) DEFAULT 0,
+              \`kg_recycled\` decimal(10,2) DEFAULT 0.00,
+              \`role\` enum('usuario','moderador','dueño') DEFAULT 'usuario',
+              \`unlocked_achievements\` text DEFAULT NULL,
+              \`stats\` text DEFAULT NULL,
+              \`last_login\` datetime DEFAULT NULL,
+              \`favorite_locations\` text DEFAULT NULL,
+              \`banner_url\` text DEFAULT NULL,
+              \`profile_picture_url\` text DEFAULT NULL,
+              \`title\` varchar(255) DEFAULT NULL,
+              \`bio\` text DEFAULT NULL,
+              \`socials\` text DEFAULT NULL,
+              PRIMARY KEY (\`id\`),
+              UNIQUE KEY \`email\` (\`email\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "users" asegurada.');
+
+        // --- Locations Table ---
+        await connection.query(`
+             CREATE TABLE IF NOT EXISTS \`locations\` (
+              \`id\` VARCHAR(255) NOT NULL,
+              \`name\` VARCHAR(255) NOT NULL,
+              \`address\` VARCHAR(255) NOT NULL,
+              \`description\` TEXT,
+              \`hours\` VARCHAR(255),
+              \`schedule\` JSON,
+              \`materials\` JSON,
+              \`map_data\` JSON,
+              \`status\` ENUM('ok', 'reported', 'maintenance', 'serviced') NOT NULL DEFAULT 'ok',
+              \`last_serviced\` DATE,
+              \`check_ins\` INT DEFAULT 0,
+              \`image_urls\` JSON,
+              PRIMARY KEY (\`id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "locations" asegurada.');
+        
         // --- Impact Stats Table ---
         await connection.query(`
             CREATE TABLE IF NOT EXISTS \`impact_stats\` (
@@ -47,8 +92,8 @@ const initializeDatabase = async () => {
               \`title\` varchar(255) NOT NULL,
               \`category\` varchar(100) NOT NULL,
               \`excerpt\` text NOT NULL,
-              \`image\` mediumtext DEFAULT NULL,
-              \`content\` mediumtext DEFAULT NULL,
+              \`image\` longtext DEFAULT NULL,
+              \`content\` longtext DEFAULT NULL,
               \`featured\` tinyint(1) DEFAULT 0,
               \`author_id\` int(11) DEFAULT NULL,
               \`published_at\` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -67,10 +112,10 @@ const initializeDatabase = async () => {
         );
 
         for (const column of columns) {
-            if (column.DATA_TYPE.toLowerCase() !== 'mediumtext') {
-                console.warn(`⚠️  Columna "${column.COLUMN_NAME}" en "news_articles" tiene un tipo incorrecto (${column.DATA_TYPE}). Modificando a MEDIUMTEXT...`);
-                await connection.query(`ALTER TABLE \`news_articles\` MODIFY COLUMN \`${column.COLUMN_NAME}\` MEDIUMTEXT;`);
-                console.log(`✅  Columna "${column.COLUMN_NAME}" actualizada a MEDIUMTEXT.`);
+            if (column.DATA_TYPE.toLowerCase() !== 'longtext') {
+                console.warn(`⚠️  Columna "${column.COLUMN_NAME}" en "news_articles" tiene un tipo incorrecto (${column.DATA_TYPE}). Modificando a LONGTEXT...`);
+                await connection.query(`ALTER TABLE \`news_articles\` MODIFY COLUMN \`${column.COLUMN_NAME}\` LONGTEXT;`);
+                console.log(`✅  Columna "${column.COLUMN_NAME}" actualizada a LONGTEXT.`);
             }
         }
         console.log('✅ Columnas de "news_articles" verificadas.');
@@ -103,7 +148,6 @@ const initializeDatabase = async () => {
             console.log('✅ Tabla "games" verificada.');
         }
 
-
         // --- User Game Scores Table ---
         await connection.query(`
              CREATE TABLE IF NOT EXISTS \`user_game_scores\` (
@@ -117,6 +161,57 @@ const initializeDatabase = async () => {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
         console.log('✅ Tabla "user_game_scores" asegurada.');
+
+        // --- Reports Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`reports\` (
+              \`id\` INT NOT NULL AUTO_INCREMENT,
+              \`location_id\` VARCHAR(255) NOT NULL,
+              \`user_id\` INT NOT NULL,
+              \`reason\` ENUM('full', 'dirty', 'damaged', 'other') NOT NULL,
+              \`comment\` TEXT,
+              \`image_url\` TEXT,
+              \`status\` ENUM('pending', 'resolved', 'dismissed') NOT NULL DEFAULT 'pending',
+              \`reported_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (\`id\`),
+              KEY \`location_id\` (\`location_id\`),
+              KEY \`user_id\` (\`user_id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "reports" asegurada.');
+
+        // --- Contact Messages Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`contact_messages\` (
+              \`id\` INT NOT NULL AUTO_INCREMENT,
+              \`name\` VARCHAR(255) NOT NULL,
+              \`email\` VARCHAR(255) NOT NULL,
+              \`subject\` VARCHAR(255) NOT NULL,
+              \`message\` TEXT NOT NULL,
+              \`status\` ENUM('unread', 'read', 'archived') NOT NULL DEFAULT 'unread',
+              \`submitted_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (\`id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "contact_messages" asegurada.');
+
+        // --- Community Messages Table ---
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS \`community_messages\` (
+              \`id\` INT NOT NULL AUTO_INCREMENT,
+              \`channel_id\` INT NOT NULL,
+              \`user_id\` INT NOT NULL,
+              \`content\` TEXT NOT NULL,
+              \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              \`edited\` BOOLEAN DEFAULT FALSE,
+              \`reactions\` JSON,
+              \`replying_to_message_id\` INT DEFAULT NULL,
+              PRIMARY KEY (\`id\`),
+              KEY \`channel_id\` (\`channel_id\`),
+              KEY \`user_id\` (\`user_id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('✅ Tabla "community_messages" asegurada.');
 
         connection.release();
 
@@ -354,6 +449,27 @@ app.put('/api/users/favorites', async (req, res) => {
 });
 
 // --- Puntos Verdes & Reports ---
+const updateLocationStatusAfterReportChange = async (locationId) => {
+    try {
+        const [[{ pending_count }]] = await db.query(
+            'SELECT COUNT(*) as pending_count FROM reports WHERE location_id = ? AND status = "pending"',
+            [locationId]
+        );
+
+        if (pending_count === 0) {
+            console.log(`[Location Status] No hay reportes pendientes para ${locationId}. Actualizando a 'serviced'.`);
+            await db.query(
+                "UPDATE locations SET status = 'serviced', last_serviced = NOW() WHERE id = ? AND status = 'reported'",
+                [locationId]
+            );
+        } else {
+            console.log(`[Location Status] Aún hay ${pending_count} reportes pendientes para ${locationId}. El estado permanece 'reported'.`);
+        }
+    } catch (error) {
+        console.error(`[Location Status] Error al actualizar el estado de la ubicación ${locationId}:`, error);
+    }
+};
+
 app.get('/api/locations', async (req, res) => {
     try {
         const [locations] = await db.query(`
@@ -868,9 +984,15 @@ app.put('/api/admin/users/:id', async (req, res) => {
 app.delete('/api/admin/users/:id', async (req, res) => {
     if (!await authAdmin(req, res, 'dueño')) return;
     try {
-        await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);
-        res.status(200).json({ message: 'Usuario eliminado.' });
+        const { id } = req.params;
+        // The DB schema for user_game_scores has ON DELETE CASCADE, so they will be auto-deleted.
+        // For other tables, we might need manual cleanup if not set up with cascades.
+        await db.query('DELETE FROM community_messages WHERE user_id = ?', [id]);
+        await db.query('DELETE FROM reports WHERE user_id = ?', [id]);
+        await db.query('DELETE FROM users WHERE id = ?', [id]);
+        res.status(200).json({ message: 'Usuario eliminado permanentemente.' });
     } catch (error) {
+        console.error("[DELETE USER] ERROR:", error);
         res.status(500).json({ message: 'Error al eliminar usuario.' });
     }
 });
@@ -884,12 +1006,16 @@ app.put('/api/admin/users/:id/achievements', async (req, res) => {
         if (users.length === 0) return res.status(404).json({ message: 'Usuario no encontrado.' });
         
         let unlockedIds = new Set(users[0].unlocked_achievements ? JSON.parse(users[0].unlocked_achievements) : []);
-        if (unlocked) unlockedIds.add(achievementId);
-        else unlockedIds.delete(achievementId);
+        if (unlocked) {
+            unlockedIds.add(String(achievementId));
+        } else {
+            unlockedIds.delete(String(achievementId));
+        }
         
         await db.query('UPDATE users SET unlocked_achievements = ? WHERE id = ?', [JSON.stringify(Array.from(unlockedIds)), id]);
         res.status(200).json({ message: 'Logros actualizados.' });
     } catch (error) {
+        console.error("[UPDATE ACHIEVEMENTS] ERROR:", error);
         res.status(500).json({ message: 'Error al actualizar logros.' });
     }
 });
@@ -921,6 +1047,7 @@ app.get('/api/admin/messages', async (req, res) => {
     }
 });
 app.put('/api/admin/messages/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -930,7 +1057,20 @@ app.put('/api/admin/messages/:id', async (req, res) => {
          res.status(500).json({ message: "Error al actualizar mensaje." });
     }
 });
+
+app.delete('/api/admin/messages/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
+    try {
+        const { id } = req.params;
+        await db.query('DELETE FROM contact_messages WHERE id = ?', [id]);
+        res.status(200).json({ message: 'Mensaje eliminado.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al eliminar el mensaje.' });
+    }
+});
+
 app.get('/api/admin/reports', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
     try {
         const [reports] = await db.query(
             `SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
@@ -945,19 +1085,49 @@ app.get('/api/admin/reports', async (req, res) => {
     }
 });
 app.put('/api/admin/reports/:id', async (req, res) => {
+     if (!await authAdmin(req, res, 'moderador')) return;
      try {
         const { id } = req.params;
         const { status } = req.body;
+        
+        const [reports] = await db.query('SELECT location_id FROM reports WHERE id = ?', [id]);
+        if (reports.length === 0) return res.status(404).json({ message: 'Reporte no encontrado.' });
+        const { location_id } = reports[0];
+        
         await db.query('UPDATE reports SET status = ? WHERE id = ?', [status, id]);
+
+        if (status === 'resolved' || status === 'dismissed') {
+            await updateLocationStatusAfterReportChange(location_id);
+        }
+
         res.status(200).json({ message: 'Status updated' });
     } catch (error) {
          res.status(500).json({ message: "Error al actualizar reporte." });
     }
 });
 
+app.delete('/api/admin/reports/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
+    try {
+        const { id } = req.params;
+        const [reports] = await db.query('SELECT location_id FROM reports WHERE id = ?', [id]);
+        if (reports.length === 0) return res.status(404).json({ message: 'Reporte no encontrado.' });
+        const { location_id } = reports[0];
+
+        await db.query('DELETE FROM reports WHERE id = ?', [id]);
+        await updateLocationStatusAfterReportChange(location_id);
+        
+        res.status(200).json({ message: 'Reporte eliminado.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al eliminar reporte.' });
+    }
+});
+
 app.post('/api/admin/reply', async (req, res) => {
     const { to, subject, body, adminUserId } = req.body;
     console.log('\n[ADMIN REPLY] Solicitud de respuesta recibida.');
+
+    if (!await authAdmin(req, res, 'moderador')) return;
 
     if (!to || !subject || !body) {
         console.log('[ADMIN REPLY] Error: Faltan campos (to, subject, body).');
@@ -1007,7 +1177,8 @@ app.get('/api/impact-stats', async (req, res) => {
 });
 
 
-app.put('/api/impact-stats', isAdmin, async (req, res) => {
+app.put('/api/impact-stats', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
     try {
         const { recycledKg, participants, points } = req.body;
         if (recycledKg === undefined || participants === undefined || points === undefined) {

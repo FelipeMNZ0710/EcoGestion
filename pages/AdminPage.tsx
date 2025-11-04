@@ -94,7 +94,6 @@ const ReplyModal: React.FC<{
                     <div className="flex justify-end space-x-3 pt-6">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-600 text-slate-100 rounded-md hover:bg-slate-500">Cancelar</button>
                         <button type="submit" disabled={isSending} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:bg-slate-500 flex items-center">
-                            {/* FIX: Complete SVG path and add button text */}
                             {isSending && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
                             {isSending ? 'Enviando...' : 'Enviar Respuesta'}
                         </button>
@@ -159,7 +158,7 @@ const EditUserModal: React.FC<{
 };
 
 
-const MessagesPanel: React.FC<{ messages: ContactMessage[], onUpdateStatus: (id: number, status: ContactMessage['status']) => void, onReply: (message: ContactMessage) => void }> = ({ messages, onUpdateStatus, onReply }) => (
+const MessagesPanel: React.FC<{ messages: ContactMessage[], onUpdateStatus: (id: number, status: ContactMessage['status']) => void, onReply: (message: ContactMessage) => void, onDelete: (id: number) => void }> = ({ messages, onUpdateStatus, onReply, onDelete }) => (
     <div className="space-y-4">
         {messages.map(msg => (
             <details key={msg.id} className="modern-card p-4">
@@ -175,10 +174,11 @@ const MessagesPanel: React.FC<{ messages: ContactMessage[], onUpdateStatus: (id:
                 </summary>
                 <div className="mt-4 pt-4 border-t border-white/10 text-text-secondary">
                     <p>{msg.message}</p>
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                         <button onClick={() => onReply(msg)} className="px-3 py-1 text-sm bg-primary rounded-md text-white">Responder</button>
                         {msg.status !== 'read' && <button onClick={() => onUpdateStatus(msg.id, 'read')} className="px-3 py-1 text-sm bg-slate-600 rounded-md">Marcar como Leído</button>}
                         {msg.status !== 'archived' && <button onClick={() => onUpdateStatus(msg.id, 'archived')} className="px-3 py-1 text-sm bg-slate-700 rounded-md">Archivar</button>}
+                        <button onClick={() => onDelete(msg.id)} className="px-3 py-1 text-sm bg-red-500/20 text-red-300 rounded-md">Eliminar</button>
                     </div>
                 </div>
             </details>
@@ -186,7 +186,7 @@ const MessagesPanel: React.FC<{ messages: ContactMessage[], onUpdateStatus: (id:
     </div>
 );
 
-const ReportsPanel: React.FC<{ reports: Report[], onUpdateStatus: (id: number, status: ReportStatus) => void }> = ({ reports, onUpdateStatus }) => (
+const ReportsPanel: React.FC<{ reports: Report[], onUpdateStatus: (id: number, status: ReportStatus) => void, onDelete: (id: number) => void }> = ({ reports, onUpdateStatus, onDelete }) => (
      <div className="space-y-4">
         {reports.map(rep => (
             <details key={rep.id} className="modern-card p-4">
@@ -200,9 +200,10 @@ const ReportsPanel: React.FC<{ reports: Report[], onUpdateStatus: (id: number, s
                 <div className="mt-4 pt-4 border-t border-white/10 text-text-secondary space-y-3">
                     {rep.comment && <p><strong>Comentario:</strong> {rep.comment}</p>}
                     {rep.imageUrl && <div><p><strong>Imagen Adjunta:</strong></p><img src={rep.imageUrl} alt="Reporte" className="max-w-xs rounded-lg mt-2"/></div>}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {rep.status !== 'resolved' && <button onClick={() => onUpdateStatus(rep.id, 'resolved')} className="px-3 py-1 text-sm bg-emerald-500/20 text-emerald-300 rounded-md">Marcar como Resuelto</button>}
                         {rep.status !== 'dismissed' && <button onClick={() => onUpdateStatus(rep.id, 'dismissed')} className="px-3 py-1 text-sm bg-slate-600 rounded-md">Desestimar</button>}
+                        <button onClick={() => onDelete(rep.id)} className="px-3 py-1 text-sm bg-red-500/20 text-red-300 rounded-md">Eliminar</button>
                     </div>
                 </div>
             </details>
@@ -229,7 +230,7 @@ const UsersPanel: React.FC<{ users: User[], onEdit: (user: User) => void, onDele
                         <td className="p-4">{u.email}</td>
                         <td className="p-4">{u.role}</td>
                         <td className="p-4">{u.points}</td>
-                        <td className="p-4 flex gap-2">
+                        <td className="p-4 flex flex-wrap gap-2">
                             <button onClick={() => onEdit(u)} className="text-sm text-blue-400 hover:underline">Editar</button>
                             <button onClick={() => onManageAchievements(u)} className="text-sm text-amber-400 hover:underline">Logros</button>
                             <button onClick={() => onDelete(u.id)} className="text-sm text-red-400 hover:underline">Eliminar</button>
@@ -287,6 +288,20 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
         } catch (err) { console.error(`Error actualizando estado para ${type}:`, err); }
     };
     
+    const handleDelete = async (type: 'messages' | 'reports', id: number) => {
+        if (!window.confirm(`¿Seguro que quieres eliminar este ${type === 'messages' ? 'mensaje' : 'reporte'}? Esta acción no se puede deshacer.`)) return;
+        try {
+            await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminUserId: user?.id }),
+            });
+            fetchData(activeTab);
+        } catch (err) {
+            console.error(`Error eliminando ${type}:`, err);
+        }
+    };
+    
     const handleSendReply = async (body: string) => {
         if (!replyingTo || !user) return;
         await fetch('http://localhost:3001/api/admin/reply', {
@@ -310,7 +325,7 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
     };
 
     const handleDeleteUser = async (userId: string) => {
-        if (window.confirm('¿Seguro que quieres eliminar este usuario?')) {
+        if (window.confirm('¿Seguro que quieres eliminar este usuario? Esta acción es irreversible.')) {
             try {
                 await fetch(`http://localhost:3001/api/admin/users/${userId}`, { 
                     method: 'DELETE',
@@ -330,7 +345,11 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id })
             });
-            setEditingUser(prev => prev ? { ...prev, achievements: prev.achievements.map(a => a.id === achievementId ? { ...a, unlocked } : a) } : null);
+            // Optimistic update for achievements modal
+            const updatedUsers = await (await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}?adminUserId=${user.id}`)).json();
+            setEditingUser(updatedUsers);
+            // Full refetch for main user list
+            fetchData('users');
         } catch (err) { console.error("Error al cambiar logro:", err); }
     };
 
@@ -339,8 +358,8 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
         if (error) return <div className="text-center p-8 text-red-400">{error}</div>;
 
         switch (activeTab) {
-            case 'messages': return <MessagesPanel messages={messages} onUpdateStatus={(id, status) => handleUpdateStatus('messages', id, status)} onReply={setReplyingTo} />;
-            case 'reports': return <ReportsPanel reports={reports} onUpdateStatus={(id, status) => handleUpdateStatus('reports', id, status)} />;
+            case 'messages': return <MessagesPanel messages={messages} onUpdateStatus={(id, status) => handleUpdateStatus('messages', id, status)} onReply={setReplyingTo} onDelete={(id) => handleDelete('messages', id)} />;
+            case 'reports': return <ReportsPanel reports={reports} onUpdateStatus={(id, status) => handleUpdateStatus('reports', id, status)} onDelete={(id) => handleDelete('reports', id)} />;
             case 'users': return <UsersPanel users={users} onEdit={setEditingUser} onDelete={handleDeleteUser} onManageAchievements={(u) => { setEditingUser(u); setIsAchievementsModalOpen(true); }} />;
             default: return null;
         }
@@ -350,7 +369,7 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
         <>
             <ReplyModal isOpen={!!replyingTo} onClose={() => setReplyingTo(null)} recipientEmail={replyingTo?.email || ''} defaultSubject={`Re: ${replyingTo?.subject}`} onSend={handleSendReply} />
             <EditUserModal isOpen={!!editingUser && !isAchievementsModalOpen} onClose={() => setEditingUser(null)} user={editingUser} onSave={handleUpdateUser} />
-            <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => setIsAchievementsModalOpen(false)} user={editingUser} isAdminMode={user?.role === 'dueño'} onToggleAchievement={handleToggleAchievement} />
+            <AchievementsModal isOpen={isAchievementsModalOpen} onClose={() => { setIsAchievementsModalOpen(false); setEditingUser(null); }} user={editingUser} isAdminMode={user?.role === 'dueño'} onToggleAchievement={handleToggleAchievement} />
             
             <div className="bg-background pt-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
