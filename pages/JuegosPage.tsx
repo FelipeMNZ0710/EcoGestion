@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import type { User, Game, GamificationAction, GameType } from '../types';
 import TriviaGame from '../components/games/TriviaGame';
 import MemoryGame from '../components/games/MemoryGame';
@@ -210,7 +210,6 @@ const GameEditModal: React.FC<{
     );
 };
 
-
 const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: GamificationAction, payload?: any) => void; isAdminMode: boolean; }> = ({ user, onUserAction, isAdminMode }) => {
     const [games, setGames] = useState<Game[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -218,7 +217,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     const [editingGame, setEditingGame] = useState<Game | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Todos');
-    
+
     const fetchGames = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -333,9 +332,9 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     return (
         <>
             <GameEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveGame} game={editingGame} />
-            <div className="bg-background pt-20">
+            <div className="bg-background pt-20 relative min-h-screen">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                    <div className="text-center mb-12 animate-fade-in-up">
+                    <div className="text-center mb-12 animate-fade-in-up relative">
                         <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Sala de Juegos Educativos</h1>
                         <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">¡Aprende sobre reciclaje de la forma más divertida y gana EcoPuntos!</p>
                         {isAdminMode && (

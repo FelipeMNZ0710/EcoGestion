@@ -975,7 +975,9 @@ app.put('/api/admin/users/:id', async (req, res) => {
         const { id } = req.params;
         const { name, role, points } = req.body;
         await db.query('UPDATE users SET name = ?, role = ?, points = ? WHERE id = ?', [name, role, points, id]);
-        res.status(200).json({ message: 'Usuario actualizado.' });
+        const [updatedUsers] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+        if (updatedUsers.length === 0) return res.status(404).json({ message: 'User not found after update.' });
+        res.status(200).json(formatUserForFrontend(updatedUsers[0]));
     } catch (error) {
         res.status(500).json({ message: 'Error al actualizar usuario.' });
     }
@@ -1013,7 +1015,11 @@ app.put('/api/admin/users/:id/achievements', async (req, res) => {
         }
         
         await db.query('UPDATE users SET unlocked_achievements = ? WHERE id = ?', [JSON.stringify(Array.from(unlockedIds)), id]);
-        res.status(200).json({ message: 'Logros actualizados.' });
+        
+        const [updatedUsers] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+        if (updatedUsers.length === 0) return res.status(404).json({ message: 'User not found after update.' });
+        res.status(200).json(formatUserForFrontend(updatedUsers[0]));
+
     } catch (error) {
         console.error("[UPDATE ACHIEVEMENTS] ERROR:", error);
         res.status(500).json({ message: 'Error al actualizar logros.' });
@@ -1052,7 +1058,9 @@ app.put('/api/admin/messages/:id', async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
         await db.query('UPDATE contact_messages SET status = ? WHERE id = ?', [status, id]);
-        res.status(200).json({ message: 'Status updated' });
+        const [updatedMessages] = await db.query('SELECT * FROM contact_messages WHERE id = ?', [id]);
+        if (updatedMessages.length === 0) return res.status(404).json({ message: 'Message not found after update.' });
+        res.status(200).json(updatedMessages[0]);
     } catch (error) {
          res.status(500).json({ message: "Error al actualizar mensaje." });
     }
@@ -1100,7 +1108,15 @@ app.put('/api/admin/reports/:id', async (req, res) => {
             await updateLocationStatusAfterReportChange(location_id);
         }
 
-        res.status(200).json({ message: 'Status updated' });
+        const [updatedReports] = await db.query(
+            `SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
+             FROM reports r JOIN users u ON r.user_id = u.id 
+             JOIN locations l ON r.location_id = l.id 
+             WHERE r.id = ?`,
+            [id]
+        );
+        if (updatedReports.length === 0) return res.status(404).json({ message: 'Report not found after update.' });
+        res.status(200).json(updatedReports[0]);
     } catch (error) {
          res.status(500).json({ message: "Error al actualizar reporte." });
     }

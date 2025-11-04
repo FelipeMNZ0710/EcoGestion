@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, ContactMessage, Report, ReportStatus, UserRole, Achievement } from '../types';
 import AchievementsModal from '../components/AchievementsModal';
@@ -242,8 +240,12 @@ const UsersPanel: React.FC<{ users: User[], onEdit: (user: User) => void, onDele
     </div>
 );
 
+interface AdminPageProps {
+  user: User | null;
+  updateUser: (user: User) => void;
+}
 
-const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
+const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('messages');
     const [messages, setMessages] = useState<ContactMessage[]>([]);
     const [reports, setReports] = useState<Report[]>([]);
@@ -279,27 +281,41 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
 
     const handleUpdateStatus = async (type: 'messages' | 'reports', id: number, status: string) => {
         try {
-            await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
+            const response = await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, adminUserId: user?.id }),
             });
-            fetchData(activeTab);
+            if (!response.ok) throw new Error('Failed to update status');
+            const updatedItem = await response.json();
+            
+            if (type === 'messages') {
+                setMessages(prev => prev.map(msg => msg.id === id ? updatedItem : msg));
+            } else if (type === 'reports') {
+                setReports(prev => prev.map(rep => rep.id === id ? updatedItem : rep));
+            }
         } catch (err) { console.error(`Error actualizando estado para ${type}:`, err); }
     };
     
-    const handleDelete = async (type: 'messages' | 'reports', id: number) => {
-        if (!window.confirm(`¿Seguro que quieres eliminar este ${type === 'messages' ? 'mensaje' : 'reporte'}? Esta acción no se puede deshacer.`)) return;
+    const handleDelete = async (type: 'messages' | 'reports' | 'users', id: number | string) => {
+        const typeName = type === 'messages' ? 'mensaje' : type === 'reports' ? 'reporte' : 'usuario';
+        if (!window.confirm(`¿Seguro que quieres eliminar este ${typeName}? Esta acción no se puede deshacer.`)) return;
         try {
-            await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
+            const response = await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ adminUserId: user?.id }),
             });
-            fetchData(activeTab);
-        } catch (err) {
-            console.error(`Error eliminando ${type}:`, err);
-        }
+            if (!response.ok) throw new Error(`Failed to delete ${typeName}`);
+
+            if (type === 'messages') {
+                setMessages(prev => prev.filter(msg => msg.id !== id));
+            } else if (type === 'reports') {
+                setReports(prev => prev.filter(rep => rep.id !== id));
+            } else if (type === 'users') {
+                setUsers(prev => prev.filter(u => u.id !== id));
+            }
+        } catch (err) { console.error(`Error eliminando ${type}:`, err); }
     };
     
     const handleSendReply = async (body: string) => {
@@ -309,49 +325,69 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to: replyingTo.email, subject: `Re: ${replyingTo.subject}`, body, adminUserId: user.id })
         });
-        handleUpdateStatus('messages', replyingTo.id, 'read');
+        await handleUpdateStatus('messages', replyingTo.id, 'read');
     };
 
-    const handleUpdateUser = async (updatedUser: Partial<User>) => {
+    const handleUpdateUser = async (updatedFields: Partial<User>) => {
         if (!editingUser || !user) return;
         try {
-            await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}`, {
+            const response = await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...updatedUser, adminUserId: user.id })
+                body: JSON.stringify({ ...updatedFields, adminUserId: user.id })
             });
-            fetchData('users');
-        } catch (err) { console.error('Error al actualizar usuario:', err); }
-    };
-
-    const handleDeleteUser = async (userId: string) => {
-        if (window.confirm('¿Seguro que quieres eliminar este usuario? Esta acción es irreversible.')) {
-            try {
-                await fetch(`http://localhost:3001/api/admin/users/${userId}`, { 
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUserId: user?.id })
-                });
-                fetchData('users');
-            } catch (err) { console.error('Error al eliminar usuario:', err); }
+            if (!response.ok) throw new Error('Failed to update user');
+            const updatedUserFromServer = await response.json();
+            setUsers(prev => prev.map(u => u.id === updatedUserFromServer.id ? updatedUserFromServer : u));
+            if(updatedUserFromServer.id === user.id) {
+                updateUser(updatedUserFromServer);
+            }
+        } catch (err) { 
+            console.error('Error al actualizar usuario:', err); 
+            alert('No se pudo actualizar el usuario.');
         }
     };
     
     const handleToggleAchievement = async (achievementId: string, unlocked: boolean) => {
         if (!editingUser || !user) return;
+        const targetUserId = editingUser.id;
+    
         try {
-            await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}/achievements`, {
+            const response = await fetch(`http://localhost:3001/api/admin/users/${targetUserId}/achievements`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id })
+                body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id }),
             });
-            // Optimistic update for achievements modal
-            const updatedUsers = await (await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}?adminUserId=${user.id}`)).json();
-            setEditingUser(updatedUsers);
-            // Full refetch for main user list
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error: No se pudo guardar el cambio en el servidor.');
+            }
+    
+            const updatedUserFromServer = await response.json();
+    
+            // 1. Actualizar la lista de usuarios en el panel de administración
+            setUsers(prevUsers => prevUsers.map(u => 
+                u.id === updatedUserFromServer.id ? updatedUserFromServer : u
+            ));
+    
+            // 2. Actualizar el estado del usuario que se está editando en el modal
+            setEditingUser(updatedUserFromServer);
+    
+            // 3. Si el usuario editado es el mismo que el administrador actual,
+            //    actualizar el estado global de la aplicación.
+            if (updatedUserFromServer.id === user.id) {
+                updateUser(updatedUserFromServer);
+            }
+    
+        } catch (error) {
+            console.error("Error al actualizar el logro:", error);
+            alert((error as Error).message);
+            // En caso de error, se recargan los datos para mantener la consistencia
             fetchData('users');
-        } catch (err) { console.error("Error al cambiar logro:", err); }
+        }
     };
+
 
     const renderContent = () => {
         if (isLoading) return <div className="text-center p-8 text-text-secondary">Cargando...</div>;
@@ -360,7 +396,7 @@ const AdminPage: React.FC<{ user: User | null }> = ({ user }) => {
         switch (activeTab) {
             case 'messages': return <MessagesPanel messages={messages} onUpdateStatus={(id, status) => handleUpdateStatus('messages', id, status)} onReply={setReplyingTo} onDelete={(id) => handleDelete('messages', id)} />;
             case 'reports': return <ReportsPanel reports={reports} onUpdateStatus={(id, status) => handleUpdateStatus('reports', id, status)} onDelete={(id) => handleDelete('reports', id)} />;
-            case 'users': return <UsersPanel users={users} onEdit={setEditingUser} onDelete={handleDeleteUser} onManageAchievements={(u) => { setEditingUser(u); setIsAchievementsModalOpen(true); }} />;
+            case 'users': return <UsersPanel users={users} onEdit={setEditingUser} onDelete={(id) => handleDelete('users', id)} onManageAchievements={(u) => { setEditingUser(u); setIsAchievementsModalOpen(true); }} />;
             default: return null;
         }
     };

@@ -120,7 +120,7 @@ const App: React.FC = () => {
       case 'perfil':
         return <PerfilPage user={user} updateUser={updateUser} setCurrentPage={setCurrentPage} />;
       case 'admin':
-        return isAdminMode ? <AdminPage user={user} /> : <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
+        return isAdminMode ? <AdminPage user={user} updateUser={updateUser} /> : <HomePage setCurrentPage={setCurrentPage} user={user} isAdminMode={isAdminMode} />;
       case 'politica-privacidad':
         return <PoliticaPrivacidadPage />;
       case 'terminos-uso':
