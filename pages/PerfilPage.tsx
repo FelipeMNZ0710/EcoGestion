@@ -183,7 +183,7 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
     
     const handleUpdateUser = async (updatedFields: Partial<User>) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/users/profile/${user.id}`, {
+            const response = await fetch(`/api/users/profile/${user.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedFields)
@@ -203,7 +203,7 @@ const PerfilPage: React.FC<{ user: User | null, updateUser: (user: User) => void
     
     const handleToggleAchievement = async (achievementId: string, unlocked: boolean) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/users/${user.id}/achievements`, {
+            const response = await fetch(`/api/users/${user.id}/achievements`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id })

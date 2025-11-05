@@ -296,7 +296,7 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
     const fetchNews = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/news');
+            const response = await fetch('/api/news');
             if (!response.ok) throw new Error('Failed to fetch news');
             const data = await response.json();
             setNews(data);
@@ -370,7 +370,7 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         }
 
         const isCreating = !articleData.id;
-        const url = isCreating ? 'http://localhost:3001/api/news' : `http://localhost:3001/api/news/${articleData.id}`;
+        const url = isCreating ? '/api/news' : `/api/news/${articleData.id}`;
         const method = isCreating ? 'POST' : 'PUT';
 
         try {
@@ -396,7 +396,7 @@ const NoticiasPage: React.FC<{user: User | null, isAdminMode: boolean}> = ({user
         }
         if (window.confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
             try {
-                const response = await fetch(`http://localhost:3001/api/news/${articleId}`, { method: 'DELETE' });
+                const response = await fetch(`/api/news/${articleId}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Failed to delete article');
                 fetchNews(); // Refresh data
             } catch (error) {

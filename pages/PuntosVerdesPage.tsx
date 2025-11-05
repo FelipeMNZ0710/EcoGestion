@@ -1,9 +1,7 @@
-
-
 import React, { useEffect, useState, useRef, useMemo, forwardRef, useCallback } from 'react';
-import InteractiveMap from '../components/InteractiveMap';
 import type { User, GamificationAction, Location, Schedule, LocationStatus, ReportReason } from '../types';
 import FilterMenu, { Category as FilterCategory } from '../components/FilterMenu';
+import InteractiveMap from '../components/InteractiveMap';
 
 const allMaterials: string[] = ['Plásticos', 'Vidrio', 'Papel/Cartón', 'Pilas'];
 const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -33,14 +31,22 @@ const checkOpen = (schedule: Schedule[]): boolean => {
 
 // --- Sub-Components ---
 const LocationCard = forwardRef<HTMLDivElement, {
-    location: Location; isSelected: boolean; isHovered: boolean; isFavorite: boolean;
-    user: User | null; isAdminMode: boolean; onMouseEnter: () => void;
-    onMouseLeave: () => void; onClick: () => void; onToggleFavorite: (locationId: string) => void;
-    onEdit: () => void; onDelete: () => void;
-}>(({ location, isSelected, isHovered, isFavorite, user, isAdminMode, onMouseEnter, onMouseLeave, onClick, onToggleFavorite, onEdit, onDelete }, ref) => {
+    location: Location; isSelected: boolean; isFavorite: boolean;
+    user: User | null; isAdminMode: boolean; onClick: () => void; onToggleFavorite: (locationId: string) => void;
+    onEdit: () => void; onDelete: () => void; onHover: (id: string | null) => void;
+}>(({ location, isSelected, isFavorite, user, isAdminMode, onClick, onToggleFavorite, onEdit, onDelete, onHover }, ref) => {
     const currentStatus = statusInfo[location.status];
     return (
-        <div ref={ref} className={`modern-card overflow-hidden flex flex-col transition-all duration-200 cursor-pointer relative ${isSelected || isHovered ? 'border-primary bg-surface' : 'border-white/10 bg-surface'}`} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick} role="button" tabIndex={0} aria-label={`Ver detalles de ${location.name}`}>
+        <div 
+            ref={ref} 
+            className={`modern-card overflow-hidden flex flex-col transition-all duration-200 cursor-pointer relative ${isSelected ? 'border-primary' : ''}`} 
+            onClick={onClick} 
+            onMouseEnter={() => onHover(location.id)}
+            onMouseLeave={() => onHover(null)}
+            role="button" 
+            tabIndex={0} 
+            aria-label={`Ver detalles de ${location.name}`}
+        >
             <div className="relative">
                 <img src={location.imageUrls[0]} alt={`Foto de ${location.name}`} className="w-full h-40 object-cover" />
                  {isAdminMode && (
@@ -291,19 +297,20 @@ const PuntosVerdesPage: React.FC<{
 }> = ({ user, updateUser, onUserAction, isAdminMode }) => {
     const [puntosVerdes, setPuntosVerdes] = useState<Location[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+    const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
     const [hoveredLocationId, setHoveredLocationId] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-    
-    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const [detailModalLocation, setDetailModalLocation] = useState<Location | null>(null);
+
+    const locationRefs = useRef<Record<string, HTMLDivElement | null>>({});
     
     const fetchLocations = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/locations');
+            const response = await fetch('/api/locations');
             if (!response.ok) throw new Error('La respuesta de la red no fue exitosa');
             const data: Location[] = await response.json();
             setPuntosVerdes(data);
@@ -325,13 +332,11 @@ const PuntosVerdesPage: React.FC<{
         }
         return puntosVerdes.filter(p => p.materials.includes(activeFilter));
     }, [puntosVerdes, activeFilter, user]);
-    
-    const openDetailModal = (location: Location) => {
-        setSelectedLocation(location);
-    };
 
-    const closeDetailModal = () => {
-        setSelectedLocation(null);
+    const handleSelectLocationFromMap = (location: Location) => {
+        setSelectedLocationId(location.id);
+        const cardElement = locationRefs.current[location.id];
+        cardElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     const handleToggleFavorite = async (locationId: string) => {
@@ -340,7 +345,7 @@ const PuntosVerdesPage: React.FC<{
             return;
         }
         try {
-            const response = await fetch(`http://localhost:3001/api/users/favorites`, {
+            const response = await fetch(`/api/users/favorites`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id, locationId: locationId })
@@ -355,25 +360,25 @@ const PuntosVerdesPage: React.FC<{
     };
 
     const handleCheckIn = () => {
-        if (selectedLocation) {
-            onUserAction('check_in', { locationId: selectedLocation.id });
-            setPuntosVerdes(puntosVerdes.map(p => p.id === selectedLocation.id ? {...p, checkIns: p.checkIns + 1} : p));
-            closeDetailModal();
+        if (detailModalLocation) {
+            onUserAction('check_in', { locationId: detailModalLocation.id });
+            setPuntosVerdes(puntosVerdes.map(p => p.id === detailModalLocation.id ? {...p, checkIns: p.checkIns + 1} : p));
+            setDetailModalLocation(null);
         }
     };
     
     const handleReportSubmit = async (reportData: { reason: ReportReason, comment: string, imageUrl?: string }) => {
-        if (!selectedLocation || !user) {
+        if (!detailModalLocation || !user) {
             alert("Se requiere un usuario y una ubicación para enviar un reporte.");
             return;
         }
 
         try {
-            const response = await fetch('http://localhost:3001/api/locations/report', {
+            const response = await fetch('/api/locations/report', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    locationId: selectedLocation.id,
+                    locationId: detailModalLocation.id,
                     userId: user.id,
                     ...reportData
                 })
@@ -386,8 +391,8 @@ const PuntosVerdesPage: React.FC<{
             setPuntosVerdes(puntosVerdes.map(p => p.id === updatedLocation.id ? { ...p, status: updatedLocation.status } : p));
             onUserAction('report_punto_verde');
             setIsReportModalOpen(false);
-            if(selectedLocation.id === updatedLocation.id) {
-                setSelectedLocation(prev => prev ? { ...prev, status: updatedLocation.status } : null);
+            if(detailModalLocation.id === updatedLocation.id) {
+                setDetailModalLocation(prev => prev ? { ...prev, status: updatedLocation.status } : null);
             }
         } catch (error) {
             console.error("Error al enviar el reporte:", error);
@@ -403,13 +408,13 @@ const PuntosVerdesPage: React.FC<{
     const handleSaveLocation = async (locationData: Omit<Location, 'schedule' | 'mapData' | 'lastServiced' | 'checkIns'>) => {
         const isCreating = !editingLocation;
         const method = isCreating ? 'POST' : 'PUT';
-        const url = isCreating ? 'http://localhost:3001/api/locations' : `http://localhost:3001/api/locations/${locationData.id}`;
+        const url = isCreating ? '/api/locations' : `/api/locations/${locationData.id}`;
         
         // Simplistic mapData generation for new locations, assuming address is enough
         const fullLocationData = {
             ...locationData,
             schedule: [],
-            mapData: isCreating ? { id: locationData.id, name: locationData.name, lat: -26.17, lng: -58.17, x: 400, y: 300 } : editingLocation!.mapData,
+            mapData: isCreating ? { id: locationData.id, name: locationData.name, lat: -26.17 + (Math.random() - 0.5) * 0.1, lng: -58.17 + (Math.random() - 0.5) * 0.1, x: 0, y: 0 } : editingLocation!.mapData,
             lastServiced: new Date().toISOString(),
             checkIns: isCreating ? 0 : editingLocation!.checkIns
         };
@@ -434,7 +439,7 @@ const PuntosVerdesPage: React.FC<{
         if (!window.confirm("¿Estás seguro de que quieres eliminar este Punto Verde? Esta acción no se puede deshacer.")) return;
         
         try {
-            const response = await fetch(`http://localhost:3001/api/locations/${locationId}`, { method: 'DELETE' });
+            const response = await fetch(`/api/locations/${locationId}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Falló al eliminar la ubicación.');
             await fetchLocations();
         } catch(error) {
@@ -445,14 +450,14 @@ const PuntosVerdesPage: React.FC<{
 
     return (
         <>
-            <LocationDetailModal location={selectedLocation} user={user} onClose={closeDetailModal} onCheckIn={handleCheckIn} onReport={() => setIsReportModalOpen(true)} />
+            <LocationDetailModal location={detailModalLocation} user={user} onClose={() => setDetailModalLocation(null)} onCheckIn={handleCheckIn} onReport={() => setIsReportModalOpen(true)} />
             <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onSubmit={handleReportSubmit} />
             <LocationEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveLocation} location={editingLocation} />
 
             <div className="pt-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <div className="text-center mb-12">
-                        <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Mapa Interactivo de Puntos Verdes</h1>
+                        <h1 className="text-4xl font-extrabold font-display text-text-main sm:text-5xl">Puntos Verdes en Formosa</h1>
                         <p className="mt-4 text-lg text-text-secondary max-w-3xl mx-auto">Encuentra tu punto de reciclaje más cercano, filtra por material y colabora con la comunidad reportando el estado de los contenedores.</p>
                          {isAdminMode && (
                             <div className="mt-6">
@@ -463,55 +468,58 @@ const PuntosVerdesPage: React.FC<{
                         )}
                     </div>
 
-                    <div className="mb-8">
-                        <FilterMenu activeFilter={activeFilter} setActiveFilter={setActiveFilter} user={user} />
-                    </div>
-
-                    <div className="grid lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-1 h-[60vh] lg:h-auto order-2 lg:order-1">
-                            <div className="overflow-y-auto max-h-[60vh] lg:max-h-[calc(100vh-15rem)] pr-2 space-y-4">
-                                {isLoading ? (
-                                    <div className="text-center text-text-secondary p-8">
-                                        <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Cargando Puntos Verdes...
-                                    </div>
-                                ) : (
-                                    filteredLocations.map(location => (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div className="lg:col-span-5">
+                            <div className="lg:sticky lg:top-24">
+                                <InteractiveMap 
+                                    locations={puntosVerdes}
+                                    selectedLocationId={selectedLocationId}
+                                    hoveredLocationId={hoveredLocationId}
+                                    onSelectLocation={handleSelectLocationFromMap}
+                                    onHoverLocation={setHoveredLocationId}
+                                />
+                            </div>
+                        </div>
+                        <div className="lg:col-span-7 space-y-8">
+                            <div>
+                                <FilterMenu activeFilter={activeFilter} setActiveFilter={setActiveFilter} user={user} />
+                            </div>
+                            
+                            {isLoading ? (
+                                <div className="text-center text-text-secondary p-8">
+                                    <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Cargando Puntos Verdes...
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {filteredLocations.map(location => (
                                         <LocationCard 
                                             key={location.id}
-                                            ref={el => { cardRefs.current[location.id] = el; }}
+                                            ref={el => { locationRefs.current[location.id] = el; }}
                                             location={location}
-                                            isSelected={selectedLocation?.id === location.id}
-                                            isHovered={hoveredLocationId === location.id}
+                                            isSelected={selectedLocationId === location.id}
                                             isFavorite={user?.favoriteLocations?.includes(location.id) ?? false}
                                             user={user}
                                             isAdminMode={isAdminMode}
-                                            onMouseEnter={() => setHoveredLocationId(location.id)}
-                                            onMouseLeave={() => setHoveredLocationId(null)}
-                                            onClick={() => openDetailModal(location)}
+                                            onClick={() => { setSelectedLocationId(location.id); setDetailModalLocation(location); }}
                                             onToggleFavorite={handleToggleFavorite}
                                             onEdit={() => handleOpenEditModal(location)}
                                             onDelete={() => handleDeleteLocation(location.id)}
+                                            onHover={setHoveredLocationId}
                                         />
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                        <div className="lg:col-span-2 h-[60vh] lg:h-auto order-1 lg:order-2">
-                             <InteractiveMap
-                                locations={filteredLocations.map(l => ({ ...l.mapData, status: l.status }))}
-                                selectedLocation={selectedLocation ? { ...selectedLocation.mapData, status: selectedLocation.status } : null}
-                                hoveredLocationId={hoveredLocationId}
-                                onPinClick={(mapData) => {
-                                    const loc = puntosVerdes.find(p => p.id === mapData.id);
-                                    if(loc) openDetailModal(loc);
-                                }}
-                                onPinMouseEnter={setHoveredLocationId}
-                                onPinMouseLeave={() => setHoveredLocationId(null)}
-                            />
+                                    ))}
+                                </div>
+                            )}
+                             {filteredLocations.length === 0 && !isLoading && (
+                                <div className="text-center text-text-secondary p-8 modern-card">
+                                    <p className="text-2xl mb-2">🙁</p>
+                                    <p className="font-semibold">No se encontraron Puntos Verdes</p>
+                                    <p className="text-sm">Intenta con otro filtro o revisa tus favoritos.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

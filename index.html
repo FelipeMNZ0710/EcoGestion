@@ -32,6 +32,9 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
     
+    <!-- MapLibre CSS -->
+    <link href='https://esm.sh/maplibre-gl@4.3.2/dist/maplibre-gl.css' rel='stylesheet' />
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -438,23 +441,9 @@
       .discord-admin-tag { background-color: var(--bg-accent); color: #f5f5f5; font-size: 0.6rem; font-weight: bold; padding: 1px 4px; border-radius: 3px; }
 
       /* Puntos Verdes Map Styles */
-      .map-container { position: relative; width: 100%; height: 100%; overflow: hidden; background-color: #1a1a1a; }
-      .map-svg { width: 100%; height: 100%; }
-      .map-water { fill: #2a3a4a; }
-      .map-block { fill: #2c2c2c; }
-      .map-avenue { stroke: #4a4a4a; stroke-width: 3; fill: none; stroke-linecap: round; }
-      .map-street { stroke: #4a4a4a; stroke-width: 1; fill: none; stroke-linecap: round; opacity: 0.5; }
-      .map-plaza { fill: #065f46; }
-      .map-pin { cursor: pointer; transition: transform 0.2s ease; }
-      .map-pin:hover { transform: scale(1.1); }
-      .map-pin-halo { fill: #10B981; opacity: 0; transform-origin: center; transition: all 0.3s ease; }
-      .map-pin.is-hovered .map-pin-halo, .map-pin.is-selected .map-pin-halo { opacity: 0.3; transform: scale(1.5); }
-      .map-pin-body { stroke: #181818; stroke-width: 2; transition: fill 0.2s; }
-      .map-pin-body.status-ok { fill: #34d399; }
-      .map-pin-body.status-reported { fill: #f59e0b; }
-      .map-pin-body.status-maintenance { fill: #60a5fa; }
-      .map-pin-body.status-serviced { fill: #22d3ee; }
-      .map-pin.is-selected .map-pin-body { stroke: #10B981; }
+      .maplibregl-marker {
+        cursor: pointer;
+      }
 
       /* Puntos Verdes Filter Menu */
       .filter-menu { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -787,6 +776,8 @@
       @keyframes game-sparkle { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.5); opacity: 1; } 70% { transform: scale(0.8); opacity: 1; } }
       @keyframes game-fall-rotate { 0% { transform: translateY(-50px) rotate(0deg); opacity: 0; } 100% { transform: translateY(0) rotate(var(--end-rotate, 360deg)); opacity: 1; } }
       @keyframes game-screen-flash { 50% { background-color: rgba(239, 68, 68, 0.3); } }
+      @keyframes float-up { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+      @keyframes feedback-pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 
     </style>
     <script type="importmap">
@@ -796,7 +787,11 @@
     "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
     "react/": "https://esm.sh/react@^19.1.1/",
     "@google/genai": "https://esm.sh/@google/genai@^1.15.0",
-    "marked": "https://aistudiocdn.com/marked@^16.2.1"
+    "marked": "https://aistudiocdn.com/marked@^16.2.1",
+    "react-map-gl/maplibre": "https://esm.sh/react-map-gl@7.1.7/maplibre",
+    "maplibre-gl": "https://esm.sh/maplibre-gl@4.3.2",
+    "@math.gl/web-mercator": "https://esm.sh/@math.gl/web-mercator@4.0.0",
+    "react-map-gl/": "https://aistudiocdn.com/react-map-gl@^8.1.0/"
   }
 }
 </script>

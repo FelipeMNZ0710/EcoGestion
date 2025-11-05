@@ -18,6 +18,7 @@ const binInfo: Record<BinType, { name: string; color: string, icon: string, drop
 }
 
 const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComplete, userHighScore }) => {
+    const [gameStarted, setGameStarted] = useState(false);
     const [gameItems, setGameItems] = useState<SortableItemData[]>([]);
     const [currentItem, setCurrentItem] = useState<SortableItemData | null>(null);
     const [score, setScore] = useState(0);
@@ -33,14 +34,14 @@ const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComp
     }, [items]);
 
     useEffect(() => {
-        if (timeLeft > 0 && !isFinished) {
+        if (gameStarted && timeLeft > 0 && !isFinished) {
             const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timer);
-        } else if (timeLeft <= 0 && !isFinished) {
+        } else if (gameStarted && timeLeft <= 0 && !isFinished) {
             setIsFinished(true);
             onComplete(score);
         }
-    }, [timeLeft, isFinished, onComplete, score]);
+    }, [timeLeft, isFinished, onComplete, score, gameStarted]);
 
     const nextItem = () => {
         setFeedback(null);
@@ -68,10 +69,23 @@ const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComp
     
     const isNewHighScore = score > userHighScore;
 
+    if (!gameStarted) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+                <div className="text-7xl mb-4">♻️</div>
+                <h2 className="text-3xl font-bold text-text-main">Clasificación Rápida</h2>
+                <p className="text-text-secondary mt-4 max-w-md">Arrastra cada objeto que aparezca en el centro hacia su contenedor correcto en la parte inferior. ¡Hazlo rápido, el tiempo corre!</p>
+                <button onClick={() => setGameStarted(true)} className="cta-button mt-8">
+                    Empezar a Jugar
+                </button>
+            </div>
+        );
+    }
+
     if (isFinished) {
          return (
             <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
-                <div className="text-7xl mb-4">♻️</div>
+                <div className="text-7xl mb-4">🏆</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
                 {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
                 <p className="text-text-secondary mt-2 text-lg">Tu puntaje final: <strong className="text-primary text-2xl">{score}</strong>.</p>
@@ -89,7 +103,14 @@ const SortingGame: React.FC<SortingGameProps> = ({ items, bins, duration, onComp
     if (feedback === 'incorrect') itemAnimationClass = 'animate-game-shake';
     
     return (
-        <div className="w-full h-full flex flex-col items-center justify-between text-text-main">
+        <div className="w-full h-full flex flex-col items-center justify-between text-text-main relative">
+            {feedback && (
+                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                    <div className="text-9xl" style={{ animation: 'feedback-pop 0.5s ease-out forwards' }}>
+                        {feedback === 'correct' ? '✅' : '❌'}
+                    </div>
+                </div>
+            )}
             <header className="w-full flex justify-between items-center text-lg sm:text-xl font-bold px-2">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
                 <div>Tiempo: <span className={`transition-colors ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>{timeLeft}s</span></div>

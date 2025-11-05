@@ -2,6 +2,7 @@
   "name": "EcoGestión",
   "description": "An intelligent chatbot to answer all your recycling questions for the EcoGestión initiative. Get clear, friendly, and accurate information instantly.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }

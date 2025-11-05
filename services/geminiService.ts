@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction } from '../data/botPrompt';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
@@ -24,6 +24,36 @@ export async function* getGeminiResponseStream(query: string): AsyncGenerator<st
     } catch (error) {
         console.error("Error fetching from Gemini API stream:", error);
         // Re-throw the error to be caught by the intelligentBotService and trigger the fallback.
+        throw error;
+    }
+}
+
+export async function getGeminiMapResponse(query: string, location: { latitude: number; longitude: number } | null): Promise<GenerateContentResponse> {
+    try {
+        const config: any = {
+            tools: [{ googleMaps: {} }],
+        };
+
+        if (location) {
+            config.toolConfig = {
+                retrievalConfig: {
+                    latLng: {
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                    },
+                },
+            };
+        }
+
+        const response = await ai.models.generateContent({
+            model: modelName,
+            contents: query,
+            config,
+        });
+
+        return response;
+    } catch (error) {
+        console.error("Error fetching from Gemini API with Maps:", error);
         throw error;
     }
 }

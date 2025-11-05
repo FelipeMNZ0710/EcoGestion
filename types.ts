@@ -322,6 +322,7 @@ export interface ChatMessage {
   sender: 'user' | 'bot';
   feedback?: 'like' | 'dislike' | null;
   isLoading?: boolean;
+  groundingChunks?: any[];
 }
 
 // --- Contact Message Type ---
@@ -333,4 +334,11 @@ export interface ContactMessage {
   message: string;
   status: 'unread' | 'read' | 'archived';
   submitted_at: string;
+}
+
+// --- Testimonial Type ---
+export interface Testimonial {
+  name: string;
+  role: string;
+  quote: string;
 }

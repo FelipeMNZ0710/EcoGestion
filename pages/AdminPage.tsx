@@ -262,7 +262,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/${tab}?adminUserId=${user.id}`);
+            const response = await fetch(`/api/admin/${tab}?adminUserId=${user.id}`);
             if (!response.ok) throw new Error(`Error ${response.status}: No se pudo obtener los datos.`);
             const data = await response.json();
             if (tab === 'messages') setMessages(data);
@@ -281,7 +281,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
 
     const handleUpdateStatus = async (type: 'messages' | 'reports', id: number, status: string) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
+            const response = await fetch(`/api/admin/${type}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, adminUserId: user?.id }),
@@ -301,7 +301,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
         const typeName = type === 'messages' ? 'mensaje' : type === 'reports' ? 'reporte' : 'usuario';
         if (!window.confirm(`¿Seguro que quieres eliminar este ${typeName}? Esta acción no se puede deshacer.`)) return;
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/${type}/${id}`, {
+            const response = await fetch(`/api/admin/${type}/${id}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ adminUserId: user?.id }),
@@ -320,7 +320,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
     
     const handleSendReply = async (body: string) => {
         if (!replyingTo || !user) return;
-        await fetch('http://localhost:3001/api/admin/reply', {
+        await fetch('/api/admin/reply', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to: replyingTo.email, subject: `Re: ${replyingTo.subject}`, body, adminUserId: user.id })
@@ -331,7 +331,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
     const handleUpdateUser = async (updatedFields: Partial<User>) => {
         if (!editingUser || !user) return;
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/users/${editingUser.id}`, {
+            const response = await fetch(`/api/admin/users/${editingUser.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...updatedFields, adminUserId: user.id })
@@ -353,7 +353,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, updateUser }) => {
         const targetUserId = editingUser.id;
     
         try {
-            const response = await fetch(`http://localhost:3001/api/admin/users/${targetUserId}/achievements`, {
+            const response = await fetch(`/api/admin/users/${targetUserId}/achievements`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ achievementId, unlocked, adminUserId: user.id }),

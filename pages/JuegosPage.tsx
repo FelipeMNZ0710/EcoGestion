@@ -221,7 +221,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     const fetchGames = useCallback(async () => {
         setIsLoading(true);
         try {
-            const url = user ? `http://localhost:3001/api/games?userId=${user.id}` : 'http://localhost:3001/api/games';
+            const url = user ? `/api/games?userId=${user.id}` : '/api/games';
             const response = await fetch(url);
             if (!response.ok) throw new Error('Failed to fetch games');
             const data = await response.json();
@@ -298,7 +298,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
 
     const handleSaveGame = async (gameToSave: Omit<Game, 'id' | 'userHighScore'> & { id?: number }) => {
         const isCreating = !gameToSave.id;
-        const url = isCreating ? `http://localhost:3001/api/games` : `http://localhost:3001/api/games/${gameToSave.id}`;
+        const url = isCreating ? `/api/games` : `/api/games/${gameToSave.id}`;
         const method = isCreating ? 'POST' : 'PUT';
         
         try {
@@ -319,7 +319,7 @@ const JuegosPage: React.FC<{ user: User | null; onUserAction: (action: Gamificat
     const handleDeleteGame = async (gameId: number) => {
         if (window.confirm("¿Seguro que quieres eliminar este juego?")) {
             try {
-                const response = await fetch(`http://localhost:3001/api/games/${gameId}`, { method: 'DELETE' });
+                const response = await fetch(`/api/games/${gameId}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Failed to delete game');
                 fetchGames();
             } catch (error) {

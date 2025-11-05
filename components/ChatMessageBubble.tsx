@@ -8,6 +8,13 @@ interface ChatMessageBubbleProps {
     onFeedback: (messageId: number, feedback: 'like' | 'dislike') => void;
 }
 
+const MapPinIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-6.05a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+    </svg>
+);
+
+
 const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onNavigate, onFeedback }) => {
     const isUser = message.sender === 'user';
     const showTypingIndicator = message.sender === 'bot' && message.text === '' && !message.isLoading;
@@ -75,6 +82,8 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onNaviga
         );
     };
 
+    const mapChunks = message.groundingChunks?.filter(c => c.maps) || [];
+
 
     return (
         <div className={`flex items-start gap-3 ${isUser ? 'justify-end animate-slide-in-right' : 'justify-start animate-slide-in-left'}`}>
@@ -88,6 +97,26 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onNaviga
                             : renderMessageContent()
                     }
                  </div>
+
+                {mapChunks.length > 0 && (
+                    <div className="px-4 pb-2 pt-2 mt-2 border-t border-white/10">
+                        <h4 className="text-xs font-bold text-text-secondary mb-2">Fuentes de Google Maps:</h4>
+                        <div className="flex flex-col gap-1">
+                            {mapChunks.map((chunk, index) => (
+                                <a
+                                    href={chunk.maps.uri}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    key={index}
+                                    className="flex items-center p-2 text-sm bg-slate-800 rounded-md hover:bg-slate-700 transition-colors text-text-main"
+                                >
+                                    <MapPinIcon />
+                                    <span className="truncate">{chunk.maps.title}</span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                  {!isUser && !showTypingIndicator && !message.isLoading && message.text && (
                      <div className="feedback-controls">

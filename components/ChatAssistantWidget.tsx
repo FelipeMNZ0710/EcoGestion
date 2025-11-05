@@ -3,6 +3,7 @@ import type { User, ChatMessage, Page } from '../types';
 import ChatHistory from './ChatHistory';
 import ChatInput from './ChatInput';
 import { getBotResponseStream } from '../services/intelligentBotService';
+import { getGeminiMapResponse } from '../services/geminiService';
 import { allQuickQuestions } from '../data/quickQuestionsData';
 import { getFromCache, setInCache } from '../services/cacheService';
 
@@ -61,10 +62,7 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
         }
     }, [isOpen, user, messages.length]);
 
-    const handleSend = async (text: string) => {
-        const newUserMessage: ChatMessage = { id: Date.now(), text, sender: 'user' };
-        setMessages(prev => [...prev, newUserMessage]);
-
+    const handleStreamQuery = async (text: string) => {
         const cachedResponse = getFromCache(text);
         if (cachedResponse) {
             const cachedBotMessage: ChatMessage = { id: Date.now() + 1, text: cachedResponse, sender: 'bot' };
@@ -74,7 +72,6 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
 
         setIsLoading(true);
         const botMessageId = Date.now() + 1;
-        // Display "thinking" message immediately
         const thinkingMessage: ChatMessage = { id: botMessageId, text: '', sender: 'bot', isLoading: true };
         setMessages(prev => [...prev, thinkingMessage]);
 
@@ -84,40 +81,83 @@ const ChatAssistantWidget: React.FC<ChatAssistantWidgetProps> = ({ user, setCurr
             const stream = getBotResponseStream(text);
             for await (const chunk of stream) {
                 if (isFirstChunk) {
-                    // Replace "thinking" message with the first chunk
                     fullResponse = chunk;
-                    setMessages(prev =>
-                        prev.map(msg =>
-                            msg.id === botMessageId ? { ...msg, text: fullResponse, isLoading: false } : msg
-                        )
-                    );
+                    setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: fullResponse, isLoading: false } : msg));
                     isFirstChunk = false;
                 } else {
                     fullResponse += chunk;
-                    setMessages(prev =>
-                        prev.map(msg =>
-                            msg.id === botMessageId ? { ...msg, text: fullResponse } : msg
-                        )
-                    );
+                    setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: fullResponse } : msg));
                 }
             }
         } catch (error) {
             console.error("Error streaming bot response:", error);
             const errorMessage = "Lo siento, ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo más tarde.";
-            setMessages(prev =>
-                prev.map(msg =>
-                    msg.id === botMessageId ? { ...msg, text: errorMessage, isLoading: false } : msg
-                )
-            );
+            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: errorMessage, isLoading: false } : msg));
         } finally {
-            // If the stream was empty or failed before the first chunk
-            if (isFirstChunk) {
-                 setMessages(prev => prev.filter(msg => msg.id !== botMessageId));
-            }
+            if (isFirstChunk) setMessages(prev => prev.filter(msg => msg.id !== botMessageId));
             setIsLoading(false);
-            if (fullResponse) {
-                setInCache(text, fullResponse);
+            if (fullResponse) setInCache(text, fullResponse);
+        }
+    };
+    
+    const getUserLocation = (): Promise<{ latitude: number; longitude: number } | null> => {
+        return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+                resolve(null);
+                return;
             }
+            navigator.geolocation.getCurrentPosition(
+                (position) => resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                }),
+                (error) => {
+                    console.warn("Geolocation error:", error.message);
+                    resolve(null);
+                },
+                { timeout: 5000 }
+            );
+        });
+    };
+
+    const handleMapQuery = async (text: string) => {
+        setIsLoading(true);
+        const botMessageId = Date.now() + 1;
+        const thinkingMessage: ChatMessage = { id: botMessageId, text: '', sender: 'bot', isLoading: true };
+        setMessages(prev => [...prev, thinkingMessage]);
+
+        try {
+            const location = await getUserLocation();
+            const response = await getGeminiMapResponse(text, location);
+            const responseText = response.text;
+            const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+            
+            setMessages(prev => prev.map(msg => 
+                msg.id === botMessageId 
+                ? { ...msg, text: responseText, isLoading: false, groundingChunks: groundingChunks || [] } 
+                : msg
+            ));
+        } catch (error) {
+            console.error("Error handling map query:", error);
+            const errorMessage = "Lo siento, no pude procesar la búsqueda en el mapa. Intenta de nuevo.";
+             setMessages(prev => prev.map(msg => 
+                msg.id === botMessageId ? { ...msg, text: errorMessage, isLoading: false } : msg
+            ));
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSend = async (text: string) => {
+        const newUserMessage: ChatMessage = { id: Date.now(), text, sender: 'user' };
+        setMessages(prev => [...prev, newUserMessage]);
+        
+        const isMapQuery = /dónde|cerca|mapa|ubicaci[oó]n|punto\s*verde|hay\s*alg[uú]n/i.test(text);
+
+        if (isMapQuery) {
+            await handleMapQuery(text);
+        } else {
+            await handleStreamQuery(text);
         }
     };
 

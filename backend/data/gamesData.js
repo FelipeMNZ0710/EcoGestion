@@ -27,8 +27,8 @@ const gamesData = [
         payload: {
             points: 60,
             cards: [
-                { id: '1', content: ' BOTELLA ', type: 'icon' }, { id: '2', content: ' CAJA ', type: 'icon' }, { id: '3', content: ' FRASCO ', type: 'icon' },
-                { id: '4', content: ' LATA ', type: 'icon' }, { id: '5', content: ' DIARIO ', type: 'icon' }, { id: '6', content: ' TETRA ', type: 'icon' },
+                { id: '1', content: '🍾', type: 'icon' }, { id: '2', content: '📦', type: 'icon' }, { id: '3', content: '🫙', type: 'icon' },
+                { id: '4', content: '🥫', type: 'icon' }, { id: '5', content: '📰', type: 'icon' }, { id: '6', content: '🧃', type: 'icon' },
             ]
         },
         rating: 4.7
@@ -43,11 +43,14 @@ const gamesData = [
         payload: {
             points: 75,
             items: [
-                { id: 's1', name: 'Botella', image: ' BOTELLA ', correctBin: 'plastico' },
-                { id: 's2', name: 'Periódico', image: ' DIARIO ', correctBin: 'papel' },
-                { id: 's3', name: 'Frasco', image: ' FRASCO ', correctBin: 'vidrio' },
-                { id: 's4', name: 'Lata atún', image: ' LATA ', correctBin: 'metales' },
-                { id: 's5', name: 'Cáscara', image: ' PLATANO ', correctBin: 'organico' },
+                { id: 's1', name: 'Botella Plástica', image: '🍾', correctBin: 'plastico' },
+                { id: 's2', name: 'Periódico', image: '📰', correctBin: 'papel' },
+                { id: 's3', name: 'Frasco de Vidrio', image: '🫙', correctBin: 'vidrio' },
+                { id: 's4', name: 'Lata de Atún', image: '🥫', correctBin: 'metales' },
+                { id: 's5', name: 'Cáscara de Banana', image: '🍌', correctBin: 'organico' },
+                { id: 's6', name: 'Caja de Cartón', image: '📦', correctBin: 'papel' },
+                { id: 's7', name: 'Botella de Gaseosa', image: '🥤', correctBin: 'plastico' },
+                { id: 's8', name: 'Botella de Vino', image: '🍷', correctBin: 'vidrio' },
             ],
             bins: ['plastico', 'papel', 'vidrio', 'metales', 'organico'],
             duration: 60
@@ -77,11 +80,18 @@ const gamesData = [
         category: 'Estrategia',
         image: 'https://images.unsplash.com/photo-1590212151086-e0ad63f46f34?q=80&w=400',
         type: 'chain',
-        learningObjective: 'Organiza los pasos del proceso de reciclaje en el orden correcto.',
+        learningObjective: 'Clasifica los objetos de la cinta transportadora antes de que lleguen al final.',
         payload: {
             points: 80,
-            items: [],
-            bins: [],
+            items: [
+                { id: 's1', name: 'Botella Plástica', image: '🍾', correctBin: 'plastico' },
+                { id: 's2', name: 'Periódico', image: '📰', correctBin: 'papel' },
+                { id: 's3', name: 'Frasco de Vidrio', image: '🫙', correctBin: 'vidrio' },
+                { id: 's4', name: 'Lata de Atún', image: '🥫', correctBin: 'metales' },
+                { id: 's5', name: 'Cáscara de Banana', image: '🍌', correctBin: 'organico' },
+                { id: 's6', name: 'Caja de Cartón', image: '📦', correctBin: 'papel' },
+            ],
+            bins: ['plastico', 'papel', 'vidrio', 'metales', 'organico'],
             duration: 90
         },
         rating: 4.6
@@ -95,7 +105,15 @@ const gamesData = [
         learningObjective: 'Mueve el contenedor para atrapar solo los objetos reciclables y esquivar la basura.',
         payload: {
             points: 70,
-            fallingItems: [],
+            fallingItems: [
+                { id: 'c1', image: '🍾', type: 'recyclable', points: 10 },
+                { id: 'c2', image: '🥫', type: 'recyclable', points: 10 },
+                { id: 'c3', image: '📰', type: 'recyclable', points: 10 },
+                { id: 'c4', image: '🫙', type: 'recyclable', points: 10 },
+                { id: 'c5', image: '🍎', type: 'trash', points: 0 },
+                { id: 'c6', image: '🐟', type: 'trash', points: 0 },
+                { id: 'c7', image: '🍗', type: 'trash', points: 0 },
+            ],
             lives: 3
         },
         rating: 4.7
@@ -109,7 +127,13 @@ const gamesData = [
         learningObjective: 'Elige la herramienta correcta para reparar objetos rotos y darles una segunda vida.',
         payload: {
             points: 65,
-            repairableItems: [],
+            repairableItems: [
+                { id: 'r1', name: 'Bicicleta', image: '🚲', toolOptions: ['🔧', '🔩', '🔨'], correctTool: '🔧' },
+                { id: 'r2', name: 'Ropa Rota', image: '👕', toolOptions: ['🧵', '🧷', '🩹'], correctTool: '🧵' },
+                { id: 'r3', name: 'Silla de Madera', image: '🪑', toolOptions: ['🔨', '🪵', '🔩'], correctTool: '🔨' },
+                { id: 'r4', name: 'Libro Deshojado', image: '📚', toolOptions: ['💧', '🔥', '🧴'], correctTool: '🧴' },
+                { id: 'r5', name: 'Juguete', image: '🧸', toolOptions: ['🩹', '🪛', '🧽'], correctTool: '🪛' },
+            ],
             timePerItem: 15
         },
         rating: 4.5

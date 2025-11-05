@@ -87,7 +87,7 @@ const ComoReciclarPage: React.FC<{ user: User | null, onUserAction: (action: Gam
         const fetchGuides = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('http://localhost:3001/api/recycling-guides');
+                const response = await fetch('/api/recycling-guides');
                 if (!response.ok) throw new Error('Failed to fetch recycling guides');
                 const data = await response.json();
                 setGuidesContent(data);

@@ -40,7 +40,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         setError('');
         setIsLoading(true);
 
-        const url = isRegistering ? 'http://localhost:3001/api/register' : 'http://localhost:3001/api/login';
+        const url = isRegistering ? '/api/register' : '/api/login';
         const body = isRegistering ? { name, email, password } : { email, password };
         
         try {
@@ -80,54 +80,4 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     
                     {error && (
                         <div className="bg-red-500/20 text-red-300 text-sm p-3 rounded-md mb-4 text-center">
-                            {error}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit}>
-                        {isRegistering && (
-                             <div className="inputForm">
-                                <div className="input-icon"><UserIcon /></div>
-                                <input type="text" placeholder="Nombre Completo" value={name} onChange={e => setName(e.target.value)} required className="input" />
-                            </div>
-                        )}
-                        <div className="inputForm">
-                            <div className="input-icon"><EmailIcon /></div>
-                            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="input" />
-                        </div>
-                        <div className="inputForm">
-                            <button
-                                type="button"
-                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                                className="password-toggle"
-                                aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
-                            >
-                                {isPasswordVisible ? <OpenLockIcon /> : <ClosedLockIcon />}
-                            </button>
-                            <input 
-                                type={isPasswordVisible ? 'text' : 'password'} 
-                                placeholder="Contraseña" 
-                                value={password} 
-                                onChange={e => setPassword(e.target.value)} 
-                                required 
-                                className="input"
-                            />
-                        </div>
-                        
-                        <button type="submit" disabled={isLoading} className="button-submit flex items-center justify-center">
-                            {isLoading && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-                            {isLoading ? 'Procesando...' : (isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión')}
-                        </button>
-                    </form>
-
-                    <p className="p">
-                        {isRegistering ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'}
-                        <button onClick={() => { setIsRegistering(!isRegistering); setError(''); }} className="span ml-1">
-                            {isRegistering ? 'Inicia Sesión' : 'Regístrate'}
-                        </button>
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-};
+                            

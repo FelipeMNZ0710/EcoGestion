@@ -12,15 +12,16 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     const gameAreaRef = useRef<HTMLDivElement>(null);
     const cartRef = useRef<HTMLDivElement>(null);
     
+    const [gameStarted, setGameStarted] = useState(false);
     const [fallingItems, setFallingItems] = useState<{ item: CatcherItem; id: number; x: number; y: number, rotation: number }[]>([]);
-    const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'correct' | 'incorrect' }[]>([]);
+    const [feedback, setFeedback] = useState<{ id: number, text: string, x: number, y: number, color: string }[]>([]);
     const [cartX, setCartX] = useState(50); // in percentage
     const [score, setScore] = useState(0);
     const [lives, setLives] = useState(initialLives);
     const [isFinished, setIsFinished] = useState(false);
     const [flash, setFlash] = useState(false);
     const nextItemId = useRef(0);
-    const nextParticleId = useRef(0);
+    const nextFeedbackId = useRef(0);
 
     const spawnItem = useCallback(() => {
         if (isFinished) return;
@@ -36,23 +37,22 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     }, [items, isFinished]);
 
     useEffect(() => {
-        const spawnInterval = setInterval(spawnItem, 1500 - (score / 10)); // Faster spawn with score
-        return () => clearInterval(spawnInterval);
-    }, [spawnItem, score]);
+        if (gameStarted) {
+            const spawnInterval = setInterval(spawnItem, 1500 - (score / 10)); // Faster spawn with score
+            return () => clearInterval(spawnInterval);
+        }
+    }, [spawnItem, score, gameStarted]);
 
-    const createParticles = (x: number, y: number, type: 'correct' | 'incorrect') => {
-        const newParticles = Array.from({ length: 10 }).map(() => ({
-            id: nextParticleId.current++,
-            x,
-            y,
-            type,
-        }));
-        setParticles(prev => [...prev, ...newParticles]);
-        setTimeout(() => setParticles(prev => prev.filter(p => !newParticles.some(np => np.id === p.id))), 600);
+    const addFeedback = (text: string, x: number, y: number, color: string) => {
+        const newFeedback = { id: nextFeedbackId.current++, text, x, y, color };
+        setFeedback(prev => [...prev, newFeedback]);
+        setTimeout(() => {
+            setFeedback(prev => prev.filter(f => f.id !== newFeedback.id));
+        }, 1000);
     };
 
     useEffect(() => {
-        if (isFinished) return;
+        if (isFinished || !gameStarted) return;
         const gameLoop = setInterval(() => {
             const gameAreaHeight = gameAreaRef.current?.offsetHeight || 600;
             setFallingItems(prev => {
@@ -71,15 +71,15 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
                     if (!itemRect) return true;
 
                     if (itemRect.bottom > cartRect.top && itemRect.right > cartRect.left && itemRect.left < cartRect.right && itemRect.bottom < cartRect.bottom + 20) {
-                        const particleX = (itemRect.left + itemRect.width / 2) - gameAreaRect.left;
-                        const particleY = itemRect.top - gameAreaRect.top;
+                        const feedbackX = (itemRect.left + itemRect.width / 2) - gameAreaRect.left;
+                        const feedbackY = itemRect.top - gameAreaRect.top;
                         if (item.item.type === 'recyclable') {
                             setScore(s => s + item.item.points);
-                            createParticles(particleX, particleY, 'correct');
+                            addFeedback(`+${item.item.points}`, feedbackX, feedbackY, 'text-primary');
                         } else {
                             setLives(l => l - 1);
                             setFlash(true); setTimeout(() => setFlash(false), 200);
-                            createParticles(particleX, particleY, 'incorrect');
+                            addFeedback(`-1 Vida`, feedbackX, feedbackY, 'text-red-500');
                         }
                         return false;
                     }
@@ -98,7 +98,7 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
         }, 16);
 
         return () => clearInterval(gameLoop);
-    }, [isFinished, score]);
+    }, [isFinished, score, gameStarted]);
 
     useEffect(() => {
         if (lives <= 0 && !isFinished) {
@@ -117,6 +117,19 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
     };
     
     const isNewHighScore = score > userHighScore;
+
+    if (!gameStarted) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+                <div className="text-7xl mb-4">🗑️</div>
+                <h2 className="text-3xl font-bold text-text-main">Atrapa el Reciclable</h2>
+                <p className="text-text-secondary mt-4 max-w-md">Mueve el mouse para desplazar el contenedor. Atrapa todos los objetos reciclables que caen y esquiva la basura. ¡Pierdes una vida si un reciclable toca el suelo o si atrapas basura!</p>
+                <button onClick={() => setGameStarted(true)} className="cta-button mt-8">
+                    Empezar a Jugar
+                </button>
+            </div>
+        );
+    }
 
     if (isFinished) {
         return (
@@ -148,20 +161,15 @@ const WasteCatcherGame: React.FC<WasteCatcherGameProps> = ({ items, lives: initi
                 </div>
             ))}
             
-            <div className="absolute inset-0 pointer-events-none">
-                {particles.map(p => (
+             <div className="absolute inset-0 pointer-events-none">
+                {feedback.map(f => (
                     <div
-                        key={p.id}
-                        className={`absolute rounded-full ${p.type === 'correct' ? 'bg-emerald-400' : 'bg-red-500'}`}
-                        style={{
-                            left: p.x,
-                            top: p.y,
-                            width: '6px',
-                            height: '6px',
-                            animation: `game-sparkle 0.6s ease-out forwards`,
-                            transform: `translate(${(Math.random() - 0.5) * 50}px, ${(Math.random() - 0.5) * 50}px)`
-                        }}
-                    ></div>
+                        key={f.id}
+                        className={`absolute text-2xl font-bold ${f.color}`}
+                        style={{ left: f.x, top: f.y, animation: 'float-up 1s ease-out forwards' }}
+                    >
+                        {f.text}
+                    </div>
                 ))}
             </div>
 

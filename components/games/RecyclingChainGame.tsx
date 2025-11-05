@@ -18,6 +18,7 @@ const binInfo: Record<BinType, { name: string; color: string; icon: string; drop
 };
 
 const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, duration, onComplete, userHighScore }) => {
+    const [gameStarted, setGameStarted] = useState(false);
     const [gameItems, setGameItems] = useState<{ item: SortableItemData; id: number; position: number }[]>([]);
     const [score, setScore] = useState(0);
     const [combo, setCombo] = useState(0);
@@ -25,9 +26,11 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     const [isFinished, setIsFinished] = useState(false);
     const [isDragging, setIsDragging] = useState<number | null>(null);
     const [dragOverBin, setDragOverBin] = useState<BinType | null>(null);
+    const [floatingScores, setFloatingScores] = useState<{ id: number, value: string, x: number, y: number }[]>([]);
 
     const gameAreaRef = useRef<HTMLDivElement>(null);
     const nextItemId = useRef(0);
+    const nextScoreId = useRef(0);
 
     const spawnItem = useCallback(() => {
         if (isFinished) return;
@@ -41,13 +44,15 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     }, [items, isFinished]);
 
     useEffect(() => {
-        spawnItem();
-        const spawnInterval = setInterval(spawnItem, 4000 - (score / 10)); // Spawns faster as score increases
-        return () => clearInterval(spawnInterval);
-    }, [spawnItem, isFinished, score]);
+        if (gameStarted) {
+            spawnItem();
+            const spawnInterval = setInterval(spawnItem, 4000 - (score / 10)); // Spawns faster as score increases
+            return () => clearInterval(spawnInterval);
+        }
+    }, [spawnItem, isFinished, score, gameStarted]);
 
     useEffect(() => {
-        if (isFinished) return;
+        if (isFinished || !gameStarted) return;
         const gameLoop = setInterval(() => {
             const gameAreaWidth = gameAreaRef.current?.offsetWidth || 800;
             const speed = 1 + (score / 200);
@@ -56,17 +61,34 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
             );
         }, 16);
         return () => clearInterval(gameLoop);
-    }, [isFinished, score]);
+    }, [isFinished, score, gameStarted]);
 
     useEffect(() => {
-        if (timeLeft > 0 && !isFinished) {
+        if (gameStarted && timeLeft > 0 && !isFinished) {
             const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timer);
-        } else if (timeLeft <= 0 && !isFinished) {
+        } else if (gameStarted && timeLeft <= 0 && !isFinished) {
             setIsFinished(true);
             onComplete(score);
         }
-    }, [timeLeft, isFinished, onComplete, score]);
+    }, [timeLeft, isFinished, onComplete, score, gameStarted]);
+
+    const addFloatingScore = (value: string, binElement: HTMLDivElement) => {
+        const rect = binElement.getBoundingClientRect();
+        const gameRect = gameAreaRef.current?.parentElement?.getBoundingClientRect();
+        if(!gameRect) return;
+
+        const newScore = {
+            id: nextScoreId.current++,
+            value,
+            x: rect.left + rect.width / 2 - gameRect.left,
+            y: rect.top - gameRect.top,
+        };
+        setFloatingScores(prev => [...prev, newScore]);
+        setTimeout(() => {
+            setFloatingScores(prev => prev.filter(fs => fs.id !== newScore.id));
+        }, 1000);
+    };
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, itemId: number) => {
         setIsDragging(itemId);
@@ -81,10 +103,13 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
         const draggedItem = gameItems.find(i => i.id === isDragging);
         if (draggedItem) {
             if (draggedItem.item.correctBin === bin) {
-                setScore(s => s + 10 + combo * 2);
+                const points = 10 + combo * 2;
+                setScore(s => s + points);
                 setCombo(c => c + 1);
+                addFloatingScore(`+${points}`, e.currentTarget);
             } else {
                 setCombo(0);
+                addFloatingScore(`❌`, e.currentTarget);
             }
             setGameItems(prev => prev.filter(i => i.id !== isDragging));
         }
@@ -93,6 +118,19 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     };
 
     const isNewHighScore = score > userHighScore;
+
+    if (!gameStarted) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+                <div className="text-7xl mb-4">🏭</div>
+                <h2 className="text-3xl font-bold font-display text-text-main">Cadena de Reciclaje</h2>
+                <p className="text-text-secondary mt-4 max-w-md">¡Eres el operario de la planta! Arrastra los objetos que avanzan por la cinta transportadora al contenedor correcto. ¡No dejes que se escapen!</p>
+                <button onClick={() => setGameStarted(true)} className="cta-button mt-8">
+                    Empezar a Jugar
+                </button>
+            </div>
+        );
+    }
 
     if (isFinished) {
         return (
@@ -107,10 +145,15 @@ const RecyclingChainGame: React.FC<RecyclingChainGameProps> = ({ items, bins, du
     }
     
     return (
-        <div className="w-full h-full flex flex-col items-center justify-between text-text-main">
+        <div className="w-full h-full flex flex-col items-center justify-between text-text-main relative">
+            {floatingScores.map(fs => (
+                <div key={fs.id} className="absolute text-2xl font-bold text-primary pointer-events-none" style={{ left: fs.x, top: fs.y, animation: 'float-up 1s ease-out forwards' }}>
+                    {fs.value}
+                </div>
+            ))}
             <header className="w-full flex justify-between items-center text-lg sm:text-xl font-bold px-2">
                 <div>Puntaje: <span className="text-primary">{score}</span></div>
-                {combo > 1 && <div className="text-primary text-2xl font-black animate-bounce">COMBO x{combo}!</div>}
+                {combo > 1 && <div className="text-primary text-3xl font-black" style={{animation: 'feedback-pop 0.3s ease-out'}}>COMBO x{combo}!</div>}
                 <div>Tiempo: <span className={`transition-colors ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>{timeLeft}s</span></div>
             </header>
 

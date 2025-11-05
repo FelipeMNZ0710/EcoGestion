@@ -9,6 +9,7 @@ interface TriviaGameProps {
 }
 
 const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose, userHighScore }) => {
+    const [gameStarted, setGameStarted] = useState(false);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [showFeedback, setShowFeedback] = useState(false);
@@ -46,6 +47,19 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose,
         }
     };
 
+    if (!gameStarted) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+                <div className="text-7xl mb-4">🧠</div>
+                <h2 className="text-3xl font-bold font-display text-text-main">Súper Trivia</h2>
+                <p className="text-text-secondary mt-4 max-w-md">Pon a prueba tus conocimientos sobre reciclaje. Responde correctamente para sumar puntos. ¡Mucha suerte!</p>
+                <button onClick={() => setGameStarted(true)} className="cta-button mt-8">
+                    Empezar a Jugar
+                </button>
+            </div>
+        );
+    }
+
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
@@ -65,19 +79,28 @@ const TriviaGame: React.FC<TriviaGameProps> = ({ questions, onComplete, onClose,
                     </div>
                     <div className="space-y-3">
                         {currentQuestion.options.map((option, index) => {
-                            let buttonClass = "w-full text-left p-4 border-2 rounded-lg transition-all duration-200 font-semibold ";
+                            let buttonClass = "w-full text-left p-4 border-2 rounded-lg transition-all duration-200 font-semibold flex items-center justify-between ";
+                            let feedbackIcon = null;
+
                             if (showFeedback) {
                                 if (index === currentQuestion.correctAnswer) {
-                                    buttonClass += "bg-emerald-500/20 border-emerald-500 text-text-main animate-pulse";
+                                    buttonClass += "bg-emerald-500/20 border-emerald-500 text-text-main";
+                                    feedbackIcon = '✅';
                                 } else if (index === selectedAnswer) {
                                     buttonClass += "bg-red-500/20 border-red-500 text-text-main animate-game-shake";
+                                    feedbackIcon = '❌';
                                 } else {
                                     buttonClass += "border-slate-700 opacity-50";
                                 }
                             } else {
                                buttonClass += "border-slate-700 hover:border-primary hover:bg-primary/10";
                             }
-                            return <button key={index} onClick={() => handleAnswer(index)} disabled={showFeedback} className={buttonClass}>{option}</button>;
+                            return (
+                                <button key={index} onClick={() => handleAnswer(index)} disabled={showFeedback} className={buttonClass}>
+                                    <span>{option}</span>
+                                    {feedbackIcon && <span className="text-2xl">{feedbackIcon}</span>}
+                                </button>
+                            );
                         })}
                     </div>
                     <div className="mt-6">

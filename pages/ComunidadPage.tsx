@@ -188,7 +188,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
 
     const fetchChannels = useCallback(async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/community/channels');
+            const response = await fetch('/api/community/channels');
             const data = await response.json();
             setChannels(data);
             if (data.length > 0 && !activeChannelId) {
@@ -201,7 +201,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
 
     const fetchMembers = useCallback(async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/community/members');
+            const response = await fetch('/api/community/members');
             const data = await response.json();
             setMembers(data);
         } catch (error) { console.error("Error fetching members:", error); }
@@ -210,7 +210,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const fetchMessages = useCallback(async (channelId: number) => {
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/community/messages/${channelId}`);
+            const response = await fetch(`/api/community/messages/${channelId}`);
             const data = await response.json();
             setMessages(prev => ({ ...prev, [channelId]: data }));
         } catch (error) { console.error("Error fetching messages:", error); } finally { setIsLoading(false); }
@@ -243,7 +243,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !user || activeChannelId === null) return;
         try {
-            await fetch('http://localhost:3001/api/community/messages', {
+            await fetch('/api/community/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -263,7 +263,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const handleEditMessage = async () => {
         if (!editedText.trim() || !editingMessage || !user || activeChannelId === null) return;
         try {
-            await fetch(`http://localhost:3001/api/community/messages/${editingMessage.id}`, {
+            await fetch(`/api/community/messages/${editingMessage.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: editedText.trim(), userId: user.id, userRole: user.role }),
@@ -277,7 +277,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const handleDeleteMessage = async (messageId: number) => {
         if (!user || !window.confirm("¿Seguro que quieres eliminar este mensaje?") || activeChannelId === null) return;
         try {
-            await fetch(`http://localhost:3001/api/community/messages/${messageId}`, {
+            await fetch(`/api/community/messages/${messageId}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id, userRole: user.role }),
@@ -289,7 +289,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
     const handleToggleReaction = async (messageId: number, emoji: string) => {
         if (!user || activeChannelId === null) return;
         try {
-            await fetch(`http://localhost:3001/api/community/messages/${messageId}/react`, {
+            await fetch(`/api/community/messages/${messageId}/react`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userName: user.name, emoji }),
@@ -301,7 +301,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
      const handleCreateChannel = async (channelData: { name: string; description: string; admin_only_write: boolean }) => {
         if (!isAdmin || !user) return;
         try {
-            const response = await fetch('http://localhost:3001/api/community/channels', {
+            const response = await fetch('/api/community/channels', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...channelData, userId: user.id, userRole: user.role }),
@@ -320,7 +320,7 @@ const ComunidadPage: React.FC<{ user: User | null; onUserAction: (action: Gamifi
         if (!isAdmin || !user) return;
         if (window.confirm("¿Estás seguro de que quieres eliminar este canal? Todos los mensajes se borrarán permanentemente.")) {
             try {
-                const response = await fetch(`http://localhost:3001/api/community/channels/${channelId}`, {
+                const response = await fetch(`/api/community/channels/${channelId}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: user.id, userRole: user.role }),

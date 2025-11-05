@@ -158,7 +158,7 @@ const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | nul
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await fetch('http://localhost:3001/api/impact-stats');
+        const response = await fetch('/api/impact-stats');
         if (!response.ok) {
           throw new Error(`Server responded with status ${response.status}`);
         }
@@ -193,7 +193,7 @@ const HomePage: React.FC<{setCurrentPage: (page: Page) => void, user: User | nul
       setIsModalOpen(false);
 
       try {
-          const response = await fetch('http://localhost:3001/api/impact-stats', {
+          const response = await fetch('/api/impact-stats', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

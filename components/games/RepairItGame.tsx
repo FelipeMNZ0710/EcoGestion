@@ -9,6 +9,7 @@ interface RepairItGameProps {
 }
 
 const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onComplete, userHighScore }) => {
+    const [gameStarted, setGameStarted] = useState(false);
     const [gameItems, setGameItems] = useState<RepairableItem[]>([]);
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(timePerItem);
@@ -35,7 +36,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
     }, [items]);
 
     useEffect(() => {
-        if (isFinished || flyingTool) return;
+        if (isFinished || flyingTool || !gameStarted) return;
         if (timeLeft > 0) {
             const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timer);
@@ -43,7 +44,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
             setFeedback('incorrect');
             setTimeout(nextItem, 1200);
         }
-    }, [timeLeft, isFinished, flyingTool, nextItem]);
+    }, [timeLeft, isFinished, flyingTool, nextItem, gameStarted]);
 
     const handleToolSelection = (tool: string, index: number) => {
         if (feedback) return;
@@ -63,10 +64,23 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
     const progress = (timeLeft / timePerItem) * 100;
     const isNewHighScore = score > userHighScore;
 
+    if (!gameStarted) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+                <div className="text-7xl mb-4">🛠️</div>
+                <h2 className="text-3xl font-bold font-display text-text-main">¡Repáralo!</h2>
+                <p className="text-text-secondary mt-4 max-w-md">¡No lo tires, repáralo! Elige la herramienta correcta para arreglar cada objeto antes de que se acabe el tiempo. Reutilizar es clave.</p>
+                <button onClick={() => setGameStarted(true)} className="cta-button mt-8">
+                    Empezar a Jugar
+                </button>
+            </div>
+        );
+    }
+
     if (isFinished) {
         return (
              <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col" style={{ animation: 'game-pop-in 0.5s' }}>
-                <div className="text-7xl mb-4">🛠️</div>
+                <div className="text-7xl mb-4">🏆</div>
                 <h2 className="text-3xl font-bold text-text-main">¡Juego Terminado!</h2>
                  {isNewHighScore && <p className="font-bold text-amber-400 text-xl mt-4 animate-bounce">¡Nuevo Récord!</p>}
                 <p className="text-text-secondary mt-2 text-lg">Reparaste {score / 10} objetos y tu puntaje es <strong className="text-primary text-2xl">{score}</strong>.</p>
@@ -121,7 +135,7 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
                 <div
                     className={`relative w-48 h-48 bg-background rounded-full shadow-lg flex flex-col items-center justify-center p-4 border-8 transition-colors duration-300
                         ${
-                        feedback === 'correct' ? 'border-emerald-500 animate-pulse' :
+                        feedback === 'correct' ? 'border-emerald-500' :
                         feedback === 'incorrect' ? 'border-red-500 animate-game-shake' : 'border-slate-700'
                     }`}
                 >
@@ -135,7 +149,6 @@ const RepairItGame: React.FC<RepairItGameProps> = ({ items, timePerItem, onCompl
                 {currentItem.toolOptions.map((tool, index) => (
                     <button
                         key={index}
-                        // FIX: Changed ref callback to have a function body to ensure a void return.
                         ref={el => { toolRefs.current[index] = el; }}
                         onClick={() => handleToolSelection(tool, index)}
                         disabled={!!feedback}

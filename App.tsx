@@ -58,7 +58,7 @@ const App: React.FC = () => {
     }
 
     try {
-        const response = await fetch('http://localhost:3001/api/user-action', {
+        const response = await fetch('/api/user-action', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id, action, payload })

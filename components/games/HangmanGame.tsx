@@ -54,6 +54,7 @@ const SadPlanet: React.FC<{ mistakes: number }> = ({ mistakes }) => {
 
 
 const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighScore }) => {
+    const [gameStarted, setGameStarted] = useState(false);
     const [{ word, hint }, setCurrentWord] = useState<{word: string; hint: string}>({word: '', hint: ''});
     const [guessedLetters, setGuessedLetters] = useState(new Set<string>());
     const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
@@ -73,14 +74,18 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighSc
         setGuessedLetters(new Set<string>());
         setGameState('playing');
         setScore(0);
+        setGameStarted(true);
     }, [words]);
 
     useEffect(() => {
-        setupNewGame();
-    }, [setupNewGame]);
+        if (words.length > 0) {
+            const newWordData = words[Math.floor(Math.random() * words.length)];
+            setCurrentWord({word: newWordData.word.toUpperCase(), hint: newWordData.hint});
+        }
+    }, [words]);
     
      useEffect(() => {
-        if (gameState !== 'playing') return;
+        if (gameState !== 'playing' || !gameStarted) return;
 
         if (maskedWord === word && word !== '') {
             const finalScore = 100 - (incorrectGuesses * 10);
@@ -92,7 +97,7 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighSc
             setGameState('lost');
             onComplete(0);
         }
-    }, [maskedWord, word, incorrectGuesses, onComplete, gameState]);
+    }, [maskedWord, word, incorrectGuesses, onComplete, gameState, gameStarted]);
 
     const handleGuess = (letter: string) => {
         if (gameState !== 'playing') return;
@@ -100,6 +105,19 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighSc
     };
     
     const isNewHighScore = score > userHighScore;
+
+    if (!gameStarted) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-center p-8 flex-col animate-fade-in-up">
+                <div className="text-7xl mb-4">🌍</div>
+                <h2 className="text-3xl font-bold text-text-main">Ahorcado Sostenible</h2>
+                <p className="text-text-secondary mt-4 max-w-md">Adivina la palabra oculta letra por letra. Tienes 6 intentos antes de que el planeta se llene de basura. ¡Presta atención a la pista!</p>
+                <button onClick={() => setGameStarted(true)} className="cta-button mt-8">
+                    Empezar a Jugar
+                </button>
+            </div>
+        );
+    }
 
     if (gameState !== 'playing') {
         return (
@@ -127,12 +145,12 @@ const HangmanGame: React.FC<HangmanGameProps> = ({ words, onComplete, userHighSc
             <SadPlanet mistakes={incorrectGuesses} />
             
             <div className="text-center">
-                <div className="flex justify-center gap-1 sm:gap-2 text-2xl sm:text-4xl font-bold tracking-widest my-4">
-                    {maskedWord.split('').map((letter, index) => (
+                <div className="flex flex-wrap justify-center gap-1 sm:gap-2 text-2xl sm:text-4xl font-bold tracking-widest my-4">
+                    {word.split('').map((letter, index) => (
                          letter === ' ' 
                          ? <div key={index} className="w-4 sm:w-6"></div>
-                         : <span key={index} className={`w-8 sm:w-12 h-12 sm:h-16 flex items-center justify-center border-b-4 ${letter === '_' ? 'border-slate-700' : 'border-primary'}`}>
-                            {letter !== '_' ? letter : ''}
+                         : <span key={index} className={`w-8 h-10 sm:w-12 sm:h-16 flex items-center justify-center bg-surface border-b-4 rounded-md text-text-main transition-all duration-200 ${guessedLetters.has(letter) ? 'border-primary' : 'border-slate-700'}`}>
+                            {guessedLetters.has(letter) ? letter : ''}
                         </span>
                     ))}
                 </div>

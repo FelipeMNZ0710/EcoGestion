@@ -1,8 +1,4 @@
-export interface Testimonial {
-  name: string;
-  role: string;
-  quote: string;
-}
+import type { Testimonial } from '../types';
 
 export const testimonialsData: Testimonial[] = [
   {
@@ -11,18 +7,18 @@ export const testimonialsData: Testimonial[] = [
     quote: 'Desde que uso EcoGestión, reciclar se ha vuelto parte de mi rutina. El mapa de Puntos Verdes es súper útil y ahora sé exactamente dónde llevar cada cosa. ¡Mi familia y yo estamos encantados!',
   },
   {
-    name: 'Carlos Giménez',
-    role: 'Docente Comprometido',
+    name: 'Johanna Gisele Dellagnolo',
+    role: 'Profesora de Matemáticas',
     quote: 'Utilizo los juegos y las guías de la página con mis alumnos. Es una herramienta fantástica para enseñar sobre la importancia del reciclaje de una manera interactiva y divertida. ¡Totalmente recomendada!',
   },
   {
-    name: 'Laura Fernández',
-    role: 'Emprendedora Sustentable',
+    name: 'Fausto Gaston Nuñez Barrios',
+    role: 'Profesor de Matemáticas',
     quote: 'La sección de comunidad me conectó con otras personas que tienen las mismas inquietudes. Pude compartir ideas para mi emprendimiento y aprender de otros. Es más que una app, es un movimiento.',
   },
   {
-    name: 'Javier Sosa',
-    role: 'Estudiante Universitario',
+    name: 'Leonardo Taquini',
+    role: 'Profesor de Base de Datos',
     quote: 'La app me aclaró muchísimas dudas, sobre todo con los plásticos y el compostaje. El identificador con IA es genial, le saqué una foto a un envase y al toque me dijo qué hacer. ¡Muy buena!',
   },
   {

@@ -77,9 +77,9 @@ const initializeDatabase = async () => {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
         console.log('✅ Tabla "impact_stats" asegurada.');
-        const [statsRows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
+        const [statsRows] = await connection.query('SELECT * FROM impact_stats WHERE id = 1');
         if (statsRows.length === 0) {
-            await db.query(`INSERT INTO \`impact_stats\` (\`id\`, \`recycled_kg\`, \`participants\`, \`points\`) VALUES (1, 14800, 5350, 48);`);
+            await connection.query(`INSERT INTO \`impact_stats\` (\`id\`, \`recycled_kg\`, \`participants\`, \`points\`) VALUES (1, 14800, 5350, 48);`);
             console.log('✅ Datos iniciales de estadísticas insertados.');
         } else {
             console.log('✅ Fila de estadísticas verificada.');
@@ -102,24 +102,6 @@ const initializeDatabase = async () => {
         `);
         console.log('✅ Tabla "news_articles" asegurada.');
 
-        const dbName = process.env.DB_NAME || 'ecogestion_db';
-        const [columns] = await connection.query(`
-            SELECT COLUMN_NAME, DATA_TYPE 
-            FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'news_articles' 
-            AND COLUMN_NAME IN ('image', 'content')`,
-            [dbName]
-        );
-
-        for (const column of columns) {
-            if (column.DATA_TYPE.toLowerCase() !== 'longtext') {
-                console.warn(`⚠️  Columna "${column.COLUMN_NAME}" en "news_articles" tiene un tipo incorrecto (${column.DATA_TYPE}). Modificando a LONGTEXT...`);
-                await connection.query(`ALTER TABLE \`news_articles\` MODIFY COLUMN \`${column.COLUMN_NAME}\` LONGTEXT;`);
-                console.log(`✅  Columna "${column.COLUMN_NAME}" actualizada a LONGTEXT.`);
-            }
-        }
-        console.log('✅ Columnas de "news_articles" verificadas.');
-        
         // --- Games Table ---
         await connection.query(`
             CREATE TABLE IF NOT EXISTS \`games\` (
@@ -137,7 +119,7 @@ const initializeDatabase = async () => {
         `);
         console.log('✅ Tabla "games" asegurada.');
         
-        const [gameRows] = await db.query('SELECT COUNT(*) as count FROM games');
+        const [gameRows] = await connection.query('SELECT COUNT(*) as count FROM games');
         if (gameRows[0].count === 0) {
             console.log('⏳ La tabla "games" está vacía. Poblando con datos iniciales...');
             const query = 'INSERT INTO games (id, title, category, image, type, learningObjective, payload, rating) VALUES ?';
@@ -999,59 +981,34 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     }
 });
 
-app.put('/api/admin/users/:id/achievements', async (req, res) => {
-    if (!await authAdmin(req, res, 'dueño')) return;
-    try {
-        const { id } = req.params;
-        const { achievementId, unlocked } = req.body;
-        const [users] = await db.query('SELECT unlocked_achievements FROM users WHERE id = ?', [id]);
-        if (users.length === 0) return res.status(404).json({ message: 'Usuario no encontrado.' });
-        
-        let unlockedIds = new Set(users[0].unlocked_achievements ? JSON.parse(users[0].unlocked_achievements) : []);
-        if (unlocked) {
-            unlockedIds.add(String(achievementId));
-        } else {
-            unlockedIds.delete(String(achievementId));
-        }
-        
-        await db.query('UPDATE users SET unlocked_achievements = ? WHERE id = ?', [JSON.stringify(Array.from(unlockedIds)), id]);
-        
-        const [updatedUsers] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
-        if (updatedUsers.length === 0) return res.status(404).json({ message: 'User not found after update.' });
-        res.status(200).json(formatUserForFrontend(updatedUsers[0]));
-
-    } catch (error) {
-        console.error("[UPDATE ACHIEVEMENTS] ERROR:", error);
-        res.status(500).json({ message: 'Error al actualizar logros.' });
-    }
-});
-
-
-app.post('/api/contact', async (req, res) => {
-    try {
-        const { name, email, subject, message } = req.body;
-        console.log(`[CONTACT] Nuevo mensaje de ${name} (${email}). Asunto: ${subject}`);
-        await db.query(
-            'INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
-            [name, email, subject, message]
-        );
-        console.log('[CONTACT] Mensaje guardado en la DB.');
-        res.status(201).json({ message: 'Mensaje enviado exitosamente.' });
-    } catch (error) {
-        console.error("[CONTACT] ERROR:", error);
-        res.status(500).json({ message: "Error al enviar el mensaje." });
-    }
-});
-
 app.get('/api/admin/messages', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
     try {
         const [messages] = await db.query('SELECT * FROM contact_messages ORDER BY submitted_at DESC');
         res.json(messages);
     } catch (error) {
         console.error("[GET ADMIN MESSAGES] ERROR:", error);
-        res.status(500).json({ message: "Error al obtener mensajes." });
+        res.status(500).json({ message: 'Error al obtener mensajes de contacto.' });
     }
 });
+
+app.get('/api/admin/reports', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
+    try {
+        const [reports] = await db.query(`
+            SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
+            FROM reports r 
+            JOIN users u ON r.user_id = u.id 
+            JOIN locations l ON r.location_id = l.id 
+            ORDER BY r.reported_at DESC
+        `);
+        res.json(reports);
+    } catch (error) {
+        console.error("[GET ADMIN REPORTS] ERROR:", error);
+        res.status(500).json({ message: 'Error al obtener reportes.' });
+    }
+});
+
 app.put('/api/admin/messages/:id', async (req, res) => {
     if (!await authAdmin(req, res, 'moderador')) return;
     try {
@@ -1059,182 +1016,195 @@ app.put('/api/admin/messages/:id', async (req, res) => {
         const { status } = req.body;
         await db.query('UPDATE contact_messages SET status = ? WHERE id = ?', [status, id]);
         const [updatedMessages] = await db.query('SELECT * FROM contact_messages WHERE id = ?', [id]);
-        if (updatedMessages.length === 0) return res.status(404).json({ message: 'Message not found after update.' });
         res.status(200).json(updatedMessages[0]);
     } catch (error) {
-         res.status(500).json({ message: "Error al actualizar mensaje." });
+        console.error("[UPDATE ADMIN MESSAGE] ERROR:", error);
+        res.status(500).json({ message: 'Error al actualizar mensaje.' });
+    }
+});
+
+app.put('/api/admin/reports/:id', async (req, res) => {
+    if (!await authAdmin(req, res, 'moderador')) return;
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        const [reportRows] = await db.query('SELECT location_id FROM reports WHERE id = ?', [id]);
+        if (reportRows.length === 0) return res.status(404).json({ message: 'Reporte no encontrado.' });
+        const locationId = reportRows[0].location_id;
+
+        await db.query('UPDATE reports SET status = ? WHERE id = ?', [status, id]);
+        
+        if (status === 'resolved' || status === 'dismissed') {
+            await updateLocationStatusAfterReportChange(locationId);
+        }
+
+        const [updatedReports] = await db.query(`
+            SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
+            FROM reports r 
+            JOIN users u ON r.user_id = u.id 
+            JOIN locations l ON r.location_id = l.id 
+            WHERE r.id = ?
+        `, [id]);
+        res.status(200).json(updatedReports[0]);
+    } catch (error) {
+        console.error("[UPDATE ADMIN REPORT] ERROR:", error);
+        res.status(500).json({ message: 'Error al actualizar reporte.' });
     }
 });
 
 app.delete('/api/admin/messages/:id', async (req, res) => {
     if (!await authAdmin(req, res, 'moderador')) return;
     try {
-        const { id } = req.params;
-        await db.query('DELETE FROM contact_messages WHERE id = ?', [id]);
+        await db.query('DELETE FROM contact_messages WHERE id = ?', [req.params.id]);
         res.status(200).json({ message: 'Mensaje eliminado.' });
     } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar el mensaje.' });
-    }
-});
-
-app.get('/api/admin/reports', async (req, res) => {
-    if (!await authAdmin(req, res, 'moderador')) return;
-    try {
-        const [reports] = await db.query(
-            `SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
-             FROM reports r JOIN users u ON r.user_id = u.id 
-             JOIN locations l ON r.location_id = l.id 
-             ORDER BY r.reported_at DESC`
-        );
-        res.json(reports);
-    } catch (error) {
-        console.error("[GET ADMIN REPORTS] ERROR:", error);
-        res.status(500).json({ message: "Error al obtener reportes." });
-    }
-});
-app.put('/api/admin/reports/:id', async (req, res) => {
-     if (!await authAdmin(req, res, 'moderador')) return;
-     try {
-        const { id } = req.params;
-        const { status } = req.body;
-        
-        const [reports] = await db.query('SELECT location_id FROM reports WHERE id = ?', [id]);
-        if (reports.length === 0) return res.status(404).json({ message: 'Reporte no encontrado.' });
-        const { location_id } = reports[0];
-        
-        await db.query('UPDATE reports SET status = ? WHERE id = ?', [status, id]);
-
-        if (status === 'resolved' || status === 'dismissed') {
-            await updateLocationStatusAfterReportChange(location_id);
-        }
-
-        const [updatedReports] = await db.query(
-            `SELECT r.*, u.name as userName, u.email as userEmail, l.name as locationName 
-             FROM reports r JOIN users u ON r.user_id = u.id 
-             JOIN locations l ON r.location_id = l.id 
-             WHERE r.id = ?`,
-            [id]
-        );
-        if (updatedReports.length === 0) return res.status(404).json({ message: 'Report not found after update.' });
-        res.status(200).json(updatedReports[0]);
-    } catch (error) {
-         res.status(500).json({ message: "Error al actualizar reporte." });
+        console.error("[DELETE ADMIN MESSAGE] ERROR:", error);
+        res.status(500).json({ message: 'Error al eliminar mensaje.' });
     }
 });
 
 app.delete('/api/admin/reports/:id', async (req, res) => {
     if (!await authAdmin(req, res, 'moderador')) return;
     try {
-        const { id } = req.params;
-        const [reports] = await db.query('SELECT location_id FROM reports WHERE id = ?', [id]);
-        if (reports.length === 0) return res.status(404).json({ message: 'Reporte no encontrado.' });
-        const { location_id } = reports[0];
+        const [reportRows] = await db.query('SELECT location_id FROM reports WHERE id = ?', [req.params.id]);
+        if (reportRows.length === 0) return res.status(404).json({ message: 'Reporte no encontrado.' });
+        const locationId = reportRows[0].location_id;
 
-        await db.query('DELETE FROM reports WHERE id = ?', [id]);
-        await updateLocationStatusAfterReportChange(location_id);
+        await db.query('DELETE FROM reports WHERE id = ?', [req.params.id]);
         
+        await updateLocationStatusAfterReportChange(locationId);
+
         res.status(200).json({ message: 'Reporte eliminado.' });
     } catch (error) {
+        console.error("[DELETE ADMIN REPORT] ERROR:", error);
         res.status(500).json({ message: 'Error al eliminar reporte.' });
     }
 });
 
 app.post('/api/admin/reply', async (req, res) => {
-    const { to, subject, body, adminUserId } = req.body;
-    console.log('\n[ADMIN REPLY] Solicitud de respuesta recibida.');
-
     if (!await authAdmin(req, res, 'moderador')) return;
-
-    if (!to || !subject || !body) {
-        console.log('[ADMIN REPLY] Error: Faltan campos (to, subject, body).');
-        return res.status(400).json({ message: 'Faltan campos requeridos para enviar la respuesta.' });
+    try {
+        const { to, subject, body } = req.body;
+        console.log('--- SIMULACIÓN DE ENVÍO DE EMAIL ---');
+        console.log(`Para: ${to}`);
+        console.log(`Asunto: ${subject}`);
+        console.log('--- Cuerpo del Mensaje ---');
+        console.log(body);
+        console.log('------------------------------------');
+        console.log('NOTA: Esto es una simulación. Para enviar emails reales, se necesita configurar un servicio como Nodemailer.');
+        res.status(200).json({ message: 'Respuesta enviada (simulado).' });
+    } catch (error) {
+        console.error("[SEND REPLY] ERROR:", error);
+        res.status(500).json({ message: 'Error al simular envío de respuesta.' });
     }
-    
-    // --- SIMULACIÓN DE ENVÍO DE EMAIL ---
-    console.log('****************************************************');
-    console.log('***           SIMULANDO ENVÍO DE EMAIL           ***');
-    console.log('****************************************************');
-    console.log(`DE: noreply@ecogestion.com`);
-    console.log(`PARA: ${to}`);
-    console.log(`ASUNTO: ${subject}`);
-    console.log('-------------------- CUERPO --------------------');
-    console.log(body);
-    console.log('------------------------------------------------');
-    console.log(`(Respuesta enviada por Admin ID: ${adminUserId || 'No especificado'})`);
-    console.log('****************************************************');
-    // --- FIN DE SIMULACIÓN ---
-
-    res.status(200).json({ message: 'Respuesta enviada exitosamente (simulación).' });
 });
 
-// --- Impact Stats Endpoints ---
-app.get('/api/impact-stats', async (req, res) => {
+app.put('/api/admin/users/:id/achievements', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
     try {
-        const [rows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
+        const { id } = req.params;
+        const { achievementId, unlocked } = req.body;
         
-        if (rows.length === 0) {
-            console.warn("[GET IMPACT STATS] Fila no encontrada. Creando...");
-            await db.query(`INSERT INTO \`impact_stats\` (\`id\`, \`recycled_kg\`, \`participants\`, \`points\`) VALUES (1, 14800, 5350, 48) ON DUPLICATE KEY UPDATE id=1;`);
-            const [newRows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
-            res.json({ recycledKg: newRows[0].recycled_kg, participants: newRows[0].participants, points: newRows[0].points });
-            return;
+        const [users] = await db.query('SELECT unlocked_achievements FROM users WHERE id = ?', [id]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
         }
-
-        const stats = rows[0];
-        res.json({
-            recycledKg: stats.recycled_kg,
-            participants: stats.participants,
-            points: stats.points
-        });
+        
+        const unlockedAchievements = new Set(users[0].unlocked_achievements ? JSON.parse(users[0].unlocked_achievements) : []);
+        
+        if (unlocked) {
+            unlockedAchievements.add(achievementId);
+        } else {
+            unlockedAchievements.delete(achievementId);
+        }
+        
+        const updatedAchievementsJSON = JSON.stringify(Array.from(unlockedAchievements));
+        
+        await db.query('UPDATE users SET unlocked_achievements = ? WHERE id = ?', [updatedAchievementsJSON, id]);
+        
+        const [updatedUsers] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+        if (updatedUsers.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado después de la actualización.' });
+        }
+        
+        res.status(200).json(formatUserForFrontend(updatedUsers[0]));
     } catch (error) {
-        console.error("[GET IMPACT STATS] ERROR:", error);
-        res.status(500).json({ message: "Error al obtener las estadísticas." });
+        console.error("[UPDATE USER ACHIEVEMENTS] ERROR:", error);
+        res.status(500).json({ message: 'Error en el servidor al actualizar los logros del usuario.' });
     }
 });
 
-
-app.put('/api/impact-stats', async (req, res) => {
-    if (!await authAdmin(req, res, 'moderador')) return;
-    try {
-        const { recycledKg, participants, points } = req.body;
-        if (recycledKg === undefined || participants === undefined || points === undefined) {
-            return res.status(400).json({ message: 'Todos los campos de estadísticas son requeridos.' });
-        }
-        const [result] = await db.query(
-            'UPDATE impact_stats SET recycled_kg = ?, participants = ?, points = ? WHERE id = 1',
-            [recycledKg, participants, points]
-        );
-
-        if (result.affectedRows === 0) {
-            throw new Error("La fila de estadísticas no se encontró en la base de datos para actualizar. Intenta reiniciar el servidor.");
-        }
-
-        res.status(200).json({ message: 'Estadísticas actualizadas correctamente.' });
-    } catch (error) {
-        console.error("[UPDATE IMPACT STATS] ERROR:", error);
-        res.status(500).json({ message: "Error al actualizar las estadísticas." });
-    }
-});
-
-
-// --- Recycling Guide Endpoint ---
-app.get('/api/recycling-guides', async (req, res) => {
+// --- Other Endpoints ---
+app.get('/api/recycling-guides', (req, res) => {
     res.json(comoReciclarData);
 });
 
-// --- Start Server ---
+app.get('/api/impact-stats', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM impact_stats WHERE id = 1');
+        if (rows.length > 0) {
+            const stats = rows[0];
+            res.json({
+                recycledKg: stats.recycled_kg,
+                participants: stats.participants,
+                points: stats.points,
+            });
+        } else {
+            res.status(404).json({ message: "Stats not found" });
+        }
+    } catch (error) {
+        console.error('[GET STATS] ERROR:', error);
+        res.status(500).json({ message: "Error fetching stats" });
+    }
+});
+
+app.put('/api/impact-stats', async (req, res) => {
+    if (!await authAdmin(req, res, 'dueño')) return;
+    try {
+        const { recycledKg, participants, points } = req.body;
+        await db.query(
+            'UPDATE impact_stats SET recycled_kg = ?, participants = ?, points = ? WHERE id = 1',
+            [recycledKg, participants, points]
+        );
+        res.status(200).json({ message: 'Estadísticas actualizadas.' });
+    } catch (error) {
+        console.error('[UPDATE STATS] ERROR:', error);
+        res.status(500).json({ message: 'Error al actualizar las estadísticas.' });
+    }
+});
+
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { name, email, subject, message } = req.body;
+        if (!name || !email || !subject || !message) {
+            return res.status(400).json({ message: 'Todos los campos son requeridos.' });
+        }
+        await db.query(
+            'INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
+            [name, email, subject, message]
+        );
+        res.status(201).json({ message: 'Mensaje recibido. ¡Gracias por contactarnos!' });
+    } catch (error) {
+        console.error('[CONTACT FORM] ERROR:', error);
+        res.status(500).json({ message: 'Error en el servidor al procesar el mensaje.' });
+    }
+});
+
+
+// --- Server Start ---
 const startServer = async () => {
     try {
-        console.log('⏳ Inicializando la base de datos...');
         await initializeDatabase();
-        
         app.listen(port, () => {
-            console.log(`🚀 Servidor de EcoGestión escuchando en http://localhost:${port}`);
-            console.log('✅ Base de datos y servidor listos.');
+            console.log(`🚀 El servidor de EcoGestión está corriendo en http://localhost:${port}`);
+            console.log('-----------------------------------------------------------------------------');
+            console.log('✅ ¡El backend está listo para recibir peticiones!');
+            console.log('-----------------------------------------------------------------------------');
         });
     } catch (error) {
-        console.error('❌ FATAL: No se pudo iniciar el servidor. La inicialización de la base de datos falló.');
-        process.exit(1);
+        console.error('❌ FALLO CATASTRÓFICO: El servidor no pudo iniciarse debido a un error con la base de datos.');
+        process.exit(1); // Termina el proceso si no se puede conectar/inicializar la DB
     }
 };
 
